@@ -3,123 +3,64 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Room Management</title>
+    <title>ผังห้องพัก</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style> body { font-family: 'Sarabun', sans-serif; } </style>
 </head>
-<body class="bg-gray-50 text-gray-800">
+<body class="bg-slate-50 text-slate-800">
 
-    <div class="flex h-screen">
-        
-        <aside class="w-64 bg-slate-900 text-white flex flex-col">
-            <div class="p-6 text-2xl font-bold text-center border-b border-slate-700">
-                 DormManager
-            </div>
-            <nav class="flex-1 p-4 space-y-2">
-                <a href="#" class="block px-4 py-3 rounded bg-blue-600 text-white shadow-lg">
-                     จัดการห้องพัก
-                </a>
-                <a href="#" class="block px-4 py-3 rounded hover:bg-slate-800 transition">
-                     ผู้เช่า
-                </a>
-                <a href="#" class="block px-4 py-3 rounded hover:bg-slate-800 transition">
-                     ใบแจ้งหนี้
-                </a>
-            </nav>
-        </aside>
+    <%- include('../partials/sidebar') %>
 
-        <main class="flex-1 p-8 overflow-y-auto">
-            
-            <div class="flex justify-between items-center mb-8">
-                <div>
-                    <h1 class="text-3xl font-bold text-gray-900">ผังห้องพัก</h1>
-                    <p class="text-gray-500">จัดการข้อมูลและสถานะห้องพักทั้งหมด</p>
-                </div>
-                <button class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg shadow transition flex items-center gap-2">
-                    <span>+</span> เพิ่มห้องพัก
-                </button>
+    <div class="ml-64 pt-16 min-h-screen flex flex-col">
+        <%- include('../partials/navbar') %>
+
+        <main class="flex-1 p-8">
+            <div class="flex justify-between items-center mb-6">
+                <h1 class="text-2xl font-bold text-slate-800">ผังห้องพัก (45 ห้อง)</h1>
+                <a href="/rooms/create" class="bg-blue-600 text-white px-4 py-2 rounded-lg shadow hover:bg-blue-700 transition">+ เพิ่มห้อง</a>
             </div>
 
-            <div class="grid grid-cols-3 gap-6 mb-8">
-                <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-                    <div class="text-gray-500 text-sm">ห้องว่าง</div>
-                    <div class="text-3xl font-bold text-green-600">12 ห้อง</div>
-                </div>
-                <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-                    <div class="text-gray-500 text-sm">มีคนอยู่</div>
-                    <div class="text-3xl font-bold text-blue-600">35 ห้อง</div>
-                </div>
-                <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-                    <div class="text-gray-500 text-sm">แจ้งซ่อม</div>
-                    <div class="text-3xl font-bold text-orange-500">3 ห้อง</div>
-                </div>
-            </div>
+            <div class="space-y-8">
+                <% 
+                    // จัดกลุ่มห้องตามชั้น (Group by Floor)
+                    const floors = {};
+                    rooms.forEach(room => {
+                        if(!floors[room.floor]) floors[room.floor] = [];
+                        floors[room.floor].push(room);
+                    });
+                %>
 
-            <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-                <table class="w-full text-left border-collapse">
-                    <thead class="bg-gray-50 text-gray-600 uppercase text-xs font-semibold">
-                        <tr>
-                            <th class="p-4 border-b">หมายเลขห้อง</th>
-                            <th class="p-4 border-b">ประเภท</th>
-                            <th class="p-4 border-b">ราคา (บาท)</th>
-                            <th class="p-4 border-b">ผู้เช่า</th>
-                            <th class="p-4 border-b">สถานะ</th>
-                            <th class="p-4 border-b text-center">จัดการ</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-gray-100">
-                        <% rooms.forEach(room => { %>
-                        <tr class="hover:bg-gray-50 transition">
-                            <td class="p-4 font-bold text-gray-700">
-                                <%= room.number %>
-                            </td>
-                            <td class="p-4 text-gray-500"><%= room.type %></td>
-                            <td class="p-4 font-mono text-gray-600"><%= room.price.toLocaleString() %></td>
-                            <td class="p-4">
-                                <% if(room.tenant) { %>
-                                    <div class="flex items-center gap-2">
-                                        <div class="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 text-xs font-bold">
-                                            <%= room.tenant.charAt(0) %>
-                                        </div>
-                                        <span class="text-sm font-medium"><%= room.tenant %></span>
+                <% Object.keys(floors).forEach(floor => { %>
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                        <h3 class="text-lg font-bold text-slate-700 mb-4 border-b pb-2">ชั้นที่ <%= floor %></h3>
+                        
+                        <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                            <% floors[floor].forEach(room => { %>
+                                <div class="relative p-4 rounded-lg border-2 transition cursor-pointer hover:shadow-md
+                                    <%= room.status === 'occupied' ? 'border-blue-200 bg-blue-50' : 
+                                       room.status === 'maintenance' ? 'border-orange-200 bg-orange-50' : 
+                                       'border-green-200 bg-green-50' %>">
+                                    
+                                    <div class="flex justify-between items-start mb-2">
+                                        <span class="font-bold text-xl text-slate-700"><%= room.number %></span>
+                                        <% if(room.type.includes('พัดลม')) { %>
+                                            <span class="text-xs px-1.5 py-0.5 bg-slate-200 rounded text-slate-600">พัดลม</span>
+                                        <% } %>
                                     </div>
-                                <% } else { %>
-                                    <span class="text-gray-400 text-sm">-</span>
-                                <% } %>
-                            </td>
-                            <td class="p-4">
-                                <% 
-                                    let badgeColor = 'bg-gray-100 text-gray-800';
-                                    let label = 'Unknown';
-                                    if(room.status === 'available') { 
-                                        badgeColor = 'bg-green-100 text-green-800'; 
-                                        label = 'ว่าง';
-                                    } else if(room.status === 'occupied') { 
-                                        badgeColor = 'bg-blue-100 text-blue-800'; 
-                                        label = 'มีผู้เช่า';
-                                    } else if(room.status === 'maintenance') {
-                                        badgeColor = 'bg-orange-100 text-orange-800';
-                                        label = 'ซ่อมบำรุง';
-                                    }
-                                %>
-                                <span class="px-3 py-1 rounded-full text-xs font-semibold <%= badgeColor %>">
-                                    <%= label %>
-                                </span>
-                            </td>
-                            <td class="p-4 text-center">
-                                <button class="text-gray-400 hover:text-blue-600 mx-1">✏️</button>
-                                <button class="text-gray-400 hover:text-red-600 mx-1">🗑️</button>
-                            </td>
-                        </tr>
-                        <% }) %>
-                    </tbody>
-                </table>
+                                    
+                                    <div class="text-xs text-slate-500 mb-1"><%= room.price.toLocaleString() %> บ.</div>
+                                    
+                                    <div class="text-xs font-bold <%= room.status === 'occupied' ? 'text-blue-600' : 'text-green-600' %>">
+                                        <%= room.status === 'occupied' ? '👤 มีคนอยู่' : '✅ ว่าง' %>
+                                    </div>
+                                </div>
+                            <% }) %>
+                        </div>
+                    </div>
+                <% }) %>
             </div>
-
         </main>
     </div>
-
 </body>
 </html>
