@@ -19,10 +19,7 @@ app.get('/', (req, res) => {
     res.render('dashboard');
 });
 
-// ✅ หน้ารายชื่อห้อง (สูตรสร้าง 45 ห้อง)
 app.get('/rooms', (req, res) => {
-    console.log("---------------------------------------");
-    console.log("Step 1: มีคนเรียกเข้าหน้า /rooms แล้ว!");
     // Config หอพัก (4 ชั้น, รวม 45 ห้อง)
     const rooms = [];
     const roomsPerFloor = [11, 12, 12, 10]; // ชั้น 1=11ห้อง, ชั้น 2-3=12ห้อง, ชั้น 4=10ห้อง
@@ -52,10 +49,6 @@ app.get('/rooms', (req, res) => {
             });
         }
     });
-    console.log(`Step 2: สร้างข้อมูลเสร็จแล้ว ทั้งหมด ${rooms.length} ห้อง`);
-
-    // 3. จุดเช็คที่ 3: กำลังจะส่งไปหน้า View
-    console.log("Step 3: กำลังพยายาม Render ไฟล์ rooms/index.ejs ...");
     // ส่งข้อมูลไปที่หน้า rooms/index.ejs
     res.render('rooms/index', { rooms: rooms });
 });
