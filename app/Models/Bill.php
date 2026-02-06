@@ -8,7 +8,16 @@ class Bill extends Model
 {
     protected $fillable = [
         'bill_date',
+        'billing_month',
         'total_price',
+        'total_amount',
+        'water_units',
+        'water_amount',
+        'electric_units',
+        'electric_amount',
+        'room_rate',
+        'other_fees',
+        'due_date',
         'status',
         'room_id',
         'tenant_id',
@@ -29,5 +38,10 @@ class Bill extends Model
     public function tenant()
     {
         return $this->belongsTo(Tenant::class, 'tenant_id');
+    }
+
+    public function receipt()
+    {
+        return $this->hasOne(Receipt::class, 'bill_id');
     }
 }

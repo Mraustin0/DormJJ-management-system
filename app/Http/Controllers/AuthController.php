@@ -81,6 +81,34 @@ $rooms = Room::with('contract')
     return view('rooms.accommodation', compact('contracts'));
 }
 
+    // หน้า Profile
+    public function profile()
+    {
+        $user = Auth::user();
+        return view('rooms.profile', compact('user'));
+    }
 
+    // อัปเดต Profile
+    public function updateProfile(Request $request)
+    {
+        $user = Auth::user();
+
+        $validated = $request->validate([
+            'username' => 'required|string|max:255|unique:users,username,' . $user->id,
+            'email' => 'nullable|email|max:255',
+            'password' => 'nullable|min:6|confirmed',
+        ]);
+
+        $user->username = $validated['username'];
+        if (!empty($validated['email'])) {
+            $user->email = $validated['email'];
+        }
+        if (!empty($validated['password'])) {
+            $user->password = bcrypt($validated['password']);
+        }
+        $user->save();
+
+        return redirect()->route('profile.index')->with('success', 'บันทึกข้อมูลโปรไฟล์เรียบร้อยแล้ว');
+    }
 
 }

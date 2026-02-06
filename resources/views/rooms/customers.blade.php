@@ -15,49 +15,7 @@
 </head>
 <body class="bg-gray-50 text-gray-800 overflow-x-hidden">
 
-    <div id="sidebarOverlay" class="fixed inset-0 bg-black/50 z-40 hidden opacity-0 transition-opacity duration-300 md:hidden" onclick="toggleSidebar()"></div>
-
-    <aside id="sidebar" class="fixed top-0 left-0 h-full w-72 bg-white z-50 -translate-x-full md:translate-x-0 transition-transform duration-300 ease-in-out shadow-2xl flex flex-col border-r border-gray-100">
-        <div class="p-8 pb-4">
-            <h1 class="text-[#4A90E2] font-bold text-2xl leading-tight tracking-wide">
-                DORMITORY<br>MANAGEMENT<br>SYSTEM
-            </h1>
-        </div>
-        <nav class="flex-1 px-6 space-y-6 overflow-y-auto py-4">
-            <a href="{{ route('rooms.index') }}" class="block px-6 py-3 text-gray-800 text-lg font-bold rounded-lg text-center hover:bg-gray-100 transition-colors">
-                หน้าหลัก
-            </a>
-            <div>
-                <h3 class="text-gray-500 font-bold text-sm mb-3">จัดการข้อมูลหลัก</h3>
-                <ul class="space-y-2">
-                    <li><a href="{{ route('meters.water') }}" class="block px-2 py-1.5 text-gray-800 font-medium text-lg hover:text-[#4A90E2]">บันทึกมิเตอร์น้ำ</a></li>
-                    <li><a href="{{ route('meters.electric') }}" class="block px-2 py-1.5 text-gray-800 font-medium text-lg hover:text-[#4A90E2]">บันทึกมิเตอร์ไฟฟ้า</a></li>
-                    <li><a href="#" class="block px-2 py-1.5 text-gray-800 font-medium text-lg hover:text-[#4A90E2]">สร้างบิล</a></li>
-                    <li><a href="{{ route('rooms.accommodation') }}" class="block px-2 py-1.5 text-gray-800 font-medium text-lg hover:text-[#4A90E2]">ข้อมูลการเข้าพัก</a></li>
-                    <li><a href="{{ route('rooms.bills') }}" class="block px-2 py-1.5 text-gray-800 font-medium text-lg hover:text-[#4A90E2]">ประวัติบิล</a></li>
-                </ul>
-            </div>
-            <div>
-                <h3 class="text-gray-500 font-bold text-sm uppercase mb-3">USER</h3>
-                <ul class="space-y-2">
-                    <li><a href="{{ route('rooms.customers') }}" class="block px-2 py-2 bg-[#A0A0A0] text-white rounded-lg font-medium text-lg shadow-sm">ข้อมูลลูกค้า</a></li>
-                    <li><a href="#" class="block px-2 py-1.5 text-gray-800 font-medium text-lg hover:text-[#4A90E2]">สร้างบัญชีผู้ใช้</a></li>
-                </ul>
-            </div>
-            <div>
-                <h3 class="text-gray-500 font-bold text-sm uppercase mb-3">SETTING</h3>
-                <ul class="space-y-2">
-                    <li><a href="#" class="block px-2 py-1.5 text-gray-800 font-medium text-lg hover:text-[#4A90E2]">ตั้งค่าระบบ</a></li>
-                    <li>
-                        <form action="{{ route('logout') }}" method="POST">
-                            @csrf
-                            <button type="submit" class="block px-2 py-1.5 text-gray-800 font-medium text-lg hover:text-[#4A90E2] w-full text-left">ออกจากระบบ</button>
-                        </form>
-                    </li>
-                </ul>
-            </div>
-        </nav>
-    </aside>
+    @include('partials.sidebar', ['activePage' => 'customers'])
 
     <div id="mainContent" class="md:ml-72 min-h-screen flex flex-col transition-[margin] duration-300 ease-in-out">
         
@@ -68,7 +26,13 @@
                 </button>
                 <h2 class="text-2xl font-bold text-[#4A90E2]">ข้อมูลลูกค้า</h2>
             </div>
-            <div class="flex items-center gap-3">
+            <div class="flex items-center gap-4">
+                {{-- Notification Bell --}}
+                <a href="{{ route('rooms.bills') }}?status=pending" class="p-2 rounded-lg hover:bg-gray-100 text-gray-600 transition-colors relative">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
+                    </svg>
+                </a>
                 <div class="text-right hidden sm:block">
                     <p class="text-sm font-bold text-gray-900">{{ Auth::user()->username ?? 'Admin' }}</p>
                     <p class="text-xs text-gray-500">ผู้ดูแลระบบ</p>
@@ -120,10 +84,10 @@
                                 </td>
 
                                 <td class="py-4 px-4 text-center">
-                                    <button onclick="openEditModal({{ json_encode($c) }})"
-                                            class="text-gray-400 hover:text-[#4A90E2] transition-colors p-1">
+                                    <a href="{{ route('rooms.edit', $c->room_id) }}"
+                                       class="text-gray-400 hover:text-[#4A90E2] transition-colors p-1 inline-block">
                                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
-                                    </button>
+                                    </a>
                                 </td>
                             </tr>
                             @empty
@@ -165,138 +129,8 @@
         </main>
     </div>
 
-    <div id="editModal" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center backdrop-blur-sm transition-opacity">
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg mx-4 overflow-hidden transform scale-95 transition-transform duration-200" id="modalPanel">
-            
-            <div class="flex justify-between items-center px-6 py-4 border-b border-gray-100 bg-gray-50">
-                <h3 class="text-lg font-bold text-gray-800">แก้ไขข้อมูลลูกค้า</h3>
-                <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-                </button>
-            </div>
-
-            <div class="p-6">
-                <form id="editForm">
-                    <input type="hidden" id="editId" name="id">
-                    
-                    <div class="space-y-4">
-                        <div>
-                            <label class="block text-sm font-bold text-gray-700 mb-1">ชื่อ-สกุล</label>
-                            <input type="text" id="editName" name="tenant_name" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-[#4A90E2] outline-none">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-bold text-gray-700 mb-1">เลขบัตรประชาชน</label>
-                            <input type="text" id="editNid" name="nid" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-[#4A90E2] outline-none">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-bold text-gray-700 mb-1">เบอร์โทรศัพท์</label>
-                            <input type="text" id="editPhone" name="phone" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-[#4A90E2] outline-none">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-bold text-gray-700 mb-1">อีเมล</label>
-                            <input type="email" id="editEmail" name="email" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-[#4A90E2] outline-none">
-                        </div>
-                    </div>
-
-                    <div class="pt-6 text-center">
-                        <button type="button" onclick="saveCustomer()" class="bg-[#4A90E2] hover:bg-[#357abd] text-white font-bold py-2.5 px-8 rounded-lg shadow-md transition-colors w-full">
-                            บันทึกการเปลี่ยนแปลง
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-
     <script>
-        let sidebarOpen = window.innerWidth >= 768;
-
-        function toggleSidebar() {
-            const sidebar = document.getElementById('sidebar');
-            const mainContent = document.getElementById('mainContent');
-            const overlay = document.getElementById('sidebarOverlay');
-
-            sidebarOpen = !sidebarOpen;
-
-            if (sidebarOpen) {
-                if (window.innerWidth >= 768) {
-                    sidebar.classList.add('md:translate-x-0');
-                    if (mainContent) mainContent.classList.add('md:ml-72');
-                } else {
-                    sidebar.classList.remove('-translate-x-full');
-                    if (overlay) {
-                        overlay.classList.remove('hidden');
-                        requestAnimationFrame(() => overlay.classList.remove('opacity-0'));
-                    }
-                }
-            } else {
-                if (window.innerWidth >= 768) {
-                    sidebar.classList.remove('md:translate-x-0');
-                    if (mainContent) mainContent.classList.remove('md:ml-72');
-                } else {
-                    sidebar.classList.add('-translate-x-full');
-                    if (overlay) {
-                        overlay.classList.add('opacity-0');
-                        setTimeout(() => overlay.classList.add('hidden'), 300);
-                    }
-                }
-            }
-        }
-
-        // Modal Logic
-        function openEditModal(customer) {
-            const modal = document.getElementById('editModal');
-            const panel = document.getElementById('modalPanel');
-            
-            // Fill Data
-            document.getElementById('editId').value = customer.id;
-            document.getElementById('editName').value = customer.tenant_name;
-            document.getElementById('editNid').value = customer.nid || '';
-            document.getElementById('editPhone').value = customer.phone || '';
-            document.getElementById('editEmail').value = customer.email || '';
-
-            // Show Modal
-            modal.classList.remove('hidden');
-            setTimeout(() => { panel.classList.remove('scale-95'); panel.classList.add('scale-100'); }, 10);
-        }
-
-        function closeModal() {
-            const modal = document.getElementById('editModal');
-            const panel = document.getElementById('modalPanel');
-            panel.classList.remove('scale-100'); panel.classList.add('scale-95');
-            setTimeout(() => { modal.classList.add('hidden'); }, 200);
-        }
-
-        // Save Function
-        function saveCustomer() {
-            const formData = new FormData(document.getElementById('editForm'));
-
-            fetch("{{ route('customers.update') }}", {
-                method: 'POST',
-                headers: {
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                    'Accept': 'application/json'
-                },
-                body: formData
-            })
-            .then(response => response.json())
-            .then(data => {
-                if(data.success) {
-                    Swal.fire({
-                        icon: 'success',
-                        title: 'บันทึกสำเร็จ!',
-                        showConfirmButton: false,
-                        timer: 1500
-                    }).then(() => location.reload());
-                } else {
-                    Swal.fire('Error', 'เกิดข้อผิดพลาด', 'error');
-                }
-            })
-            .catch(err => {
-                console.error(err);
-                Swal.fire('Error', 'เชื่อมต่อ Server ไม่ได้', 'error');
-            });
-        }
+        // Page ready - no modal needed, edit goes to separate page
     </script>
 </body>
 </html>

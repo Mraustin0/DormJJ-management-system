@@ -13,49 +13,7 @@
 </head>
 <body class="bg-gray-50 text-gray-800 overflow-x-hidden">
 
-    <div id="sidebarOverlay" class="fixed inset-0 bg-black/50 z-40 hidden opacity-0 transition-opacity duration-300 md:hidden" onclick="toggleSidebar()"></div>
-
-    <aside id="sidebar" class="fixed top-0 left-0 h-full w-72 bg-white z-50 -translate-x-full md:translate-x-0 transition-transform duration-300 ease-in-out shadow-2xl flex flex-col border-r border-gray-100">
-        <div class="p-8 pb-4">
-            <h1 class="text-[#4A90E2] font-bold text-2xl leading-tight tracking-wide">
-                DORMITORY<br>MANAGEMENT<br>SYSTEM
-            </h1>
-        </div>
-        <nav class="flex-1 px-6 space-y-6 overflow-y-auto py-4">
-            <a href="{{ route('rooms.index') }}" class="block px-6 py-3 text-gray-800 text-lg font-bold rounded-lg text-center hover:bg-gray-100 transition-colors">
-                หน้าหลัก
-            </a>
-            <div>
-                <h3 class="text-gray-500 font-bold text-sm mb-3">จัดการข้อมูลหลัก</h3>
-                <ul class="space-y-2">
-                    <li><a href="{{ route('meters.water') }}" class="block px-2 py-1.5 text-gray-800 font-medium text-lg hover:text-[#4A90E2]">บันทึกมิเตอร์น้ำ</a></li>
-                    <li><a href="{{ route('meters.electric') }}" class="block px-2 py-1.5 text-gray-800 font-medium text-lg hover:text-[#4A90E2]">บันทึกมิเตอร์ไฟฟ้า</a></li>
-                    <li><a href="#" class="block px-2 py-1.5 text-gray-800 font-medium text-lg hover:text-[#4A90E2]">สร้างบิล</a></li>
-                    <li><a href="{{ route('rooms.accommodation') }}" class="block px-2 py-2 bg-[#A0A0A0] text-white rounded-lg font-medium text-lg shadow-sm">ข้อมูลการเข้าพัก</a></li>
-                    <li><a href="{{ route('rooms.bills') }}" class="block px-2 py-1.5 text-gray-800 font-medium text-lg hover:text-[#4A90E2]">ประวัติบิล</a></li>
-                </ul>
-            </div>
-            <div>
-                <h3 class="text-gray-500 font-bold text-sm uppercase mb-3">USER</h3>
-                <ul class="space-y-2">
-                    <li><a href="{{ route('rooms.customers') }}" class="block px-2 py-1.5 text-gray-800 font-medium text-lg hover:text-[#4A90E2]">ข้อมูลลูกค้า</a></li>
-                    <li><a href="#" class="block px-2 py-1.5 text-gray-800 font-medium text-lg hover:text-[#4A90E2]">สร้างบัญชีผู้ใช้</a></li>
-                </ul>
-            </div>
-            <div>
-                <h3 class="text-gray-500 font-bold text-sm uppercase mb-3">SETTING</h3>
-                <ul class="space-y-2">
-                    <li><a href="#" class="block px-2 py-1.5 text-gray-800 font-medium text-lg hover:text-[#4A90E2]">ตั้งค่าระบบ</a></li>
-                    <li>
-                        <form action="{{ route('logout') }}" method="POST">
-                            @csrf
-                            <button type="submit" class="block px-2 py-1.5 text-gray-800 font-medium text-lg hover:text-[#4A90E2] w-full text-left">ออกจากระบบ</button>
-                        </form>
-                    </li>
-                </ul>
-            </div>
-        </nav>
-    </aside>
+    @include('partials.sidebar', ['activePage' => 'accommodation'])
 
     <div id="mainContent" class="md:ml-72 flex-1 min-h-screen flex flex-col transition-[margin] duration-300 ease-in-out">
         <nav class="bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center sticky top-0 z-30 shadow-sm">
@@ -65,7 +23,13 @@
                 </button>
                 <h2 class="text-xl font-bold text-gray-800">ข้อมูลการเข้าพัก</h2>
             </div>
-            <div class="flex items-center gap-3">
+            <div class="flex items-center gap-4">
+                {{-- Notification Bell --}}
+                <a href="{{ route('rooms.bills') }}?status=pending" class="p-2 rounded-lg hover:bg-gray-100 text-gray-600 transition-colors relative">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
+                    </svg>
+                </a>
                 <div class="text-right hidden sm:block">
                     <p class="text-sm font-bold text-gray-900">{{ Auth::user()->username ?? 'Admin' }}</p>
                     <p class="text-xs text-gray-500">ผู้ดูแลระบบ</p>
@@ -76,7 +40,7 @@
 
         <main class="p-8">
             <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 min-h-[80vh]">
-                
+
                 <div class="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
                     <h3 class="text-xl font-bold text-gray-800">รายชื่อผู้เข้าพัก ({{ $contracts->total() }} รายการ)</h3>
                     <div class="relative w-full md:w-auto">
@@ -99,25 +63,9 @@
                         <tbody class="text-sm">
                             @forelse($contracts as $index => $contract)
                             @php
-                                $startDate = $contract->start_date ?? $contract->created_at;
-                                $endDate = $contract->end_date;
-                                if ($startDate && $endDate) {
-                                    $diff = $startDate->diff($endDate);
-                                    $parts = [];
-                                    if ($diff->y > 0) $parts[] = $diff->y . ' ปี';
-                                    if ($diff->m > 0) $parts[] = $diff->m . ' เดือน';
-                                    if (empty($parts) && $diff->d > 0) $parts[] = $diff->d . ' วัน';
-                                    $duration = implode(' ', $parts) ?: '-';
-                                } elseif ($startDate) {
-                                    $diff = $startDate->diff(now());
-                                    $parts = [];
-                                    if ($diff->y > 0) $parts[] = $diff->y . ' ปี';
-                                    if ($diff->m > 0) $parts[] = $diff->m . ' เดือน';
-                                    if (empty($parts) && $diff->d > 0) $parts[] = $diff->d . ' วัน';
-                                    $duration = (implode(' ', $parts) ?: '< 1 เดือน') . ' (ต่อเนื่อง)';
-                                } else {
-                                    $duration = '-';
-                                }
+                                $startDate = $contract->check_in_date ? \Carbon\Carbon::parse($contract->check_in_date) : null;
+                                $durationMonths = $contract->contract_duration ?? 12;
+                                $duration = $durationMonths . ' เดือน';
                             @endphp
                             <tr class="border-b border-gray-100 hover:bg-gray-50 transition-colors">
                                 <td class="py-4 px-4 text-gray-500">{{ $contracts->firstItem() + $index }}</td>
@@ -141,40 +89,6 @@
         </main>
     </div>
 
-    <script>
-        let sidebarOpen = window.innerWidth >= 768;
-
-        function toggleSidebar() {
-            const sidebar = document.getElementById('sidebar');
-            const mainContent = document.getElementById('mainContent');
-            const overlay = document.getElementById('sidebarOverlay');
-
-            sidebarOpen = !sidebarOpen;
-
-            if (sidebarOpen) {
-                if (window.innerWidth >= 768) {
-                    sidebar.classList.add('md:translate-x-0');
-                    if (mainContent) mainContent.classList.add('md:ml-72');
-                } else {
-                    sidebar.classList.remove('-translate-x-full');
-                    if (overlay) {
-                        overlay.classList.remove('hidden');
-                        requestAnimationFrame(() => overlay.classList.remove('opacity-0'));
-                    }
-                }
-            } else {
-                if (window.innerWidth >= 768) {
-                    sidebar.classList.remove('md:translate-x-0');
-                    if (mainContent) mainContent.classList.remove('md:ml-72');
-                } else {
-                    sidebar.classList.add('-translate-x-full');
-                    if (overlay) {
-                        overlay.classList.add('opacity-0');
-                        setTimeout(() => overlay.classList.add('hidden'), 300);
-                    }
-                }
-            }
-        }
-    </script>
+    <script></script>
 </body>
 </html>

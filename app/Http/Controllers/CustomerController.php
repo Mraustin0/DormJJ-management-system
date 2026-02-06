@@ -5,9 +5,108 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Contract;
 use App\Models\Room;
+use App\Models\User;
+use App\Models\MeterReading;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\DB;
 
 class CustomerController extends Controller
 {
+    public function create()
+    {
+        $vacantRooms = Room::where('status', 'ว่าง')->orderBy('room_number', 'asc')->get();
+        return view('rooms.tenants_create', compact('vacantRooms'));
+    }
+
+    public function store(Request $request)
+    {
+        $request->validate([
+            'tenant_name' => 'required|string|max:255',
+            'phone' => 'required|string|max:20',
+            'email' => 'nullable|email|max:100',
+            'nid' => 'required|string|max:20',
+            'username' => 'nullable|string|max:255|unique:users,username',
+            'password' => 'nullable|string|min:6',
+            'emergency_contact_name' => 'nullable|string|max:255',
+            'emergency_contact_phone' => 'nullable|string|max:20',
+            'room_id' => 'required|exists:rooms,id',
+            'contract_duration' => 'required|in:6,12',
+            'check_in_date' => 'required|date',
+            'contract_date' => 'required|date',
+            'tenant_status' => 'required|in:active,reserved',
+            'initial_electric_meter' => 'nullable|numeric|min:0',
+            'initial_water_meter' => 'nullable|numeric|min:0',
+            'contract_file' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
+            'idcard_file' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
+        ]);
+
+        DB::beginTransaction();
+        try {
+            // Create user account if username provided
+            $userId = null;
+            if (!empty($request->username) && !empty($request->password)) {
+                $user = User::create([
+                    'username' => $request->username,
+                    'password' => Hash::make($request->password),
+                    'email' => $request->email,
+                    'tenant_role' => true,
+                ]);
+                $userId = $user->id;
+            }
+
+            // Handle file uploads
+            $contractFilePath = null;
+            $idcardFilePath = null;
+
+            if ($request->hasFile('contract_file')) {
+                $contractFilePath = $request->file('contract_file')->store('contracts', 'public');
+            }
+            if ($request->hasFile('idcard_file')) {
+                $idcardFilePath = $request->file('idcard_file')->store('idcards', 'public');
+            }
+
+            // Create contract
+            $contract = Contract::create([
+                'room_id' => $request->room_id,
+                'tenant_name' => $request->tenant_name,
+                'phone' => $request->phone,
+                'email' => $request->email,
+                'nid' => $request->nid,
+                'emergency_contact_name' => $request->emergency_contact_name,
+                'emergency_contact_phone' => $request->emergency_contact_phone,
+                'user_id' => $userId,
+                'contract_duration' => $request->contract_duration,
+                'check_in_date' => $request->check_in_date,
+                'contract_date' => $request->contract_date,
+                'contract_file' => $contractFilePath,
+                'idcard_file' => $idcardFilePath,
+            ]);
+
+            // Update room status
+            $room = Room::find($request->room_id);
+            $room->update([
+                'status' => $request->tenant_status == 'active' ? 'ไม่ว่าง' : 'จอง',
+            ]);
+
+            // Create initial meter readings if provided
+            if (!empty($request->initial_electric_meter) || !empty($request->initial_water_meter)) {
+                MeterReading::create([
+                    'room_id' => $request->room_id,
+                    'electric_reading' => $request->initial_electric_meter ?? 0,
+                    'water_reading' => $request->initial_water_meter ?? 0,
+                    'reading_date' => $request->check_in_date,
+                ]);
+            }
+
+            DB::commit();
+            return redirect()->route('rooms.customers')->with('success', 'สร้างบัญชีผู้เช่าเรียบร้อยแล้ว');
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->withErrors(['error' => 'เกิดข้อผิดพลาด: ' . $e->getMessage()])->withInput();
+        }
+    }
+
     public function index(Request $request)
     {
         $query = Contract::with('room');

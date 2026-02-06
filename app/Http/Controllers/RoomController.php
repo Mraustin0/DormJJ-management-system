@@ -3,7 +3,11 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use App\Models\Room; 
+use App\Models\Room;
+use App\Models\User;
+use App\Models\MeterReading;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\DB;
 
 class RoomController extends Controller
 {
@@ -120,57 +124,90 @@ class RoomController extends Controller
 
     public function storeContract(Request $request, $id)
     {
-        // 1. Validation (เพิ่มให้ครบตามฟอร์ม)
         $request->validate([
-            'tenant_name'     => 'required|string|max:255',
-            'phone'           => 'required|string|max:20',
-            'nid'             => 'required|string|max:20',
-            'check_in_date'   => 'required|date',
-            'contract_date'   => 'nullable|date',
-            'deposit'         => 'nullable|numeric',
-            'contract_duration' => 'nullable', 
-            // 'contract_file' => 'nullable|file|mimes:pdf,jpg,png|max:10240', // แนะนำให้เปิดเช็คไฟล์
+            'tenant_name' => 'required|string|max:255',
+            'phone' => 'required|string|max:20',
+            'email' => 'nullable|email|max:100',
+            'nid' => 'required|string|max:20',
+            'username' => 'nullable|string|max:255|unique:users,username',
+            'password' => 'nullable|string|min:6',
+            'emergency_contact_name' => 'nullable|string|max:255',
+            'emergency_contact_phone' => 'nullable|string|max:20',
+            'contract_duration' => 'required|in:6,12',
+            'check_in_date' => 'required|date',
+            'contract_date' => 'required|date',
+            'tenant_status' => 'nullable|in:active,reserved',
+            'initial_electric_meter' => 'nullable|numeric|min:0',
+            'initial_water_meter' => 'nullable|numeric|min:0',
+            'contract_file' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
+            'idcard_file' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
         ]);
 
         $room = Room::findOrFail($id);
 
-        // 2. เตรียมข้อมูลบันทึก
-        $contractData = [
-            'tenant_name'   => $request->tenant_name,
-            'phone'         => $request->phone,
-            'nid'           => $request->nid,
-            'email'         => $request->email,
-            
-            // ✅ เปิดใช้งานส่วนนี้ (เพื่อให้ข้อมูลจากฟอร์มถูกบันทึก)
-            // ต้องมั่นใจว่าในตาราง contracts มีชื่อคอลัมน์ตามด้านซ้ายมือนะครับ
-            'deposit'       => $request->deposit,             // ค่ามัดจำ
-            'duration'      => $request->contract_duration,   // ระยะสัญญา (ใน DB ชื่อ duration หรือเปล่า?)
-            'contract_date' => $request->contract_date,       // วันทำสัญญา
-            'check_in_date' => $request->check_in_date,       // วันเข้าพัก (แนะนำให้แยกคอลัมน์ ไม่ควรทับ created_at)
-            
-            // ถ้าอยาก override created_at จริงๆ ให้ใช้บรรทัดนี้ แต่ไม่แนะนำ
-            // 'created_at' => $request->check_in_date, 
-            
-            'status'        => $request->tenant_status ?? 'active', // สถานะสัญญา
-        ];
+        DB::beginTransaction();
+        try {
+            // Create user account if username provided
+            $userId = null;
+            if (!empty($request->username) && !empty($request->password)) {
+                $user = User::create([
+                    'username' => $request->username,
+                    'password' => Hash::make($request->password),
+                    'email' => $request->email,
+                    'tenant_role' => true,
+                ]);
+                $userId = $user->id;
+            }
 
-        // 3. อัปโหลดไฟล์
-        if ($request->hasFile('contract_file')) {
-            $contractData['contract_file'] = $request->file('contract_file')->store('contracts', 'public');
+            // Handle file uploads
+            $contractFilePath = null;
+            $idcardFilePath = null;
+
+            if ($request->hasFile('contract_file')) {
+                $contractFilePath = $request->file('contract_file')->store('contracts', 'public');
+            }
+            if ($request->hasFile('idcard_file')) {
+                $idcardFilePath = $request->file('idcard_file')->store('idcards', 'public');
+            }
+
+            // Create contract
+            $room->contract()->create([
+                'tenant_name' => $request->tenant_name,
+                'phone' => $request->phone,
+                'email' => $request->email,
+                'nid' => $request->nid,
+                'emergency_contact_name' => $request->emergency_contact_name,
+                'emergency_contact_phone' => $request->emergency_contact_phone,
+                'user_id' => $userId,
+                'contract_duration' => $request->contract_duration,
+                'check_in_date' => $request->check_in_date,
+                'contract_date' => $request->contract_date,
+                'contract_file' => $contractFilePath,
+                'idcard_file' => $idcardFilePath,
+            ]);
+
+            // Update room status
+            $room->update([
+                'status' => $request->tenant_status == 'reserved' ? 'จอง' : 'ไม่ว่าง',
+            ]);
+
+            // Create initial meter readings if provided
+            if (!empty($request->initial_electric_meter) || !empty($request->initial_water_meter)) {
+                MeterReading::create([
+                    'room_id' => $room->id,
+                    'electric_reading' => $request->initial_electric_meter ?? 0,
+                    'water_reading' => $request->initial_water_meter ?? 0,
+                    'reading_date' => $request->check_in_date,
+                ]);
+            }
+
+            DB::commit();
+            return redirect()->route('rooms.index')->with('success', 'เพิ่มผู้เช่าเรียบร้อยแล้ว');
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->withErrors(['error' => 'เกิดข้อผิดพลาด: ' . $e->getMessage()])->withInput();
         }
-        if ($request->hasFile('idcard_file')) {
-            $contractData['idcard_file'] = $request->file('idcard_file')->store('idcards', 'public');
-        }
-
-        // 4. บันทึกข้อมูลลงตาราง contracts
-        // (ระวัง: ถ้าตาราง contracts ไม่มีคอลัมน์ deposit, duration ฯลฯ จะเกิด Error)
-        $room->contract()->create($contractData);
-
-        // 5. อัปเดตสถานะห้อง
-        $room->status = 'ไม่ว่าง';
-        $room->save();
-
-        return redirect()->route('rooms.index')->with('success', 'เพิ่มผู้เช่าเรียบร้อยแล้ว');
     }
 
 

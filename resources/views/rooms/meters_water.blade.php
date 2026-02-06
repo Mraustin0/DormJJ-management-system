@@ -16,49 +16,7 @@
 </head>
 <body class="bg-gray-50 text-gray-800 overflow-x-hidden">
 
-    <div id="sidebarOverlay" class="fixed inset-0 bg-black/50 z-40 hidden transition-opacity opacity-0 md:hidden" onclick="toggleSidebar()"></div>
-
-    <aside id="sidebar" class="fixed top-0 left-0 h-full w-72 bg-white z-50 transform -translate-x-full md:translate-x-0 sidebar-transition shadow-2xl flex flex-col border-r border-gray-100">
-        <div class="p-8 pb-4">
-            <h1 class="text-[#4A90E2] font-bold text-2xl leading-tight tracking-wide">
-                DORMITORY<br>MANAGEMENT<br>SYSTEM
-            </h1>
-        </div>
-        <nav class="flex-1 px-6 space-y-6 overflow-y-auto py-4">
-            <a href="{{ route('rooms.index') }}" class="block px-6 py-3 text-gray-800 text-lg font-bold rounded-lg text-center hover:bg-gray-100 transition-colors">
-                หน้าหลัก
-            </a>
-            <div>
-                <h3 class="text-gray-500 font-bold text-sm mb-3">จัดการข้อมูลหลัก</h3>
-                <ul class="space-y-2">
-                    <li><a href="{{ route('meters.water') }}" class="block px-2 py-2 bg-[#A0A0A0] text-white rounded-lg font-medium text-lg shadow-sm">บันทึกมิเตอร์น้ำ</a></li>
-                    <li><a href="{{ route('meters.electric') }}" class="block px-2 py-1.5 text-gray-800 font-medium text-lg hover:text-[#4A90E2]">บันทึกมิเตอร์ไฟฟ้า</a></li>
-                    <li><a href="#" class="block px-2 py-1.5 text-gray-800 font-medium text-lg hover:text-[#4A90E2]">สร้างบิล</a></li>
-                    <li><a href="{{ route('rooms.accommodation') }}" class="block px-2 py-1.5 text-gray-800 font-medium text-lg hover:text-[#4A90E2]">ข้อมูลการเข้าพัก</a></li>
-                    <li><a href="{{ route('rooms.bills') }}" class="block px-2 py-1.5 text-gray-800 font-medium text-lg hover:text-[#4A90E2]">ประวัติบิล</a></li>
-                </ul>
-            </div>
-            <div>
-                <h3 class="text-gray-500 font-bold text-sm uppercase mb-3">USER</h3>
-                <ul class="space-y-2">
-                    <li><a href="{{ route('rooms.customers') }}" class="block px-2 py-1.5 text-gray-800 font-medium text-lg hover:text-[#4A90E2]">ข้อมูลลูกค้า</a></li>
-                    <li><a href="#" class="block px-2 py-1.5 text-gray-800 font-medium text-lg hover:text-[#4A90E2]">สร้างบัญชีผู้ใช้</a></li>
-                </ul>
-            </div>
-            <div>
-                <h3 class="text-gray-500 font-bold text-sm uppercase mb-3">SETTING</h3>
-                <ul class="space-y-2">
-                    <li><a href="#" class="block px-2 py-1.5 text-gray-800 font-medium text-lg hover:text-[#4A90E2]">ตั้งค่าระบบ</a></li>
-                    <li>
-                        <form action="{{ route('logout') }}" method="POST">
-                            @csrf
-                            <button type="submit" class="block px-2 py-1.5 text-gray-800 font-medium text-lg hover:text-[#4A90E2] w-full text-left">ออกจากระบบ</button>
-                        </form>
-                    </li>
-                </ul>
-            </div>
-        </nav>
-    </aside>
+    @include('partials.sidebar', ['activePage' => 'meters.water'])
 
     <div id="mainContent" class="md:ml-72 min-h-screen flex flex-col sidebar-transition">
 
@@ -69,17 +27,25 @@
                 </button>
                 <h2 class="text-2xl font-bold text-[#4A90E2]">บันทึกมิเตอร์น้ำ</h2>
             </div>
-            <form action="{{ route('meters.water') }}" method="GET" class="flex items-center gap-3">
-                <select name="floor" onchange="this.form.submit()" class="border border-gray-300 rounded-lg px-4 py-2.5 text-sm font-medium text-gray-700 focus:outline-none focus:border-[#4A90E2] cursor-pointer appearance-none bg-white bg-[url('data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2212%22%20height%3D%2212%22%20viewBox%3D%220%200%2012%2012%22%3E%3Cpath%20fill%3D%22%23666%22%20d%3D%22M6%208L1%203h10z%22%2F%3E%3C%2Fsvg%3E')] bg-[length:12px] bg-[right_12px_center] bg-no-repeat pr-9 min-w-[120px]">
-                    <option value="">ทุกชั้น</option>
-                    @for($i = 1; $i <= 4; $i++)
-                        <option value="{{ $i }}" {{ request('floor') == $i ? 'selected' : '' }}>ชั้น {{ $i }}</option>
-                    @endfor
-                </select>
-                <div class="relative">
-                    <input type="month" name="month" value="{{ $selectedMonth }}" onchange="this.form.submit()" class="border border-gray-300 rounded-lg px-4 py-2.5 text-sm font-medium text-gray-700 focus:outline-none focus:border-[#4A90E2] cursor-pointer min-w-[180px]">
-                </div>
-            </form>
+            <div class="flex items-center gap-4">
+                <form action="{{ route('meters.water') }}" method="GET" class="flex items-center gap-3">
+                    <select name="floor" onchange="this.form.submit()" class="border border-gray-300 rounded-lg px-4 py-2.5 text-sm font-medium text-gray-700 focus:outline-none focus:border-[#4A90E2] cursor-pointer appearance-none bg-white bg-[url('data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2212%22%20height%3D%2212%22%20viewBox%3D%220%200%2012%2012%22%3E%3Cpath%20fill%3D%22%23666%22%20d%3D%22M6%208L1%203h10z%22%2F%3E%3C%2Fsvg%3E')] bg-[length:12px] bg-[right_12px_center] bg-no-repeat pr-9 min-w-[120px]">
+                        <option value="">ทุกชั้น</option>
+                        @for($i = 1; $i <= 4; $i++)
+                            <option value="{{ $i }}" {{ request('floor') == $i ? 'selected' : '' }}>ชั้น {{ $i }}</option>
+                        @endfor
+                    </select>
+                    <div class="relative">
+                        <input type="month" name="month" value="{{ $selectedMonth }}" onchange="this.form.submit()" class="border border-gray-300 rounded-lg px-4 py-2.5 text-sm font-medium text-gray-700 focus:outline-none focus:border-[#4A90E2] cursor-pointer min-w-[180px]">
+                    </div>
+                </form>
+                {{-- Notification Bell --}}
+                <a href="{{ route('rooms.bills') }}?status=pending" class="p-2 rounded-lg hover:bg-gray-100 text-gray-600 transition-colors relative">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
+                    </svg>
+                </a>
+            </div>
         </nav>
 
         <main class="p-8">
@@ -150,26 +116,6 @@
     </div>
 
     <script>
-        function toggleSidebar() {
-            const sidebar = document.getElementById('sidebar');
-            const mainContent = document.getElementById('mainContent');
-            const overlay = document.getElementById('sidebarOverlay');
-
-            if (window.innerWidth >= 768) {
-                sidebar.classList.toggle('md:translate-x-0');
-                if (mainContent) mainContent.classList.toggle('md:ml-72');
-            } else {
-                sidebar.classList.toggle('-translate-x-full');
-                if (overlay.classList.contains('hidden')) {
-                    overlay.classList.remove('hidden');
-                    setTimeout(() => overlay.classList.remove('opacity-0'), 10);
-                } else {
-                    overlay.classList.add('opacity-0');
-                    setTimeout(() => overlay.classList.add('hidden'), 300);
-                }
-            }
-        }
-
         function calcWaterUnit(roomId) {
             const prev = parseFloat(document.getElementById('waterPrev_' + roomId).value) || 0;
             const curr = parseFloat(document.getElementById('waterCurr_' + roomId).value) || 0;
