@@ -16,35 +16,15 @@
     @include('partials.sidebar', ['activePage' => 'accommodation'])
 
     <div id="mainContent" class="md:ml-72 flex-1 min-h-screen flex flex-col transition-[margin] duration-300 ease-in-out">
-        <nav class="bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center sticky top-0 z-30 shadow-sm">
-            <div class="flex items-center gap-4">
-                <button onclick="toggleSidebar()" class="p-2 rounded-lg hover:bg-gray-100 text-gray-600 transition-colors focus:outline-none">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
-                </button>
-                <h2 class="text-xl font-bold text-gray-800">ข้อมูลการเข้าพัก</h2>
-            </div>
-            <div class="flex items-center gap-4">
-                {{-- Notification Bell --}}
-                <a href="{{ route('rooms.bills') }}?status=pending" class="p-2 rounded-lg hover:bg-gray-100 text-gray-600 transition-colors relative">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
-                    </svg>
-                </a>
-                <div class="text-right hidden sm:block">
-                    <p class="text-sm font-bold text-gray-900">{{ Auth::user()->username ?? 'Admin' }}</p>
-                    <p class="text-xs text-gray-500">ผู้ดูแลระบบ</p>
-                </div>
-                <div class="w-10 h-10 rounded-full bg-[#4A90E2] flex items-center justify-center text-white font-bold shadow-md">AD</div>
-            </div>
-        </nav>
+        @include('partials.navbar', ['pageTitle' => 'ข้อมูลการเข้าพัก'])
 
         <main class="p-8">
             <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 min-h-[80vh]">
 
                 <div class="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
-                    <h3 class="text-xl font-bold text-gray-800">รายชื่อผู้เข้าพัก ({{ $contracts->total() }} รายการ)</h3>
+                    <h3 class="text-xl font-bold text-gray-800">รายชื่อผู้เข้าพัก (<span id="resultCount">{{ $contracts->total() }}</span> รายการ)</h3>
                     <div class="relative w-full md:w-auto">
-                        <input type="text" placeholder="ค้นหาชื่อ หรือ ห้อง..." class="pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-[#4A90E2] w-full md:w-64">
+                        <input type="text" id="searchInput" placeholder="ค้นหาชื่อ หรือ ห้อง..." class="pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-[#4A90E2] w-full md:w-64">
                         <svg class="w-4 h-4 text-gray-400 absolute left-3 top-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
                     </div>
                 </div>
@@ -89,6 +69,47 @@
         </main>
     </div>
 
-    <script></script>
+    <script>
+        // ค้นหาแบบ Real-time
+        const searchInput = document.getElementById('searchInput');
+        const tableBody = document.querySelector('tbody');
+        const rows = tableBody.querySelectorAll('tr');
+        const resultCount = document.getElementById('resultCount');
+        const totalRows = {{ $contracts->total() }};
+
+        searchInput.addEventListener('input', function() {
+            const searchTerm = this.value.toLowerCase().trim();
+            let visibleCount = 0;
+
+            rows.forEach(row => {
+                // ข้าม row ที่เป็น "ไม่พบข้อมูล"
+                if (row.querySelector('td[colspan]')) return;
+
+                const roomNumber = row.querySelector('td:nth-child(2)')?.textContent.toLowerCase() || '';
+                const tenantName = row.querySelector('td:nth-child(3)')?.textContent.toLowerCase() || '';
+
+                if (roomNumber.includes(searchTerm) || tenantName.includes(searchTerm)) {
+                    row.style.display = '';
+                    visibleCount++;
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+
+            // อัปเดตจำนวนที่แสดง
+            if (searchTerm === '') {
+                resultCount.textContent = totalRows;
+            } else {
+                resultCount.textContent = visibleCount;
+            }
+        });
+
+        // กด Enter เพื่อค้นหา (optional)
+        searchInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+            }
+        });
+    </script>
 </body>
 </html>

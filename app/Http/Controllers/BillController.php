@@ -7,6 +7,7 @@ use App\Models\MeterReading;
 use App\Models\Room;
 use App\Models\Bill;
 use App\Models\Receipt;
+use App\Models\Setting;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 
@@ -155,7 +156,10 @@ class BillController extends Controller
                     ->where('billing_month', $selectedMonth)
                     ->first();
 
-        return view('rooms.bill_view', compact('room', 'bill', 'meter', 'selectedMonth'));
+        // ดึงข้อมูลหอพัก
+        $setting = Setting::getInstance();
+
+        return view('rooms.bill_view', compact('room', 'bill', 'meter', 'selectedMonth', 'setting'));
     }
 
     /**
@@ -220,6 +224,9 @@ class BillController extends Controller
             return redirect()->back()->with('error', 'ไม่พบใบเสร็จสำหรับบิลนี้');
         }
 
-        return view('rooms.receipt_view', compact('bill'));
+        // ดึงข้อมูลหอพัก
+        $setting = Setting::getInstance();
+
+        return view('rooms.receipt_view', compact('bill', 'setting'));
     }
 }

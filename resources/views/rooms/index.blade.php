@@ -63,14 +63,14 @@
 
             <div class="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 mb-8 flex flex-col md:flex-row items-center justify-between gap-6 transition-all hover:shadow-md">
                 <div class="flex-1 text-center md:text-left">
-                    <h4 class="text-gray-800 text-lg font-bold">สัดส่วนห้องพัก</h4>
-                    <p class="text-gray-400 text-sm">ภาพรวมการใช้งานห้องพักทั้งหมดในระบบ</p>
+                    <h4 class="text-gray-800 text-lg font-bold">สัดส่วนห้องพัก (ชั้น {{ $currentFloor }})</h4>
+                    <p class="text-gray-400 text-sm">ข้อมูลการใช้งานห้องพักชั้นที่เลือก</p>
                     <div class="flex flex-wrap justify-center md:justify-start gap-3 mt-4 text-[11px] font-bold uppercase">
                         <span class="flex items-center gap-2 text-[#56ab91] bg-emerald-50 px-3 py-1.5 rounded-lg border border-emerald-100">
-                            <span class="w-2 h-2 rounded-full bg-[#56ab91]"></span> ว่าง {{ $total_vacant }}
+                            <span class="w-2 h-2 rounded-full bg-[#56ab91]"></span> ว่าง {{ $floor_vacant }}
                         </span>
                         <span class="flex items-center gap-2 text-[#f27b6d] bg-red-50 px-3 py-1.5 rounded-lg border border-red-100">
-                            <span class="w-2 h-2 rounded-full bg-[#f27b6d]"></span> ไม่ว่าง {{ $total_occupied }}
+                            <span class="w-2 h-2 rounded-full bg-[#f27b6d]"></span> ไม่ว่าง {{ $floor_occupied }}
                         </span>
                     </div>
                 </div>
@@ -299,14 +299,14 @@
             if (e.target === this) closeModal();
         });
 
-        // Chart
+        // Chart - แสดงข้อมูลตามชั้นที่เลือก
         const ctx = document.getElementById('roomChart').getContext('2d');
         new Chart(ctx, {
             type: 'doughnut',
             data: {
                 labels: ['ว่าง', 'ไม่ว่าง'],
                 datasets: [{
-                    data: [{{ $total_vacant }}, {{ $total_occupied }}],
+                    data: [{{ $floor_vacant }}, {{ $floor_occupied }}],
                     backgroundColor: ['#56ab91', '#f27b6d'],
                     borderWidth: 0,
                     hoverOffset: 4

@@ -7,12 +7,22 @@ use App\Http\Controllers\BillController;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\RoomController;
 use App\Http\Controllers\SettingsController;
+use App\Http\Controllers\PasswordResetController;
 
 // 1. ส่วน Login/Logout
 Route::get('/', [AuthController::class, 'showLogin'])->name('login');
 Route::get('/login', [AuthController::class, 'showLogin']);
 Route::post('/login', [AuthController::class, 'login'])->name('login.post');
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+
+// Password Reset (OTP via Email)
+Route::get('/password/reset', [PasswordResetController::class, 'showRequestForm'])->name('password.request');
+Route::post('/password/email', [PasswordResetController::class, 'sendOtp'])->name('password.email');
+Route::get('/password/otp', [PasswordResetController::class, 'showOtpForm'])->name('password.otp');
+Route::post('/password/otp/verify', [PasswordResetController::class, 'verifyOtp'])->name('password.otp.verify');
+Route::post('/password/otp/resend', [PasswordResetController::class, 'resendOtp'])->name('password.otp.resend');
+Route::get('/password/reset/form', [PasswordResetController::class, 'showResetForm'])->name('password.reset');
+Route::post('/password/reset', [PasswordResetController::class, 'resetPassword'])->name('password.update');
 
 // 2. ส่วนของ Admin (ต้อง Login ก่อนถึงเข้าได้)
 Route::middleware(['auth'])->group(function () {

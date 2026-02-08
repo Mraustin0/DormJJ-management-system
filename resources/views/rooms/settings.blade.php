@@ -7,10 +7,10 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
         body { font-family: 'Sarabun', sans-serif; }
-        #map { height: 200px; width: 100%; border-radius: 0.5rem; }
+        #map { height: 350px; width: 100%; border-radius: 1rem; }
+        .leaflet-control-attribution { display: none; }
     </style>
 </head>
 <body class="bg-gray-50 text-gray-800 overflow-x-hidden">
@@ -18,30 +18,7 @@
     @include('partials.sidebar', ['activePage' => 'settings'])
 
     <div id="mainContent" class="md:ml-72 flex-1 min-h-screen flex flex-col transition-[margin] duration-300 ease-in-out">
-        <nav class="bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center sticky top-0 z-30 shadow-sm">
-            <div class="flex items-center gap-4">
-                <button onclick="toggleSidebar()" class="p-2 rounded-lg hover:bg-gray-100 text-gray-600 transition-colors focus:outline-none">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
-                </button>
-                <h2 class="text-xl font-bold text-[#4A90E2]">ระบบจัดการหอพัก JJ Apartment</h2>
-            </div>
-            <div class="flex items-center gap-4">
-                <div class="relative">
-                    <button class="p-2 rounded-lg hover:bg-gray-100 text-gray-600 transition-colors">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
-                        </svg>
-                    </button>
-                </div>
-                <div class="text-right hidden sm:block">
-                    <p class="text-sm font-bold text-gray-900">{{ Auth::user()->username ?? 'Admin' }}</p>
-                    <p class="text-xs text-gray-500">Admin</p>
-                </div>
-                <div class="w-10 h-10 rounded-full bg-[#4A90E2] flex items-center justify-center text-white font-bold shadow-md">
-                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
-                </div>
-            </div>
-        </nav>
+        @include('partials.navbar', ['pageTitle' => 'ตั้งค่าระบบ'])
 
         <main class="p-8">
             @if(session('success'))
@@ -135,7 +112,18 @@
 
                         <div>
                             <label class="block text-sm font-bold text-gray-700 mb-2">ระบุตำแหน่งหอพักของคุณ</label>
-                            <div id="map" class="border border-gray-300"></div>
+                            <div class="bg-gray-50 p-4 rounded-2xl border border-gray-200">
+                                <div id="map" class="shadow-lg"></div>
+                                <div class="mt-3 flex items-center justify-between">
+                                    <p class="text-xs text-gray-500 flex items-center gap-2">
+                                        <svg class="w-4 h-4 text-[#4A90E2]" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+                                        คลิกบนแผนที่หรือลากหมุดเพื่อเปลี่ยนตำแหน่ง
+                                    </p>
+                                    <div class="text-xs text-gray-400">
+                                        <span id="coordDisplay">{{ $setting->latitude ?? '16.4419' }}, {{ $setting->longitude ?? '102.8360' }}</span>
+                                    </div>
+                                </div>
+                            </div>
                             <input type="hidden" name="latitude" id="latitude" value="{{ $setting->latitude ?? '16.4419' }}">
                             <input type="hidden" name="longitude" id="longitude" value="{{ $setting->longitude ?? '102.8360' }}">
                         </div>
@@ -168,24 +156,44 @@
         const lat = parseFloat(document.getElementById('latitude').value) || 16.4419;
         const lng = parseFloat(document.getElementById('longitude').value) || 102.8360;
 
-        const map = L.map('map').setView([lat, lng], 15);
+        const map = L.map('map').setView([lat, lng], 16);
 
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '&copy; OpenStreetMap contributors'
+        // ใช้ CartoDB Voyager สวยกว่า OSM ปกติ
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+            maxZoom: 19
         }).addTo(map);
 
-        let marker = L.marker([lat, lng], { draggable: true }).addTo(map);
+        // Custom marker icon
+        const customIcon = L.divIcon({
+            className: 'custom-marker',
+            html: `<div style="background: #4A90E2; width: 30px; height: 30px; border-radius: 50% 50% 50% 0; transform: rotate(-45deg); border: 3px solid white; box-shadow: 0 2px 10px rgba(0,0,0,0.3);"></div>`,
+            iconSize: [30, 30],
+            iconAnchor: [15, 30]
+        });
+
+        let marker = L.marker([lat, lng], { draggable: true, icon: customIcon }).addTo(map);
+
+        function updateCoordDisplay(latitude, longitude) {
+            document.getElementById('coordDisplay').textContent = latitude.toFixed(6) + ', ' + longitude.toFixed(6);
+        }
 
         marker.on('dragend', function(e) {
             const position = marker.getLatLng();
             document.getElementById('latitude').value = position.lat.toFixed(7);
             document.getElementById('longitude').value = position.lng.toFixed(7);
+            updateCoordDisplay(position.lat, position.lng);
         });
 
         map.on('click', function(e) {
             marker.setLatLng(e.latlng);
             document.getElementById('latitude').value = e.latlng.lat.toFixed(7);
             document.getElementById('longitude').value = e.latlng.lng.toFixed(7);
+            updateCoordDisplay(e.latlng.lat, e.latlng.lng);
+        });
+
+        // Fix map freeze when sidebar is toggled
+        window.addEventListener('sidebarToggled', function() {
+            map.invalidateSize();
         });
     </script>
 </body>

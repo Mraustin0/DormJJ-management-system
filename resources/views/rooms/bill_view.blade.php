@@ -4,18 +4,30 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>บิลค่าเช่า - JJ Apartment</title>
+    <title>ใบแจ้งหนี้ - JJ Apartment</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
-        body { font-family: 'Sarabun', 'Inter', sans-serif; }
+        body { font-family: 'Sarabun', sans-serif; }
         @media print {
+            body * { visibility: hidden; }
+            .print-area, .print-area * { visibility: visible; }
+            .print-area {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                padding: 20px;
+            }
             .no-print { display: none !important; }
-            body { background: white; }
-            #mainContent { margin-left: 0 !important; }
+            @page { margin: 10mm; }
         }
+        .bill-table { border-collapse: collapse; width: 100%; }
+        .bill-table th, .bill-table td { border: 1px solid #000; padding: 8px 12px; }
+        .bill-table th { background-color: #fff; font-weight: normal; }
+        .info-table { border-collapse: collapse; }
+        .info-table td { border: 1px solid #000; padding: 6px 12px; }
     </style>
 </head>
 <body class="bg-gray-50 text-gray-800 overflow-x-hidden">
@@ -29,146 +41,149 @@
                 <button onclick="toggleSidebar()" class="p-2 rounded-lg hover:bg-gray-100 text-gray-600 transition-colors focus:outline-none">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
                 </button>
-                <h2 class="text-xl font-bold text-[#4A90E2]">ระบบจัดการหอพัก JJ Apartment</h2>
+                <a href="{{ route('bills.create') }}?month={{ $selectedMonth }}" class="text-gray-500 hover:text-gray-700">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+                </a>
+                <h2 class="text-xl font-bold text-gray-800">ใบแจ้งหนี้</h2>
             </div>
-            <div class="flex items-center gap-4">
-                <button class="p-2 rounded-lg hover:bg-gray-100 text-gray-500">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
+            <div class="flex items-center gap-3">
+                <button onclick="window.print()" class="bg-[#f27b6d] hover:bg-[#e06a5c] text-white px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 transition-colors">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+                    พิมพ์
                 </button>
-                <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-full bg-gray-300 flex items-center justify-center">
-                        <svg class="w-6 h-6 text-gray-600" fill="currentColor" viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
-                    </div>
-                    <div class="text-right hidden sm:block">
-                        <p class="text-sm font-bold text-gray-900">{{ Auth::user()->username ?? 'Admin1' }}</p>
-                        <p class="text-xs text-gray-500">Admin</p>
-                    </div>
-                </div>
+                <button onclick="sendBill()" class="bg-[#4A90E2] hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 transition-colors">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
+                    ส่งบิล
+                </button>
             </div>
         </nav>
 
-        <main class="p-6">
+        <main class="p-6 flex justify-center">
             @php
-                $monthName = \Carbon\Carbon::parse($selectedMonth)->locale('th')->translatedFormat('F Y');
+                $billNo = $bill ? 'INV-' . str_pad($bill->id, 6, '0', STR_PAD_LEFT) : '-';
+                $billDate = $bill ? \Carbon\Carbon::parse($bill->created_at)->format('d/m/Y') : now()->format('d/m/Y');
+                $apartmentAddress = ($setting->address ?? '140/12,1/1') . ' ถ.' . ($setting->subdistrict ?? 'มิตรภาพ') . ' ต.' . ($setting->district ?? 'ในเมือง') . ' อ.เมือง จ.' . ($setting->province ?? 'ขอนแก่น') . ' ' . ($setting->postal_code ?? '40000');
             @endphp
 
-            <h3 class="text-xl font-bold text-gray-800 mb-6">บิลค่าเช่า ประจำเดือน {{ $monthName }}</h3>
+            <div class="print-area bg-white shadow-lg border border-gray-200 p-10 w-full max-w-4xl" style="min-height: 800px;">
 
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-                {{-- Bill Details Card --}}
-                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                    <div class="flex justify-between items-start mb-4">
-                        <h4 class="font-bold text-gray-700">รายละเอียดหัวบิล</h4>
-                        <a href="{{ route('bills.createForRoom', $room->id) }}?month={{ $selectedMonth }}" class="text-gray-400 hover:text-[#4A90E2]">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
-                        </a>
-                    </div>
-                    <div class="space-y-2 text-sm">
-                        <p class="font-bold text-gray-800">{{ $room->contract->tenant_name ?? '-' }}</p>
-                        <p class="text-gray-500">เบอร์โทร {{ $room->contract->phone ?? '-' }}</p>
-                    </div>
+                {{-- Header --}}
+                <div class="text-center mb-2">
+                    <h1 class="text-2xl font-bold">{{ $setting->apartment_name ?? 'JJ Apartment' }}</h1>
+                    <p class="text-sm">{{ $setting->address ?? '140/12,1/1' }} ถนน{{ $setting->subdistrict ?? 'มิตรภาพ' }} ตำบล{{ $setting->district ?? 'ในเมือง' }} อำเภอเมือง จังหวัด{{ $setting->province ?? 'ขอนแก่น' }} {{ $setting->postal_code ?? '40000' }}</p>
                 </div>
 
-                {{-- Recipient Card --}}
-                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                    <h4 class="font-bold text-gray-700 mb-4">บิลจะถูกส่งไปให้ผู้เช่า</h4>
-                    <div class="flex items-center gap-3">
-                        <div class="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center">
-                            <svg class="w-6 h-6 text-gray-500" fill="currentColor" viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
-                        </div>
-                        <div>
-                            <p class="font-bold text-gray-800">{{ $room->contract->tenant_name ?? '-' }}</p>
-                            <p class="text-sm text-[#4A90E2]">ห้อง {{ $room->room_number }}</p>
-                        </div>
+                {{-- Title --}}
+                <div class="text-center my-6">
+                    <h2 class="text-2xl font-bold text-blue-600">ใบแจ้งหนี้</h2>
+                </div>
+
+                {{-- Info Section --}}
+                <div class="flex justify-between mb-6">
+                    {{-- Left: Tenant Info --}}
+                    <div class="flex-1">
+                        <p><span class="font-medium">ชื่อผู้เช่า</span> Name: <span class="font-bold">{{ $room->contract->tenant_name ?? '-' }}</span></p>
+                        <p><span class="font-medium">ที่อยู่</span> Address: {{ $apartmentAddress }}</p>
                     </div>
-                </div>
-            </div>
-
-            {{-- Payment Details --}}
-            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                <div class="flex justify-between items-center mb-6">
-                    <h4 class="font-bold text-gray-800 text-lg">รายการชำระเงิน</h4>
-                    <button class="text-sm text-gray-500 border border-gray-300 rounded-lg px-4 py-2 hover:bg-gray-50">
-                        + เพิ่มรายการ
-                    </button>
-                </div>
-
-                <div class="overflow-x-auto">
-                    <table class="w-full">
-                        <thead>
-                            <tr class="border-b border-gray-200">
-                                <th class="text-left py-3 px-4 font-bold text-gray-600">รายการ</th>
-                                <th class="text-center py-3 px-4 font-bold text-gray-600">จำนวนหน่วยที่ใช้</th>
-                                <th class="text-right py-3 px-4 font-bold text-gray-600">จำนวนเงิน(บาท)</th>
-                            </tr>
-                        </thead>
-                        <tbody class="text-sm">
-                            @if($bill)
-                            {{-- Water --}}
-                            <tr class="border-b border-gray-100">
-                                <td class="py-4 px-4 text-gray-700">
-                                    ค่าน้ำ เดือน {{ \Carbon\Carbon::parse($selectedMonth)->locale('th')->translatedFormat('M') }} {{ \Carbon\Carbon::parse($selectedMonth)->format('y') }}
-                                    @if($meter)
-                                    ({{ $meter->water_prev ?? 0 }}-{{ $meter->water_curr ?? 0 }})
-                                    @endif
-                                </td>
-                                <td class="py-4 px-4 text-center text-gray-700">{{ $bill->water_units ?? 0 }}</td>
-                                <td class="py-4 px-4 text-right font-bold text-gray-800">{{ number_format($bill->water_amount ?? 0) }}</td>
-                            </tr>
-                            {{-- Electric --}}
-                            <tr class="border-b border-gray-100">
-                                <td class="py-4 px-4 text-gray-700">
-                                    ค่าไฟ เดือน {{ \Carbon\Carbon::parse($selectedMonth)->locale('th')->translatedFormat('M') }} {{ \Carbon\Carbon::parse($selectedMonth)->format('y') }}
-                                    @if($meter)
-                                    ({{ $meter->elec_prev ?? 0 }}-{{ $meter->elec_curr ?? 0 }})
-                                    @endif
-                                </td>
-                                <td class="py-4 px-4 text-center text-gray-700">{{ $bill->electric_units ?? 0 }}</td>
-                                <td class="py-4 px-4 text-right font-bold text-gray-800">{{ number_format($bill->electric_amount ?? 0) }}</td>
-                            </tr>
-                            {{-- Room Rate --}}
-                            <tr class="border-b border-gray-100">
-                                <td class="py-4 px-4 text-gray-700">ค่าเช่าห้อง</td>
-                                <td class="py-4 px-4 text-center text-gray-700"></td>
-                                <td class="py-4 px-4 text-right font-bold text-gray-800">{{ number_format($bill->room_rate ?? 0) }}</td>
-                            </tr>
-                            {{-- Other Fees --}}
-                            @if(($bill->other_fees ?? 0) > 0)
-                            <tr class="border-b border-gray-100">
-                                <td class="py-4 px-4 text-gray-700">ค่าปรับจ่ายบิลล่าช้า</td>
-                                <td class="py-4 px-4 text-center text-gray-700"></td>
-                                <td class="py-4 px-4 text-right font-bold text-gray-800">{{ number_format($bill->other_fees ?? 0) }}</td>
-                            </tr>
-                            @endif
-                            @else
+                    {{-- Right: Bill Info Table --}}
+                    <div>
+                        <table class="info-table text-sm">
                             <tr>
-                                <td colspan="3" class="py-8 text-center text-gray-400">ยังไม่มีข้อมูลบิล</td>
+                                <td class="font-medium">เลขที่ No.</td>
+                                <td>{{ $billNo }}</td>
                             </tr>
-                            @endif
-                        </tbody>
-                        @if($bill)
-                        <tfoot>
-                            <tr class="bg-gray-50">
-                                <td class="py-4 px-4 font-bold text-gray-800 text-lg">รวมสุทธิ</td>
-                                <td class="py-4 px-4"></td>
-                                <td class="py-4 px-4 text-right font-bold text-[#4A90E2] text-xl">{{ number_format($bill->total_amount ?? 0) }}</td>
+                            <tr>
+                                <td class="font-medium">วันที่ Date</td>
+                                <td>{{ $billDate }}</td>
                             </tr>
-                        </tfoot>
-                        @endif
+                            <tr>
+                                <td class="font-medium">ห้อง Room</td>
+                                <td class="font-bold">{{ $room->room_number }}</td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+
+                {{-- Main Table --}}
+                @if($bill)
+                <table class="bill-table text-sm mb-4">
+                    <thead>
+                        <tr>
+                            <th class="text-center w-16">ลำดับ<br><span class="text-gray-500">Item</span></th>
+                            <th class="text-left">รายการ<br><span class="text-gray-500">Description</span></th>
+                            <th class="text-center w-24">จำนวนหน่วย<br><span class="text-gray-500">Qty</span></th>
+                            <th class="text-center w-28">ราคาต่อหน่วย<br><span class="text-gray-500">Unit Price</span></th>
+                            <th class="text-right w-28">จำนวนเงิน<br><span class="text-gray-500">Amount</span></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="text-center">1</td>
+                            <td>ค่าน้ำประปา</td>
+                            <td class="text-center">{{ $bill->water_units ?? 0 }}</td>
+                            <td class="text-center">{{ number_format($setting->water_rate ?? 18, 2) }}</td>
+                            <td class="text-right">{{ number_format($bill->water_amount ?? 0, 2) }}</td>
+                        </tr>
+                        <tr>
+                            <td class="text-center">2</td>
+                            <td>ค่าไฟฟ้า</td>
+                            <td class="text-center">{{ $bill->electric_units ?? 0 }}</td>
+                            <td class="text-center">{{ number_format($setting->electric_rate ?? 8, 2) }}</td>
+                            <td class="text-right">{{ number_format($bill->electric_amount ?? 0, 2) }}</td>
+                        </tr>
+                        <tr>
+                            <td class="text-center">3</td>
+                            <td>ค่าเช่าห้องพัก</td>
+                            <td class="text-center">1</td>
+                            <td class="text-center">{{ number_format($bill->room_rate ?? 0, 2) }}</td>
+                            <td class="text-right">{{ number_format($bill->room_rate ?? 0, 2) }}</td>
+                        </tr>
+                        <tr>
+                            <td class="text-center">4</td>
+                            <td>ค่าปรับ</td>
+                            <td class="text-center">1</td>
+                            <td class="text-center">{{ number_format($bill->other_fees ?? 0, 2) }}</td>
+                            <td class="text-right">{{ number_format($bill->other_fees ?? 0, 2) }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                {{-- Total --}}
+                <div class="flex justify-end mb-6">
+                    <table class="info-table text-sm">
+                        <tr>
+                            <td class="font-bold">จำนวนเงินรวม</td>
+                            <td class="font-bold text-right">{{ number_format($bill->total_amount ?? 0, 2) }}</td>
+                        </tr>
                     </table>
                 </div>
 
-                {{-- Action Buttons --}}
-                <div class="flex justify-end gap-4 mt-8 no-print">
-                    <button onclick="window.print()" class="flex items-center gap-2 bg-[#f27b6d] hover:bg-[#e06a5c] text-white font-bold py-3 px-8 rounded-lg transition-colors">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
-                        พิมพ์
-                    </button>
-                    <button onclick="sendBill()" class="flex items-center gap-2 bg-[#4A90E2] hover:bg-[#357abd] text-white font-bold py-3 px-8 rounded-lg transition-colors">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
-                        ส่งบิล
-                    </button>
+                {{-- Notes --}}
+                <div class="text-sm mb-8">
+                    <p class="font-medium">หมายเหตุ</p>
+                    <p class="ml-4">1. กรุณาโอนเงินเข้าบัญชี "{{ $setting->apartment_name ?? 'นาย เจเจ อพาร์ท' }}" และนำสลิปโอนเงิน แจ้งที่สำนักงานทราบ</p>
+                    <p class="ml-8">- ธนาคารกสิกรไทย จำกัด สาขา {{ $setting->province ?? 'ขอนแก่น' }} เลขที่ xxx-xxxxxx-x</p>
+                    <p class="ml-8">- ธนาคารไทยพาณิชย์ จำกัด สาขา {{ $setting->province ?? 'ขอนแก่น' }} เลขที่ xxx-xxxxxx-x</p>
+                    <p class="ml-8">- ธนาคารกรุงเทพ จำกัด สาขา {{ $setting->province ?? 'ขอนแก่น' }} เลขที่ xxx-xxxxxx-x</p>
+                    <p class="ml-4">2. ค่าเช่าชำระไม่เกินวันที่ 5 ของเดือน เกินกำหนดจะปรับวันละ {{ number_format($setting->late_fee_per_day ?? 100) }} บาท</p>
                 </div>
+
+                {{-- Signature --}}
+                <div class="flex justify-end mt-12">
+                    <div class="text-center">
+                        <p>ลงชื่อ _______________________</p>
+                    </div>
+                </div>
+
+                @else
+                <div class="text-center py-12 text-gray-400">
+                    <p class="text-lg">ยังไม่มีข้อมูลบิลสำหรับเดือนนี้</p>
+                    <a href="{{ route('bills.createForRoom', $room->id) }}?month={{ $selectedMonth }}" class="inline-block mt-4 bg-[#4A90E2] text-white px-6 py-2 rounded-lg font-bold hover:bg-blue-600 transition-colors">
+                        สร้างบิล
+                    </a>
+                </div>
+                @endif
+
             </div>
         </main>
     </div>
@@ -181,7 +196,7 @@
                 icon: 'question',
                 showCancelButton: true,
                 confirmButtonColor: '#4A90E2',
-                cancelButtonColor: '#d33',
+                cancelButtonColor: '#6b7280',
                 confirmButtonText: 'ส่งบิล',
                 cancelButtonText: 'ยกเลิก'
             }).then((result) => {
@@ -193,7 +208,6 @@
                         showConfirmButton: false,
                         timer: 1500
                     }).then(() => {
-                        // กลับไปหน้าสร้างบิล
                         window.location.href = '{{ route("bills.create") }}?month={{ $selectedMonth }}';
                     });
                 }

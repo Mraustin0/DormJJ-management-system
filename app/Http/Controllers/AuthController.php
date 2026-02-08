@@ -48,24 +48,29 @@ class AuthController extends Controller
     }
 
     // 4. หน้า Dashboard (เหมือนเดิม)
-    public function index(Request $request) 
+    public function index(Request $request)
     {
         $currentFloor = $request->get('floor', 1);
 
+        // ข้อมูลรวมทั้งหมด
         $total_vacant   = Room::where('status', 'ว่าง')->count();
         $total_occupied = Room::where('status', 'ไม่ว่าง')->count();
         $total_paid     = Room::where('payment_status', 'ชำระแล้ว')->count();
         $total_pending  = Room::where('payment_status', 'ค้างชำระ')->count();
 
-       // แก้บรรทัดที่ query $rooms
-$rooms = Room::with('contract') 
-             ->where('floor', $currentFloor)
-             ->orderBy('room_number', 'asc')
-             ->get();
+        // ข้อมูลตามชั้นที่เลือก (สำหรับ Chart)
+        $floor_vacant   = Room::where('floor', $currentFloor)->where('status', 'ว่าง')->count();
+        $floor_occupied = Room::where('floor', $currentFloor)->where('status', 'ไม่ว่าง')->count();
+
+        $rooms = Room::with('contract')
+                     ->where('floor', $currentFloor)
+                     ->orderBy('room_number', 'asc')
+                     ->get();
 
         return view('rooms.index', compact(
-            'currentFloor', 'rooms', 
-            'total_vacant', 'total_occupied', 'total_paid', 'total_pending'
+            'currentFloor', 'rooms',
+            'total_vacant', 'total_occupied', 'total_paid', 'total_pending',
+            'floor_vacant', 'floor_occupied'
         ));
     }
 

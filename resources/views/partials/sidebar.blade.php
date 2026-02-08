@@ -119,5 +119,10 @@
                 }
             }
         }
+
+        // Dispatch event for map resize (used in settings page)
+        setTimeout(() => {
+            window.dispatchEvent(new CustomEvent('sidebarToggled'));
+        }, 350);
     }
 </script>

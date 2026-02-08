@@ -21,6 +21,11 @@
             .no-print { display: none !important; }
             @page { margin: 10mm; }
         }
+        .bill-table { border-collapse: collapse; width: 100%; }
+        .bill-table th, .bill-table td { border: 1px solid #000; padding: 8px 12px; }
+        .bill-table th { background-color: #fff; font-weight: normal; }
+        .info-table { border-collapse: collapse; }
+        .info-table td { border: 1px solid #000; padding: 6px 12px; }
     </style>
 </head>
 <body class="bg-gray-100 min-h-screen">
@@ -48,151 +53,150 @@
             </div>
         </nav>
 
-        <main class="p-8 flex justify-center">
-            <div class="print-area bg-white rounded-xl shadow-lg border border-gray-200 p-8 w-full max-w-2xl">
+        <main class="p-6 flex justify-center">
+            @php
+                $receiptDate = $bill->receipt->receipt_date ? $bill->receipt->receipt_date->format('d/m/Y') : now()->format('d/m/Y');
+                $receiptDateParts = $bill->receipt->receipt_date ? [
+                    'day' => $bill->receipt->receipt_date->format('d'),
+                    'month' => $bill->receipt->receipt_date->format('m'),
+                    'year' => $bill->receipt->receipt_date->format('Y')
+                ] : ['day' => '', 'month' => '', 'year' => ''];
+                $apartmentAddress = ($setting->address ?? '140/12,1/1') . ' ถ.' . ($setting->subdistrict ?? 'มิตรภาพ') . ' ต.' . ($setting->district ?? 'ในเมือง') . ' อ.เมือง จ.' . ($setting->province ?? 'ขอนแก่น') . ' ' . ($setting->postal_code ?? '40000');
+                $paymentMethod = $bill->receipt->payment_method ?? 'เงินสด';
+                $isCash = str_contains(strtolower($paymentMethod), 'cash') || str_contains($paymentMethod, 'เงินสด');
+                $isTransfer = str_contains(strtolower($paymentMethod), 'transfer') || str_contains($paymentMethod, 'โอน');
+                $isCheck = str_contains(strtolower($paymentMethod), 'check') || str_contains($paymentMethod, 'เช็ค');
+                $hasSlip = $bill->receipt->payment_slip ? true : false;
+            @endphp
 
-                <!-- Header -->
-                <div class="text-center border-b-2 border-gray-200 pb-6 mb-6">
-                    <h1 class="text-3xl font-bold text-gray-800 mb-1">JJ APARTMENT</h1>
-                    <p class="text-gray-500 text-sm">หอพัก เจเจ อพาร์ทเมนท์</p>
-                    <p class="text-gray-500 text-sm">123 ถ.ตัวอย่าง ต.ตัวอย่าง อ.เมือง จ.ตัวอย่าง 12345</p>
-                    <p class="text-gray-500 text-sm">โทร. 02-xxx-xxxx</p>
+            <div class="print-area bg-white shadow-lg border border-gray-200 p-10 w-full max-w-4xl" style="min-height: 800px;">
+
+                {{-- Header --}}
+                <div class="text-center mb-2">
+                    <h1 class="text-2xl font-bold">{{ $setting->apartment_name ?? 'JJ Apartment' }}</h1>
+                    <p class="text-sm">{{ $setting->address ?? '140/12,1/1' }} ถนน{{ $setting->subdistrict ?? 'มิตรภาพ' }} ตำบล{{ $setting->district ?? 'ในเมือง' }} อำเภอเมือง จังหวัด{{ $setting->province ?? 'ขอนแก่น' }} {{ $setting->postal_code ?? '40000' }}</p>
                 </div>
 
-                <!-- Receipt Title -->
-                <div class="text-center mb-6">
-                    <h2 class="text-2xl font-bold text-green-600 inline-flex items-center gap-2">
-                        <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                        ใบเสร็จรับเงิน
-                    </h2>
-                    <p class="text-gray-500 mt-1">RECEIPT</p>
+                {{-- Title --}}
+                <div class="text-center my-6">
+                    <h2 class="text-2xl font-bold text-blue-600">ใบเสร็จรับเงิน/Receipt</h2>
                 </div>
 
-                <!-- Receipt Info -->
-                <div class="grid grid-cols-2 gap-4 mb-6 text-sm">
-                    <div class="bg-gray-50 rounded-lg p-4">
-                        <p class="text-gray-500 mb-1">เลขที่ใบเสร็จ</p>
-                        <p class="font-bold text-lg text-[#4A90E2]">{{ $bill->receipt->receipt_number }}</p>
+                {{-- Info Section --}}
+                <div class="flex justify-between mb-6">
+                    {{-- Left: Tenant Info --}}
+                    <div class="flex-1">
+                        <p><span class="font-medium">ชื่อผู้เช่า</span> Name: <span class="font-bold">{{ $bill->room->contract->tenant_name ?? '-' }}</span></p>
+                        <p><span class="font-medium">ที่อยู่</span> Address: {{ $apartmentAddress }}</p>
                     </div>
-                    <div class="bg-gray-50 rounded-lg p-4 text-right">
-                        <p class="text-gray-500 mb-1">วันที่ออกใบเสร็จ</p>
-                        <p class="font-bold text-lg">{{ $bill->receipt->receipt_date->translatedFormat('d F Y') }}</p>
-                    </div>
-                </div>
-
-                <!-- Tenant Info -->
-                <div class="bg-blue-50 rounded-lg p-4 mb-6">
-                    <div class="grid grid-cols-2 gap-4 text-sm">
-                        <div>
-                            <p class="text-gray-500">ห้อง</p>
-                            <p class="font-bold text-xl text-[#4A90E2]">{{ $bill->room->room_number ?? '-' }}</p>
-                        </div>
-                        <div class="text-right">
-                            <p class="text-gray-500">ชื่อผู้เช่า</p>
-                            <p class="font-bold text-lg">{{ $bill->room->contract->tenant_name ?? '-' }}</p>
-                        </div>
-                    </div>
-                    <div class="mt-3 pt-3 border-t border-blue-200 text-sm">
-                        <p class="text-gray-500">ประจำเดือน</p>
-                        <p class="font-bold">{{ $bill->billing_month ? \Carbon\Carbon::parse($bill->billing_month)->translatedFormat('F Y') : '-' }}</p>
+                    {{-- Right: Receipt Info Table --}}
+                    <div>
+                        <table class="info-table text-sm">
+                            <tr>
+                                <td class="font-medium">เลขที่ No.</td>
+                                <td>{{ $bill->receipt->receipt_number }}</td>
+                            </tr>
+                            <tr>
+                                <td class="font-medium">วันที่ Date</td>
+                                <td>{{ $receiptDate }}</td>
+                            </tr>
+                            <tr>
+                                <td class="font-medium">ห้อง Room</td>
+                                <td class="font-bold">{{ $bill->room->room_number ?? '-' }}</td>
+                            </tr>
+                        </table>
                     </div>
                 </div>
 
-                <!-- Payment Details -->
-                <table class="w-full mb-6 text-sm">
+                {{-- Main Table --}}
+                <table class="bill-table text-sm mb-4">
                     <thead>
-                        <tr class="border-b-2 border-gray-200">
-                            <th class="py-3 text-left font-bold text-gray-700">รายการ</th>
-                            <th class="py-3 text-right font-bold text-gray-700">จำนวนเงิน</th>
+                        <tr>
+                            <th class="text-center w-16">ลำดับ<br><span class="text-gray-500">Item</span></th>
+                            <th class="text-left">รายการ<br><span class="text-gray-500">Description</span></th>
+                            <th class="text-center w-24">จำนวนหน่วย<br><span class="text-gray-500">Qty</span></th>
+                            <th class="text-center w-28">ราคาต่อหน่วย<br><span class="text-gray-500">Unit Price</span></th>
+                            <th class="text-right w-28">จำนวนเงิน<br><span class="text-gray-500">Amount</span></th>
                         </tr>
                     </thead>
                     <tbody>
-                        <tr class="border-b border-gray-100">
-                            <td class="py-3 text-gray-700">ค่าห้องพัก</td>
-                            <td class="py-3 text-right font-medium">{{ number_format($bill->room_rate ?? 0, 2) }} บาท</td>
+                        <tr>
+                            <td class="text-center">1</td>
+                            <td>ค่าน้ำประปา</td>
+                            <td class="text-center">{{ $bill->water_units ?? 0 }}</td>
+                            <td class="text-center">{{ number_format($setting->water_rate ?? 18, 2) }}</td>
+                            <td class="text-right">{{ number_format($bill->water_amount ?? 0, 2) }}</td>
                         </tr>
-                        <tr class="border-b border-gray-100">
-                            <td class="py-3 text-gray-700">
-                                ค่าน้ำ
-                                @if($bill->water_units)
-                                    <span class="text-gray-400 text-xs">({{ $bill->water_units }} หน่วย)</span>
-                                @endif
-                            </td>
-                            <td class="py-3 text-right font-medium">{{ number_format($bill->water_amount ?? 0, 2) }} บาท</td>
+                        <tr>
+                            <td class="text-center">2</td>
+                            <td>ค่าไฟฟ้า</td>
+                            <td class="text-center">{{ $bill->electric_units ?? 0 }}</td>
+                            <td class="text-center">{{ number_format($setting->electric_rate ?? 8, 2) }}</td>
+                            <td class="text-right">{{ number_format($bill->electric_amount ?? 0, 2) }}</td>
                         </tr>
-                        <tr class="border-b border-gray-100">
-                            <td class="py-3 text-gray-700">
-                                ค่าไฟฟ้า
-                                @if($bill->electric_units)
-                                    <span class="text-gray-400 text-xs">({{ $bill->electric_units }} หน่วย)</span>
-                                @endif
-                            </td>
-                            <td class="py-3 text-right font-medium">{{ number_format($bill->electric_amount ?? 0, 2) }} บาท</td>
+                        <tr>
+                            <td class="text-center">3</td>
+                            <td>ค่าเช่าห้องพัก</td>
+                            <td class="text-center">1</td>
+                            <td class="text-center">{{ number_format($bill->room_rate ?? 0, 2) }}</td>
+                            <td class="text-right">{{ number_format($bill->room_rate ?? 0, 2) }}</td>
                         </tr>
-                        @if($bill->other_fees > 0)
-                        <tr class="border-b border-gray-100">
-                            <td class="py-3 text-gray-700">ค่าบริการอื่นๆ</td>
-                            <td class="py-3 text-right font-medium">{{ number_format($bill->other_fees, 2) }} บาท</td>
+                        <tr>
+                            <td class="text-center">4</td>
+                            <td>ค่าปรับ</td>
+                            <td class="text-center">1</td>
+                            <td class="text-center">{{ number_format($bill->other_fees ?? 0, 2) }}</td>
+                            <td class="text-right">{{ number_format($bill->other_fees ?? 0, 2) }}</td>
                         </tr>
-                        @endif
                     </tbody>
-                    <tfoot>
-                        <tr class="border-t-2 border-gray-300">
-                            <td class="py-4 font-bold text-lg text-gray-800">ยอดรวมทั้งสิ้น</td>
-                            <td class="py-4 text-right font-bold text-2xl text-green-600">{{ number_format($bill->total_amount ?? 0, 2) }} บาท</td>
-                        </tr>
-                    </tfoot>
                 </table>
 
-                <!-- Payment Info -->
-                <div class="bg-green-50 rounded-lg p-4 mb-6">
-                    <div class="flex items-center gap-2 mb-3">
-                        <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
-                        <span class="font-bold text-green-600">ชำระเงินแล้ว</span>
-                    </div>
-                    <div class="grid grid-cols-2 gap-4 text-sm">
-                        <div>
-                            <p class="text-gray-500">ยอดที่ชำระ</p>
-                            <p class="font-bold text-green-600">{{ number_format($bill->receipt->amount_paid, 2) }} บาท</p>
-                        </div>
-                        <div class="text-right">
-                            <p class="text-gray-500">วิธีการชำระ</p>
-                            <p class="font-bold">{{ $bill->receipt->payment_method }}</p>
-                        </div>
-                    </div>
-                    @if($bill->receipt->notes)
-                    <div class="mt-3 pt-3 border-t border-green-200">
-                        <p class="text-gray-500 text-sm">หมายเหตุ: {{ $bill->receipt->notes }}</p>
-                    </div>
-                    @endif
+                {{-- Total --}}
+                <div class="flex justify-end mb-6">
+                    <table class="info-table text-sm">
+                        <tr>
+                            <td class="font-bold">จำนวนเงินรวม</td>
+                            <td class="font-bold text-right">{{ number_format($bill->total_amount ?? 0, 2) }}</td>
+                        </tr>
+                    </table>
                 </div>
 
-                <!-- Payment Slip -->
+                {{-- Payment Method --}}
+                <div class="text-sm mb-8">
+                    <p class="font-medium mb-2">ชำระเงินโดย (Paid By)</p>
+                    <div class="ml-4 space-y-1">
+                        <p>( {{ $isCash ? 'X' : ' ' }} ) Cash</p>
+                        <div class="flex gap-8">
+                            <p>( {{ $isTransfer || $hasSlip ? 'X' : ' ' }} ) Transfer Bank</p>
+                            <p>Account No <span class="border-b border-black px-2">{{ $isTransfer || $hasSlip ? '___________' : '___________' }}</span></p>
+                            <p>Date <span class="border-b border-black px-2">{{ $isTransfer || $hasSlip ? $receiptDate : '___________' }}</span></p>
+                        </div>
+                        <div class="flex gap-8">
+                            <p>( {{ $isCheck ? 'X' : ' ' }} ) Check Bank</p>
+                            <p>Chq No _______________</p>
+                            <p>Date _______________</p>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Payment Slip (if exists) --}}
                 @if($bill->receipt->payment_slip)
-                <div class="mb-6">
-                    <p class="font-bold text-gray-700 mb-2">หลักฐานการชำระเงิน</p>
+                <div class="mb-6 p-4 bg-gray-50 rounded-lg">
+                    <p class="font-medium text-gray-700 mb-2">หลักฐานการโอนเงิน:</p>
                     <img src="{{ asset('storage/' . $bill->receipt->payment_slip) }}" alt="Payment Slip" class="max-w-xs rounded-lg border border-gray-200 shadow-sm">
                 </div>
                 @endif
 
-                <!-- Signature -->
-                <div class="grid grid-cols-2 gap-8 mt-8 pt-6 border-t border-gray-200">
-                    <div class="text-center">
-                        <div class="h-16 border-b border-gray-300 mb-2"></div>
-                        <p class="text-sm text-gray-600">ผู้ชำระเงิน</p>
-                        <p class="text-xs text-gray-400">{{ $bill->room->contract->tenant_name ?? '-' }}</p>
+                {{-- Signature --}}
+                <div class="flex justify-between items-end mt-12">
+                    <div>
+                        <p>ผู้รับเงิน <span class="border-b border-black px-4">{{ $bill->receipt->receiver->username ?? '_______________' }}</span></p>
+                        <p class="text-gray-500 text-sm">Collector</p>
                     </div>
-                    <div class="text-center">
-                        <div class="h-16 border-b border-gray-300 mb-2"></div>
-                        <p class="text-sm text-gray-600">ผู้รับเงิน</p>
-                        <p class="text-xs text-gray-400">{{ $bill->receipt->receiver->username ?? 'Admin' }}</p>
+                    <div>
+                        <p>วันที่ <span class="border-b border-black px-2">{{ $receiptDateParts['day'] ?: '____' }}</span>/<span class="border-b border-black px-2">{{ $receiptDateParts['month'] ?: '____' }}</span>/<span class="border-b border-black px-2">{{ $receiptDateParts['year'] ?: '____' }}</span></p>
+                        <p class="text-gray-500 text-sm text-right">Date</p>
                     </div>
-                </div>
-
-                <!-- Footer -->
-                <div class="text-center mt-8 pt-4 border-t border-gray-200 text-xs text-gray-400">
-                    <p>เอกสารฉบับนี้ออกโดยระบบคอมพิวเตอร์ ไม่จำเป็นต้องลงลายมือชื่อ</p>
-                    <p class="mt-1">This document is computer-generated and does not require a signature.</p>
                 </div>
 
             </div>

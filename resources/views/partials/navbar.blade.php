@@ -33,59 +33,64 @@
                 <div class="max-h-96 overflow-y-auto" id="notificationList">
                     @if(isset($pendingSlips) && $pendingSlips->count() > 0)
                         @foreach($pendingSlips->take(6) as $slip)
-                        <a href="{{ route('rooms.bills') }}?status=pending" class="flex items-start gap-3 p-4 hover:bg-gray-50 cursor-pointer border-b border-gray-50 transition-colors">
-                            <div class="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0">
-                                <svg class="w-5 h-5 text-gray-500" fill="currentColor" viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+                        <a href="{{ route('rooms.bills') }}?status=pending" class="notification-item flex items-start gap-3 p-4 hover:bg-gray-50 cursor-pointer border-b border-gray-50 transition-colors" data-notif-id="slip-{{ $slip->id }}" data-read="false" data-color="#4A90E2" onclick="markAsRead(this, event)">
+                            <div class="w-10 h-10 rounded-full bg-[#4A90E2] flex items-center justify-center flex-shrink-0 notif-icon">
+                                <svg class="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
                             </div>
                             <div class="flex-1 min-w-0">
-                                <p class="text-sm font-bold text-gray-800">ห้อง {{ $slip->room->room_number ?? '-' }}</p>
-                                <p class="text-sm text-[#4A90E2]">แจ้งเตือนการโอนเงิน</p>
+                                <p class="text-sm font-bold text-gray-800 notif-title">ห้อง {{ $slip->room->room_number ?? '-' }}</p>
+                                <p class="text-sm text-[#4A90E2] notif-desc">แจ้งเตือนการโอนเงิน</p>
                                 <p class="text-xs text-gray-400 mt-1">{{ $slip->created_at?->diffForHumans() ?? '1 day' }}</p>
                             </div>
+                            <div class="w-2 h-2 rounded-full bg-[#4A90E2] mt-2 unread-dot"></div>
                         </a>
                         @endforeach
                     @else
-                        {{-- Sample notifications for demo --}}
-                        <div class="flex items-start gap-3 p-4 hover:bg-gray-50 cursor-pointer border-b border-gray-50">
-                            <div class="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0">
-                                <svg class="w-5 h-5 text-gray-500" fill="currentColor" viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+                        {{-- Sample notifications for demo with different links --}}
+                        <a href="{{ route('rooms.bills') }}?status=pending" class="notification-item flex items-start gap-3 p-4 hover:bg-gray-50 cursor-pointer border-b border-gray-50" data-notif-id="demo-1" data-read="false" data-color="#4A90E2" onclick="markAsRead(this, event)">
+                            <div class="w-10 h-10 rounded-full bg-[#4A90E2] flex items-center justify-center flex-shrink-0 notif-icon">
+                                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
                             </div>
                             <div class="flex-1 min-w-0">
-                                <p class="text-sm font-bold text-gray-800">ห้อง 101</p>
-                                <p class="text-sm text-[#4A90E2]">แจ้งเตือนการโอนเงิน</p>
-                                <p class="text-xs text-gray-400 mt-1">1 day</p>
+                                <p class="text-sm font-bold text-gray-800 notif-title">ห้อง 101</p>
+                                <p class="text-sm text-[#4A90E2] notif-desc">แจ้งเตือนการโอนเงิน</p>
+                                <p class="text-xs text-gray-400 mt-1">1 วันที่แล้ว</p>
                             </div>
-                        </div>
-                        <div class="flex items-start gap-3 p-4 hover:bg-gray-50 cursor-pointer border-b border-gray-50">
-                            <div class="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0">
-                                <svg class="w-5 h-5 text-gray-500" fill="currentColor" viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
-                            </div>
-                            <div class="flex-1 min-w-0">
-                                <p class="text-sm font-bold text-gray-800">ห้อง 102</p>
-                                <p class="text-sm text-[#4A90E2]">แจ้งเตือนสัญญาใกล้หมด</p>
-                                <p class="text-xs text-gray-400 mt-1">4 days</p>
-                            </div>
-                        </div>
-                        <div class="flex items-start gap-3 p-4 hover:bg-gray-50 cursor-pointer border-b border-gray-50">
-                            <div class="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0">
-                                <svg class="w-5 h-5 text-gray-500" fill="currentColor" viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+                            <div class="w-2 h-2 rounded-full bg-[#4A90E2] mt-2 unread-dot"></div>
+                        </a>
+                        <a href="{{ route('rooms.accommodation') }}" class="notification-item flex items-start gap-3 p-4 hover:bg-gray-50 cursor-pointer border-b border-gray-50" data-notif-id="demo-2" data-read="false" data-color="#f2b45c" onclick="markAsRead(this, event)">
+                            <div class="w-10 h-10 rounded-full bg-[#f2b45c] flex items-center justify-center flex-shrink-0 notif-icon">
+                                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                             </div>
                             <div class="flex-1 min-w-0">
-                                <p class="text-sm font-bold text-gray-800">ห้อง 110</p>
-                                <p class="text-sm text-[#4A90E2]">แจ้งเตือนค้างชำระ</p>
-                                <p class="text-xs text-gray-400 mt-1">1 day</p>
+                                <p class="text-sm font-bold text-gray-800 notif-title">ห้อง 102</p>
+                                <p class="text-sm text-[#f2b45c] notif-desc">สัญญาใกล้หมดอายุ</p>
+                                <p class="text-xs text-gray-400 mt-1">4 วันที่แล้ว</p>
                             </div>
-                        </div>
-                        <div class="flex items-start gap-3 p-4 hover:bg-gray-50 cursor-pointer border-b border-gray-50">
-                            <div class="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0">
-                                <svg class="w-5 h-5 text-gray-500" fill="currentColor" viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+                            <div class="w-2 h-2 rounded-full bg-[#f2b45c] mt-2 unread-dot"></div>
+                        </a>
+                        <a href="{{ route('rooms.bills') }}?status=pending" class="notification-item flex items-start gap-3 p-4 hover:bg-gray-50 cursor-pointer border-b border-gray-50" data-notif-id="demo-3" data-read="false" data-color="#f27b6d" onclick="markAsRead(this, event)">
+                            <div class="w-10 h-10 rounded-full bg-[#f27b6d] flex items-center justify-center flex-shrink-0 notif-icon">
+                                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                             </div>
                             <div class="flex-1 min-w-0">
-                                <p class="text-sm font-bold text-gray-800">ห้อง 201</p>
-                                <p class="text-sm text-[#4A90E2]">แจ้งย้ายออก</p>
-                                <p class="text-xs text-gray-400 mt-1">4 days</p>
+                                <p class="text-sm font-bold text-gray-800 notif-title">ห้อง 110</p>
+                                <p class="text-sm text-[#f27b6d] notif-desc">ค้างชำระค่าเช่า</p>
+                                <p class="text-xs text-gray-400 mt-1">1 วันที่แล้ว</p>
                             </div>
-                        </div>
+                            <div class="w-2 h-2 rounded-full bg-[#f27b6d] mt-2 unread-dot"></div>
+                        </a>
+                        <a href="{{ route('rooms.customers') }}" class="notification-item flex items-start gap-3 p-4 hover:bg-gray-50 cursor-pointer border-b border-gray-50" data-notif-id="demo-4" data-read="false" data-color="#9ca3af" onclick="markAsRead(this, event)">
+                            <div class="w-10 h-10 rounded-full bg-gray-400 flex items-center justify-center flex-shrink-0 notif-icon">
+                                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <p class="text-sm font-bold text-gray-800 notif-title">ห้อง 201</p>
+                                <p class="text-sm text-gray-500 notif-desc">แจ้งย้ายออก</p>
+                                <p class="text-xs text-gray-400 mt-1">4 วันที่แล้ว</p>
+                            </div>
+                            <div class="w-2 h-2 rounded-full bg-gray-400 mt-2 unread-dot"></div>
+                        </a>
                     @endif
                 </div>
 
@@ -119,9 +124,9 @@
                         <span class="font-medium">ตั้งค่าระบบ</span>
                     </a>
                     <hr class="my-2">
-                    <form action="{{ route('logout') }}" method="POST">
+                    <form id="logoutForm" action="{{ route('logout') }}" method="POST">
                         @csrf
-                        <button type="submit" class="flex items-center gap-3 px-4 py-2.5 text-red-500 hover:bg-red-50 transition-colors w-full">
+                        <button type="button" onclick="confirmLogout()" class="flex items-center gap-3 px-4 py-2.5 text-red-500 hover:bg-red-50 transition-colors w-full">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
                             <span class="font-medium">ออกจากระบบ</span>
                         </button>
@@ -131,6 +136,9 @@
         </div>
     </div>
 </nav>
+
+{{-- SweetAlert2 for confirmations --}}
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 <script>
     // Toggle Notification Dropdown
@@ -149,16 +157,112 @@
         dropdown.classList.toggle('hidden');
     }
 
-    // Filter Notifications
+    // Confirm Logout with SweetAlert2
+    function confirmLogout() {
+        Swal.fire({
+            title: 'ออกจากระบบ?',
+            text: 'คุณต้องการออกจากระบบใช่หรือไม่',
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#f27b6d',
+            cancelButtonColor: '#6b7280',
+            confirmButtonText: 'ออกจากระบบ',
+            cancelButtonText: 'ยกเลิก',
+            reverseButtons: true
+        }).then((result) => {
+            if (result.isConfirmed) {
+                document.getElementById('logoutForm').submit();
+            }
+        });
+    }
+
+    // Get read notifications from localStorage
+    function getReadNotifications() {
+        const stored = localStorage.getItem('readNotifications');
+        return stored ? JSON.parse(stored) : [];
+    }
+
+    // Save read notification to localStorage
+    function saveReadNotification(notifId) {
+        const readNotifs = getReadNotifications();
+        if (!readNotifs.includes(notifId)) {
+            readNotifs.push(notifId);
+            localStorage.setItem('readNotifications', JSON.stringify(readNotifs));
+        }
+    }
+
+    // Apply read state to notification element
+    function applyReadState(element) {
+        element.dataset.read = 'true';
+        element.classList.remove('bg-blue-50');
+        const dot = element.querySelector('.unread-dot');
+        if (dot) dot.style.display = 'none';
+        // เปลี่ยนสี icon เป็นสีเทา
+        const iconBg = element.querySelector('.notif-icon');
+        if (iconBg) {
+            iconBg.className = 'w-10 h-10 rounded-full bg-gray-300 flex items-center justify-center flex-shrink-0 notif-icon';
+        }
+        // เปลี่ยนสีข้อความ
+        const title = element.querySelector('.notif-title');
+        const desc = element.querySelector('.notif-desc');
+        if (title) {
+            title.classList.remove('font-bold', 'text-gray-800');
+            title.classList.add('font-medium', 'text-gray-500');
+        }
+        if (desc) {
+            desc.className = 'text-sm text-gray-400 notif-desc';
+        }
+    }
+
+    // Mark notification as read
+    function markAsRead(element, event) {
+        const notifId = element.dataset.notifId;
+        if (notifId) {
+            saveReadNotification(notifId);
+        }
+        applyReadState(element);
+        updateUnreadCount();
+    }
+
+    // Update unread count badge
+    function updateUnreadCount() {
+        const items = document.querySelectorAll('.notification-item');
+        let unreadCount = 0;
+        items.forEach(item => {
+            if (item.dataset.read === 'false') unreadCount++;
+        });
+
+        const badge = document.querySelector('#notificationContainer .bg-red-500');
+        if (badge) {
+            if (unreadCount > 0) {
+                badge.textContent = unreadCount > 9 ? '9+' : unreadCount;
+                badge.style.display = 'flex';
+            } else {
+                badge.style.display = 'none';
+            }
+        }
+    }
+
+    // Filter Notifications (All / Unread)
     function filterNotifications(type) {
         const tabs = document.querySelectorAll('.notification-tab');
+        const items = document.querySelectorAll('.notification-item');
+
         tabs.forEach(tab => {
             if (tab.dataset.tab === type) {
-                tab.classList.add('text-[#4A90E2]', 'border-b-2', 'border-[#4A90E2]');
-                tab.classList.remove('text-gray-400');
+                tab.classList.add('text-[#4A90E2]', 'border-b-2', 'border-[#4A90E2]', 'font-bold');
+                tab.classList.remove('text-gray-400', 'font-medium');
             } else {
-                tab.classList.remove('text-[#4A90E2]', 'border-b-2', 'border-[#4A90E2]');
-                tab.classList.add('text-gray-400');
+                tab.classList.remove('text-[#4A90E2]', 'border-b-2', 'border-[#4A90E2]', 'font-bold');
+                tab.classList.add('text-gray-400', 'font-medium');
+            }
+        });
+
+        items.forEach(item => {
+            if (type === 'all') {
+                item.style.display = 'flex';
+            } else if (type === 'unread') {
+                item.style.display = item.dataset.read === 'false' ? 'flex' : 'none';
             }
         });
     }
@@ -176,5 +280,23 @@
         if (profileContainer && !profileContainer.contains(e.target)) {
             profileDropdown?.classList.add('hidden');
         }
+    });
+
+    // On page load, restore read states from localStorage
+    document.addEventListener('DOMContentLoaded', function() {
+        const readNotifs = getReadNotifications();
+        const items = document.querySelectorAll('.notification-item');
+
+        items.forEach(item => {
+            const notifId = item.dataset.notifId;
+            if (notifId && readNotifs.includes(notifId)) {
+                applyReadState(item);
+            } else if (item.dataset.read === 'false') {
+                // ยังไม่ได้อ่าน - เพิ่ม bg-blue-50
+                item.classList.add('bg-blue-50');
+            }
+        });
+
+        updateUnreadCount();
     });
 </script>
