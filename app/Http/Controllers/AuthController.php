@@ -28,6 +28,19 @@ class AuthController extends Controller
         // ตรวจสอบกับ Database
         if (Auth::attempt($credentials)) {
             $request->session()->regenerate();
+
+            $user = Auth::user();
+
+            // Redirect based on role
+            if ($user->isAdmin() || $user->isStaff()) {
+                return redirect()->route('rooms.index');
+            }
+
+            if ($user->isTenant()) {
+                return redirect()->route('tenant.dashboard');
+            }
+
+            // Default redirect
             return redirect()->route('rooms.index');
         }
 

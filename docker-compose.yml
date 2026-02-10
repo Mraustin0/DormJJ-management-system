@@ -1,0 +1,72 @@
+version: '3.8'
+
+services:
+  # Laravel Application
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: dormjj-app
+    restart: unless-stopped
+    working_dir: /var/www
+    volumes:
+      - ./:/var/www
+      - ./docker/php/local.ini:/usr/local/etc/php/conf.d/local.ini
+    networks:
+      - dormjj-network
+    depends_on:
+      - db
+
+  # Nginx Web Server
+  nginx:
+    image: nginx:alpine
+    container_name: dormjj-nginx
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    volumes:
+      - ./:/var/www
+      - ./docker/nginx/nginx.conf:/etc/nginx/conf.d/default.conf
+    networks:
+      - dormjj-network
+    depends_on:
+      - app
+
+  # MySQL Database
+  db:
+    image: mysql:8.0
+    container_name: dormjj-db
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: ${DB_DATABASE:-dorm_management}
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-secret}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-secret}
+      MYSQL_USER: ${DB_USERNAME:-laravel}
+    ports:
+      - "3307:3306"
+    volumes:
+      - dormjj-db-data:/var/lib/mysql
+    networks:
+      - dormjj-network
+
+  # phpMyAdmin (optional - for database management)
+  phpmyadmin:
+    image: phpmyadmin:latest
+    container_name: dormjj-phpmyadmin
+    restart: unless-stopped
+    ports:
+      - "8081:80"
+    environment:
+      PMA_HOST: db
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-secret}
+    networks:
+      - dormjj-network
+    depends_on:
+      - db
+
+networks:
+  dormjj-network:
+    driver: bridge
+
+volumes:
+  dormjj-db-data:

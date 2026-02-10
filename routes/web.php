@@ -8,6 +8,7 @@ use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\RoomController;
 use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\PasswordResetController;
+use App\Http\Controllers\TenantDashboardController;
 
 // 1. ส่วน Login/Logout
 Route::get('/', [AuthController::class, 'showLogin'])->name('login');
@@ -24,8 +25,8 @@ Route::post('/password/otp/resend', [PasswordResetController::class, 'resendOtp'
 Route::get('/password/reset/form', [PasswordResetController::class, 'showResetForm'])->name('password.reset');
 Route::post('/password/reset', [PasswordResetController::class, 'resetPassword'])->name('password.update');
 
-// 2. ส่วนของ Admin (ต้อง Login ก่อนถึงเข้าได้)
-Route::middleware(['auth'])->group(function () {
+// 2. ส่วนของ Admin (ต้อง Login + เป็น Admin หรือ Staff)
+Route::middleware(['auth', 'role:admin,staff'])->group(function () {
 
     // หน้าหลัก Dashboard
     Route::get('/dashboard', [AuthController::class, 'index'])->name('rooms.index');
@@ -96,4 +97,14 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/tenants/create', [CustomerController::class, 'create'])->name('tenants.create');
     Route::post('/tenants', [CustomerController::class, 'store'])->name('tenants.store');
 
-    });
+});
+
+// 3. ส่วนของ Tenant (ต้อง Login + เป็น Tenant)
+Route::middleware(['auth', 'role:tenant'])->prefix('tenant')->group(function () {
+    Route::get('/dashboard', [TenantDashboardController::class, 'index'])->name('tenant.dashboard');
+    Route::get('/bills', [TenantDashboardController::class, 'bills'])->name('tenant.bills');
+    Route::get('/bills/{id}', [TenantDashboardController::class, 'viewBill'])->name('tenant.bills.view');
+    Route::get('/contract', [TenantDashboardController::class, 'contract'])->name('tenant.contract');
+    Route::get('/profile', [TenantDashboardController::class, 'profile'])->name('tenant.profile');
+    Route::put('/profile', [TenantDashboardController::class, 'updateProfile'])->name('tenant.profile.update');
+});
