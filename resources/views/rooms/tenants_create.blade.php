@@ -126,7 +126,7 @@
                                 <label class="block text-sm font-medium text-gray-700 mb-1">เลขห้อง</label>
                                 <div class="relative">
                                     <select name="room_id" class="w-full bg-white border border-gray-300 rounded-lg px-4 py-2.5 appearance-none focus:border-[#4A90E2] outline-none cursor-pointer" required>
-                                        <option value="" disabled selected>Drop Down เฉพาะ ห้องว่าง</option>
+                                        <option value="" disabled selected>เลือกห้อง</option>
                                         @foreach($vacantRooms as $room)
                                             <option value="{{ $room->id }}" {{ old('room_id') == $room->id ? 'selected' : '' }}>
                                                 ห้อง {{ $room->room_number }}

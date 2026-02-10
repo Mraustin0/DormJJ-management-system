@@ -100,40 +100,43 @@
             <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 min-h-[80vh]">
 
                 <!-- Header with filters -->
-                <form id="filterForm" action="{{ route('rooms.bills') }}" method="GET" class="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-6 gap-4">
-                    <div class="flex items-center gap-3">
-                        <h3 class="text-xl font-bold text-gray-800">รายการบิล</h3>
-                        <span class="bg-blue-100 text-[#4A90E2] text-sm px-3 py-1 rounded-full font-bold">{{ $bills->total() }} รายการ</span>
+                <form id="filterForm" action="{{ route('rooms.bills') }}" method="GET" class="mb-6">
+                    <!-- Row 1: Title and Controls -->
+                    <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
+                        <div class="flex items-center gap-3">
+                            <h3 class="text-xl font-bold text-gray-800">รายการบิล</h3>
+                            <span class="bg-blue-100 text-[#4A90E2] text-sm px-3 py-1 rounded-full font-bold">{{ $bills->total() }} รายการ</span>
+                        </div>
+
+                        <div class="flex flex-wrap items-center gap-3">
+                            <!-- Month Picker -->
+                            <input type="month" name="month" value="{{ $selectedMonth != 'all' ? $selectedMonth : '' }}" onchange="this.form.submit()"
+                                   class="border border-gray-300 rounded-lg px-4 py-2 text-sm font-medium text-gray-700 focus:outline-none focus:border-[#4A90E2] cursor-pointer w-44">
+
+                            <!-- Search -->
+                            <div class="relative">
+                                <input type="text" name="search" value="{{ request('search') }}" placeholder="ค้นหาข้อมูล" class="pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-[#4A90E2] w-48">
+                                <svg class="w-4 h-4 text-gray-400 absolute left-3 top-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                            </div>
+
+                            <!-- Filter Button -->
+                            <button type="button" onclick="openFilterModal()" class="p-2 border border-gray-300 rounded-lg hover:bg-gray-100 transition-colors">
+                                <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/></svg>
+                            </button>
+                        </div>
                     </div>
 
-                    <div class="flex flex-wrap gap-3 w-full lg:w-auto items-center">
-                        <!-- Month Picker -->
-                        <div class="relative flex-1 lg:flex-none">
-                            <input type="month" name="month" value="{{ $selectedMonth != 'all' ? $selectedMonth : '' }}" onchange="this.form.submit()"
-                                   class="border border-gray-300 rounded-lg px-4 py-2 text-sm font-medium text-gray-700 focus:outline-none focus:border-[#4A90E2] cursor-pointer w-full lg:w-44">
-                        </div>
-
-                        <!-- Search -->
-                        <div class="relative flex-1 lg:flex-none">
-                            <input type="text" name="search" value="{{ request('search') }}" placeholder="ค้นหาข้อมูล" class="pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-[#4A90E2] w-full lg:w-48">
-                            <svg class="w-4 h-4 text-gray-400 absolute left-3 top-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-                        </div>
-
-                        <!-- Filter Button -->
-                        <button type="button" onclick="openFilterModal()" class="p-2 border border-gray-300 rounded-lg hover:bg-gray-100 transition-colors">
-                            <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/></svg>
-                        </button>
-
-                        <!-- Download Button -->
+                    <!-- Row 2: Download Button -->
+                    <div class="flex justify-start mt-4">
                         <button type="button" onclick="openDownloadModal()" class="px-4 py-2 bg-[#4A90E2] text-white rounded-lg hover:bg-blue-600 font-bold transition-colors flex items-center gap-2">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
                             ดาวน์โหลดบิล/ใบเสร็จ
                         </button>
-
-                        <!-- Hidden inputs for checkbox filters -->
-                        <input type="hidden" name="status" id="statusInput" value="{{ $selectedStatus ?? '' }}">
-                        <input type="hidden" name="months" id="monthsInput" value="{{ request('months') }}">
                     </div>
+
+                    <!-- Hidden inputs for checkbox filters -->
+                    <input type="hidden" name="status" id="statusInput" value="{{ $selectedStatus ?? '' }}">
+                    <input type="hidden" name="months" id="monthsInput" value="{{ request('months') }}">
                 </form>
 
                 <!-- Active Filters Display -->
@@ -190,7 +193,7 @@
                                 </td>
                                 <td class="py-4 px-4 text-right font-bold text-gray-800">{{ number_format($bill->total_amount ?? 0) }}</td>
 
-                                <td class="py-4 px-4 text-center">
+                                <td class="py-4 px-4 text-center whitespace-nowrap">
                                     @if($bill->status == 'paid')
                                         <span class="bg-green-100 text-green-600 px-3 py-1 rounded-full text-xs font-bold">ชำระแล้ว</span>
                                     @elseif($bill->status == 'pending')
