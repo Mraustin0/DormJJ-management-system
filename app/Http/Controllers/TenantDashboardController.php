@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Contract;
+use App\Models\MeterReading;
 use App\Models\Setting;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -31,11 +32,37 @@ class TenantDashboardController extends Controller
         }
 
         $room = $contract->room;
-        $latestBill = $room->bills()->latest('billing_month')->first();
-        $unpaidBills = $room->bills()->where('status', '!=', 'paid')->get();
-        $totalUnpaid = $unpaidBills->sum('total_amount');
+        $setting = Setting::getInstance();
 
-        return view('tenant.dashboard', compact('contract', 'room', 'latestBill', 'unpaidBills', 'totalUnpaid'));
+        // Latest unpaid bill
+        $latestUnpaidBill = $room->bills()
+            ->where('status', '!=', 'paid')
+            ->latest('billing_month')
+            ->first();
+
+        // Bill history (all bills, latest first)
+        $billHistory = $room->bills()
+            ->with('receipt')
+            ->latest('billing_month')
+            ->get();
+
+        // Chart data for dashboard (last 6 months costs breakdown)
+        $recentBills = $room->bills()->orderBy('billing_month', 'asc')->take(6)->get();
+        $chartLabels = [];
+        $chartElectric = [];
+        $chartWater = [];
+        $chartRoom = [];
+        foreach ($recentBills as $b) {
+            $chartLabels[] = thaiMonth(\Carbon\Carbon::parse($b->billing_month)->format('m'));
+            $chartElectric[] = $b->electric_amount ?? 0;
+            $chartWater[] = $b->water_amount ?? 0;
+            $chartRoom[] = $b->room_rate ?? 0;
+        }
+
+        return view('tenant.dashboard', compact(
+            'contract', 'room', 'setting', 'latestUnpaidBill', 'billHistory',
+            'chartLabels', 'chartElectric', 'chartWater', 'chartRoom'
+        ));
     }
 
     /**
@@ -56,9 +83,10 @@ class TenantDashboardController extends Controller
             $query->where('status', $request->status);
         }
 
-        $bills = $query->latest('billing_month')->paginate(10);
+        $bills = $query->latest('billing_month')->paginate(50);
+        $setting = Setting::getInstance();
 
-        return view('tenant.bills', compact('contract', 'bills'));
+        return view('tenant.bills', compact('contract', 'bills', 'setting'));
     }
 
     /**
@@ -80,7 +108,7 @@ class TenantDashboardController extends Controller
     }
 
     /**
-     * View contract details
+     * View contract menu page
      */
     public function contract()
     {
@@ -90,7 +118,104 @@ class TenantDashboardController extends Controller
             return view('tenant.no-contract');
         }
 
-        return view('tenant.contract', compact('contract'));
+        $setting = Setting::getInstance();
+
+        return view('tenant.contract', compact('contract', 'setting'));
+    }
+
+    /**
+     * View contract detail page (full info)
+     */
+    public function contractDetail()
+    {
+        $contract = $this->getTenantContract();
+
+        if (!$contract) {
+            return view('tenant.no-contract');
+        }
+
+        $setting = Setting::getInstance();
+
+        return view('tenant.contract-detail', compact('contract', 'setting'));
+    }
+
+    /**
+     * Meter readings page with charts
+     */
+    public function meters()
+    {
+        $contract = $this->getTenantContract();
+
+        if (!$contract) {
+            return view('tenant.no-contract');
+        }
+
+        $room = $contract->room;
+        $setting = Setting::getInstance();
+
+        // Get last 6 months of meter readings
+        $meterReadings = MeterReading::where('room_id', $room->id)
+            ->orderBy('billing_month', 'asc')
+            ->take(6)
+            ->get();
+
+        // Prepare chart data
+        $chartLabels = [];
+        $electricUnits = [];
+        $waterUnits = [];
+        $electricCosts = [];
+        $waterCosts = [];
+
+        foreach ($meterReadings as $reading) {
+            $month = \Carbon\Carbon::parse($reading->billing_month);
+            $chartLabels[] = $month->format('m') . '/' . $month->format('Y');
+            $electricUnits[] = $reading->elec_unit ?? 0;
+            $waterUnits[] = $reading->water_unit ?? 0;
+            $electricCosts[] = ($reading->elec_unit ?? 0) * ($setting->electric_rate ?? 8);
+            $waterCosts[] = ($reading->water_unit ?? 0) * ($setting->water_rate ?? 18);
+        }
+
+        // Stats
+        $electricStats = [
+            'max' => count($electricUnits) ? max($electricUnits) : 0,
+            'min' => count($electricUnits) ? min($electricUnits) : 0,
+            'avg' => count($electricUnits) ? round(array_sum($electricUnits) / count($electricUnits)) : 0,
+        ];
+
+        $waterStats = [
+            'max' => count($waterUnits) ? max($waterUnits) : 0,
+            'min' => count($waterUnits) ? min($waterUnits) : 0,
+            'avg' => count($waterUnits) ? round(array_sum($waterUnits) / count($waterUnits)) : 0,
+        ];
+
+        return view('tenant.meters', compact(
+            'contract', 'room', 'setting',
+            'chartLabels', 'electricUnits', 'waterUnits',
+            'electricCosts', 'waterCosts',
+            'electricStats', 'waterStats'
+        ));
+    }
+
+    /**
+     * View receipt for a paid bill
+     */
+    public function receipt($id)
+    {
+        $contract = $this->getTenantContract();
+
+        if (!$contract) {
+            return view('tenant.no-contract');
+        }
+
+        $bill = $contract->room->bills()->where('id', $id)->with(['receipt.receiver'])->firstOrFail();
+
+        if (!$bill->receipt) {
+            abort(404, 'ยังไม่มีใบเสร็จสำหรับบิลนี้');
+        }
+
+        $setting = Setting::getInstance();
+
+        return view('tenant.receipt', compact('contract', 'bill', 'setting'));
     }
 
     /**
@@ -100,8 +225,9 @@ class TenantDashboardController extends Controller
     {
         $user = Auth::user();
         $contract = $this->getTenantContract();
+        $setting = Setting::getInstance();
 
-        return view('tenant.profile', compact('user', 'contract'));
+        return view('tenant.profile', compact('user', 'contract', 'setting'));
     }
 
     /**
@@ -112,20 +238,29 @@ class TenantDashboardController extends Controller
         $user = Auth::user();
 
         $validated = $request->validate([
-            'username' => 'required|string|max:255|unique:users,username,' . $user->id,
+            'tenant_name' => 'nullable|string|max:255',
+            'phone' => 'nullable|string|max:20',
             'email' => 'nullable|email|max:255',
-            'password' => 'nullable|min:6|confirmed',
         ]);
 
-        $user->username = $validated['username'];
+        // Update user email
         if (!empty($validated['email'])) {
             $user->email = $validated['email'];
         }
-        if (!empty($validated['password'])) {
-            $user->password = bcrypt($validated['password']);
-        }
         $user->save();
 
-        return redirect()->route('tenant.profile')->with('success', 'บันทึกข้อมูลโปรไฟล์เรียบร้อยแล้ว');
+        // Update contract tenant info
+        $contract = Contract::where('user_id', $user->id)->first();
+        if ($contract) {
+            if (!empty($validated['tenant_name'])) {
+                $contract->tenant_name = $validated['tenant_name'];
+            }
+            if (isset($validated['phone'])) {
+                $contract->phone = $validated['phone'];
+            }
+            $contract->save();
+        }
+
+        return redirect()->route('tenant.profile')->with('success', 'บันทึกข้อมูลเรียบร้อยแล้ว');
     }
 }

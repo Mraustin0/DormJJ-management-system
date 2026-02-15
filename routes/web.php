@@ -104,7 +104,10 @@ Route::middleware(['auth', 'role:tenant'])->prefix('tenant')->group(function () 
     Route::get('/dashboard', [TenantDashboardController::class, 'index'])->name('tenant.dashboard');
     Route::get('/bills', [TenantDashboardController::class, 'bills'])->name('tenant.bills');
     Route::get('/bills/{id}', [TenantDashboardController::class, 'viewBill'])->name('tenant.bills.view');
+    Route::get('/bills/{id}/receipt', [TenantDashboardController::class, 'receipt'])->name('tenant.receipt');
     Route::get('/contract', [TenantDashboardController::class, 'contract'])->name('tenant.contract');
+    Route::get('/contract/detail', [TenantDashboardController::class, 'contractDetail'])->name('tenant.contract.detail');
+    Route::get('/meters', [TenantDashboardController::class, 'meters'])->name('tenant.meters');
     Route::get('/profile', [TenantDashboardController::class, 'profile'])->name('tenant.profile');
     Route::put('/profile', [TenantDashboardController::class, 'updateProfile'])->name('tenant.profile.update');
 });
