@@ -19,6 +19,7 @@ class Bill extends Model
         'other_fees',
         'due_date',
         'status',
+        'payment_slip',
         'room_id',
         'tenant_id',
     ];
@@ -27,6 +28,7 @@ class Bill extends Model
     {
         return [
             'bill_date' => 'date',
+            'due_date'  => 'date',
         ];
     }
 

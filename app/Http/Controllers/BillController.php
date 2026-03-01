@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\MeterReading;
+use App\Models\Notification;
 use App\Models\Room;
 use App\Models\Bill;
 use App\Models\Receipt;
@@ -54,6 +55,7 @@ class BillController extends Controller
         // 7. ตัวเลือกสถานะ
         $statuses = [
             'pending' => 'รอชำระ',
+            'reviewing' => 'รอการอนุมัติ',
             'paid' => 'ชำระแล้ว',
             'overdue' => 'ค้างชำระ',
         ];
@@ -113,12 +115,12 @@ class BillController extends Controller
     {
         $request->validate([
             'room_id' => 'required|exists:rooms,id',
-            'billing_month' => 'required',
-            'total_amount' => 'required|numeric',
+            'billing_month' => 'required|date_format:Y-m',
+            'total_amount' => 'required|numeric|min:0|max:999999',
         ]);
 
         // สร้างหรืออัปเดตบิล
-        Bill::updateOrCreate(
+        $bill = Bill::updateOrCreate(
             [
                 'room_id' => $request->room_id,
                 'billing_month' => $request->billing_month,
@@ -133,6 +135,17 @@ class BillController extends Controller
                 'total_amount' => $request->total_amount,
                 'status' => 'pending',
             ]
+        );
+
+        // Send notification to tenant
+        $room = Room::find($request->room_id);
+        $monthLabel = Carbon::parse($request->billing_month)->translatedFormat('F Y');
+        Notification::notifyTenantByRoom(
+            $request->room_id,
+            'bill_created',
+            'บิลค่าเช่าประจำเดือน ' . $monthLabel,
+            'มีบิลค่าเช่าห้อง ' . ($room->room_number ?? '') . ' จำนวน ' . number_format($request->total_amount, 2) . ' บาท',
+            route('tenant.bills.view', $bill->id)
         );
 
         return response()->json(['success' => true, 'message' => 'บันทึกบิลเรียบร้อยแล้ว']);
@@ -205,6 +218,15 @@ class BillController extends Controller
         if ($room) {
             $room->update(['payment_status' => 'ชำระแล้ว']);
         }
+
+        // Send notification to tenant
+        Notification::notifyTenantByRoom(
+            $bill->room_id,
+            'payment_confirmed',
+            'ยืนยันการชำระเงินเรียบร้อย',
+            'การชำระเงินห้อง ' . ($room->room_number ?? '') . ' จำนวน ' . number_format($bill->total_amount, 2) . ' บาท ได้รับการยืนยันแล้ว',
+            route('tenant.receipt', $bill->id)
+        );
 
         return response()->json([
             'success' => true,

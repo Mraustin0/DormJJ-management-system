@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use App\Models\Notification;
 use App\Models\Room;
 use App\Models\User;
 use App\Models\MeterReading;
@@ -22,10 +23,14 @@ class RoomController extends Controller
             'total_occupied' => Room::where('status', 'ไม่ว่าง')->count(),
             'total_paid'     => Room::where('payment_status', 'ชำระแล้ว')->count(),
             'total_pending'  => Room::where('payment_status', 'ค้างชำระ')->count(),
-            
+
+            // สถิติเฉพาะชั้นที่เลือก (สำหรับ Chart)
+            'floor_vacant'   => Room::where('floor', $currentFloor)->where('status', 'ว่าง')->count(),
+            'floor_occupied' => Room::where('floor', $currentFloor)->where('status', 'ไม่ว่าง')->count(),
+
             // 3. ดึงเฉพาะห้องในชั้นที่เลือกมาแสดงผล
-            'rooms'          => Room::where('floor', $currentFloor)->orderBy('room_number', 'asc')->get(),
-            'currentFloor'   => $currentFloor
+            'rooms'          => Room::with('contract')->where('floor', $currentFloor)->orderBy('room_number', 'asc')->get(),
+            'currentFloor'   => $currentFloor,
         ];
 
         return view('rooms.index', $data);
@@ -201,12 +206,24 @@ class RoomController extends Controller
                 ]);
             }
 
+            // Send notification to tenant
+            if ($userId) {
+                Notification::create([
+                    'user_id' => $userId,
+                    'type' => 'contract_created',
+                    'title' => 'สัญญาเช่าห้อง ' . $room->room_number,
+                    'message' => 'สัญญาเช่าของคุณถูกสร้างเรียบร้อยแล้ว ยินดีต้อนรับเข้าสู่หอพัก',
+                    'link' => route('tenant.contract.detail'),
+                ]);
+            }
+
             DB::commit();
             return redirect()->route('rooms.index')->with('success', 'เพิ่มผู้เช่าเรียบร้อยแล้ว');
 
         } catch (\Exception $e) {
             DB::rollBack();
-            return back()->withErrors(['error' => 'เกิดข้อผิดพลาด: ' . $e->getMessage()])->withInput();
+            \Log::error('Room store error: ' . $e->getMessage());
+            return back()->withErrors(['error' => 'เกิดข้อผิดพลาดในระบบ กรุณาลองใหม่อีกครั้ง'])->withInput();
         }
     }
 

@@ -60,11 +60,11 @@ class MeterController extends Controller
     {
         $request->validate([
             'room_id' => 'required|exists:rooms,id',
-            'billing_month' => 'required|string',
+            'billing_month' => 'required|date_format:Y-m',
             'water_prev' => 'required|integer|min:0',
-            'water_curr' => 'required|integer|min:0',
+            'water_curr' => 'required|integer|min:0|gte:water_prev',
             'elec_prev' => 'required|integer|min:0',
-            'elec_curr' => 'required|integer|min:0',
+            'elec_curr' => 'required|integer|min:0|gte:elec_prev',
             'status' => 'required|in:pending,paid,overdue',
         ]);
 
@@ -93,9 +93,9 @@ class MeterController extends Controller
     {
         $request->validate([
             'room_id' => 'required|exists:rooms,id',
-            'billing_month' => 'required|string',
+            'billing_month' => 'required|date_format:Y-m',
             'water_prev' => 'required|integer|min:0',
-            'water_curr' => 'required|integer|min:0',
+            'water_curr' => 'required|integer|min:0|gte:water_prev',
         ]);
 
         MeterReading::updateOrCreate(
@@ -117,9 +117,9 @@ class MeterController extends Controller
     {
         $request->validate([
             'room_id' => 'required|exists:rooms,id',
-            'billing_month' => 'required|string',
+            'billing_month' => 'required|date_format:Y-m',
             'elec_prev' => 'required|integer|min:0',
-            'elec_curr' => 'required|integer|min:0',
+            'elec_curr' => 'required|integer|min:0|gte:elec_prev',
         ]);
 
         MeterReading::updateOrCreate(

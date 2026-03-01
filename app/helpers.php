@@ -21,3 +21,25 @@ if (!function_exists('thaiMonth')) {
         return $months[str_pad($month, 2, '0', STR_PAD_LEFT)] ?? '';
     }
 }
+
+if (!function_exists('thaiMonthShort')) {
+    function thaiMonthShort($month)
+    {
+        $months = [
+            '01' => 'ม.ค.',
+            '02' => 'ก.พ.',
+            '03' => 'มี.ค.',
+            '04' => 'เม.ย.',
+            '05' => 'พ.ค.',
+            '06' => 'มิ.ย.',
+            '07' => 'ก.ค.',
+            '08' => 'ส.ค.',
+            '09' => 'ก.ย.',
+            '10' => 'ต.ค.',
+            '11' => 'พ.ย.',
+            '12' => 'ธ.ค.',
+        ];
+
+        return $months[str_pad($month, 2, '0', STR_PAD_LEFT)] ?? '';
+    }
+}

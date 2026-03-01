@@ -48,8 +48,8 @@
             <h3 class="text-gray-400 font-bold text-xs mb-3">ข้อมูลหอพัก</h3>
             <ul class="space-y-2">
                 <li>
-                    <a href="{{ route('tenant.dashboard') }}" class="block px-2 py-1.5 text-gray-800 hover:text-red-600 font-medium text-base">
-                        รายละเอียดห้องพัก
+                    <a href="{{ route('tenant.room-info') }}" class="block px-2 {{ ($activePage ?? '') == 'room-info' ? 'py-2 bg-gray-500 text-white rounded-lg shadow-sm' : 'py-1.5 text-gray-800 hover:text-red-600' }} font-medium text-base">
+                        ข้อมูลห้องพัก
                     </a>
                 </li>
             </ul>
@@ -60,7 +60,12 @@
             <h3 class="text-gray-400 font-bold text-xs mb-3">การตั้งค่า</h3>
             <ul class="space-y-2">
                 <li>
-                    <a href="#" class="block px-2 py-1.5 text-gray-800 hover:text-red-600 font-medium text-base">
+                    <a href="{{ route('tenant.repairs.create') }}" class="block px-2 {{ ($activePage ?? '') == 'repairs' ? 'py-2 bg-gray-500 text-white rounded-lg shadow-sm' : 'py-1.5 text-gray-800 hover:text-red-600' }} font-medium text-base">
+                        แจ้งซ่อม
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ route('tenant.moveout') }}" class="block px-2 {{ ($activePage ?? '') == 'moveout' ? 'py-2 bg-gray-500 text-white rounded-lg shadow-sm' : 'py-1.5 text-gray-800 hover:text-red-600' }} font-medium text-base">
                         แจ้งย้ายออก
                     </a>
                 </li>
@@ -70,9 +75,9 @@
                     </a>
                 </li>
                 <li>
-                    <form action="{{ route('logout') }}" method="POST">
+                    <form action="{{ route('logout') }}" method="POST" id="sidebarLogoutForm">
                         @csrf
-                        <button type="submit" class="block px-2 py-1.5 text-gray-800 font-medium text-base hover:text-red-600 w-full text-left">
+                        <button type="button" onclick="confirmLogout('sidebarLogoutForm')" class="block px-2 py-1.5 text-gray-800 font-medium text-base hover:text-red-600 w-full text-left">
                             ออกจากระบบ
                         </button>
                     </form>

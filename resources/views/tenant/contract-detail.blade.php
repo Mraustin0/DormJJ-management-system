@@ -45,22 +45,8 @@
                     <span class="text-white font-semibold text-lg">ระบบจัดการหอพัก {{ $setting->apartment_name ?? 'JJ Apartment' }}</span>
                 </div>
                 <div class="flex items-center gap-3">
-                    <button class="text-white relative">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
-                        </svg>
-                    </button>
-                    <div class="flex items-center gap-2">
-                        <div class="w-9 h-9 bg-white/20 rounded-full flex items-center justify-center">
-                            <svg class="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
-                                <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
-                            </svg>
-                        </div>
-                        <div class="text-white text-sm hidden sm:block">
-                            <p class="font-semibold leading-tight">{{ $contract->tenant_name }}</p>
-                            <p class="text-white/80 text-xs">ห้อง {{ $contract->room->room_number }}</p>
-                        </div>
-                    </div>
+                    @include('tenant.partials.notification-bell')
+                    @include('tenant.partials.user-dropdown')
                 </div>
             </div>
         </header>
@@ -121,7 +107,7 @@
                             {{ $aptDistrict ? 'อำเภอ'.$aptDistrict : '' }} {{ $aptProvince ? 'จังหวัด'.$aptProvince : '' }} {{ $aptPostal }}
                         </div>
                         <div class="text-right mb-4 text-sm">
-                            ทำ ณ วันที่ {{ $contractDate->format('j') }} เดือน {{ thaiMonth($contractDate->format('m')) }} พ.ศ. {{ $contractDate->format('Y') + 543 }}
+                            ทำ ณ วันที่ {{ $contractDate->format('j') }} เดือน {{ thaiMonth($contractDate->format('m')) }} ค.ศ. {{ $contractDate->format('Y') }}
                         </div>
 
                         {{-- Body --}}
@@ -134,7 +120,7 @@
 
                         <p class="mt-3"><strong>ข้อ 1</strong> ผู้เช่าตกลงเช่าและผู้ให้เช่าตกลงให้เช่าห้องพักอาศัยเลขที่ <strong>{{ $room->room_number }}</strong> ชั้นที่ <strong>{{ $room->floor }}</strong> ของหอพัก{{ $aptName }} ซึ่งตั้งอยู่ที่ {{ $aptAddress }} {{ $aptSubdistrict ? 'ตำบล'.$aptSubdistrict : '' }} {{ $aptDistrict ? 'อำเภอ'.$aptDistrict : '' }} {{ $aptProvince ? 'จังหวัด'.$aptProvince : '' }} {{ $aptPostal }} เพื่อใช้เป็นที่พักอาศัย ในอัตราค่าเช่าเดือนละ <strong>{{ $rentRate }}</strong> บาท และอัตราค่าห้องปรับอากาศเดือนละ ............... บาท (ค่าเช่านี้ไม่รวมถึงค่าไฟฟ้า ค่าน้ำประปา ค่าบำรุงรักษาเฟอร์นิเจอร์ และค่าทำความสะอาด ส่วนกลาง ซึ่งผู้เช่าต้องชำระแก่ผู้ให้เช่าตามอัตราที่กำหนดไว้ในสัญญาข้อ 4</p>
 
-                        <p class="mt-3"><strong>ข้อ 2</strong> สัญญานี้มีข้อตกลงกัน มีกำหนดระยะเวลา <strong>{{ $duration }}</strong> เดือน เริ่มต้นวันที่ <strong>{{ $startDate ? $startDate->format('j/m/').($startDate->format('Y')+543) : '............' }}</strong> หมดอายุสัญญาวันที่ <strong>{{ $endDate ? $endDate->format('j/m/').($endDate->format('Y')+543) : '............' }}</strong> หากไม่ครบระยะสัญญา ผู้ให้เช่ามีสิทธิรับเงินประกันทั้งหมด</p>
+                        <p class="mt-3"><strong>ข้อ 2</strong> สัญญานี้มีข้อตกลงกัน มีกำหนดระยะเวลา <strong>{{ $duration }}</strong> เดือน เริ่มต้นวันที่ <strong>{{ $startDate ? $startDate->format('j/m/Y') : '............' }}</strong> หมดอายุสัญญาวันที่ <strong>{{ $endDate ? $endDate->format('j/m/Y') : '............' }}</strong> หากไม่ครบระยะสัญญา ผู้ให้เช่ามีสิทธิรับเงินประกันทั้งหมด</p>
 
                         <p class="mt-3"><strong>ข้อ 3</strong> การชำระค่าเช่า ผู้เช่าตกลงจะชำระค่าเช่าแก่ผู้ให้เช่า โดยชำระภายในวันที่ 1-{{ $setting->payment_due_day ?? 5 }} ของทุกเดือนตลอดเวลาอายุสัญญาการเช่า กรณีที่ผู้เช่าชำระค่าเช่าล่าช้า ผู้เช่ายอมจ่ายค่าปรับล่าช้า {{ number_format($setting->late_fee_per_day ?? 50, 0) }} บาท/วัน นับตั้งแต่วันที่ครบกำหนดชำระ แต่ไม่เกิน 45 วัน หากชำระล่าช้าเกิน 45 วัน ผู้ให้เช่าสามารถมีสิทธิบอกเลิกสัญญาได้ทันทีโดยมีต้องบอกกล่าวล่วงหน้า</p>
 

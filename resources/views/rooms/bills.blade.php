@@ -41,7 +41,7 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
                         </svg>
                         @php
-                            $pendingCount = $bills->where('status', 'pending')->count();
+                            $pendingCount = $bills->where('status', 'reviewing')->count();
                         @endphp
                         @if($pendingCount > 0)
                         <span class="absolute -top-1 -right-1 bg-red-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center font-bold">
@@ -61,7 +61,7 @@
                             @endphp
                             @if($pendingBills->count() > 0)
                                 @foreach($pendingBills as $pBill)
-                                <div onclick="openSlipModal({{ $pBill->id }}, '{{ $pBill->room->room_number ?? '-' }}', {{ $pBill->total_amount ?? 0 }})" class="block px-4 py-3 hover:bg-gray-50 border-b border-gray-100 last:border-0 cursor-pointer">
+                                <div onclick="openSlipModal({{ $pBill->id }}, '{{ $pBill->room->room_number ?? '-' }}', {{ $pBill->total_amount ?? 0 }}, '{{ $pBill->payment_slip ? asset('storage/' . $pBill->payment_slip) : '' }}')" class="block px-4 py-3 hover:bg-gray-50 border-b border-gray-100 last:border-0 cursor-pointer">
                                     <div class="flex items-start gap-3">
                                         <div class="w-10 h-10 bg-yellow-100 rounded-full flex items-center justify-center flex-shrink-0">
                                             <svg class="w-5 h-5 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -196,6 +196,8 @@
                                 <td class="py-4 px-4 text-center whitespace-nowrap">
                                     @if($bill->status == 'paid')
                                         <span class="bg-green-100 text-green-600 px-3 py-1 rounded-full text-xs font-bold">ชำระแล้ว</span>
+                                    @elseif($bill->status == 'reviewing')
+                                        <span class="bg-orange-100 text-orange-600 px-3 py-1 rounded-full text-xs font-bold">รอการอนุมัติ</span>
                                     @elseif($bill->status == 'pending')
                                         <span class="bg-yellow-100 text-yellow-600 px-3 py-1 rounded-full text-xs font-bold">รอชำระ</span>
                                     @else
@@ -206,9 +208,9 @@
                                 {{-- Slip Column --}}
                                 <td class="py-4 px-4 text-center">
                                     @if($bill->status != 'paid')
-                                        <button onclick="openSlipModal({{ $bill->id }}, '{{ $bill->room->room_number ?? '-' }}', {{ $bill->total_amount ?? 0 }})" class="bg-gray-100 text-gray-600 text-xs px-3 py-1.5 rounded-lg inline-flex items-center gap-1 hover:bg-gray-200 transition-all font-medium">
+                                        <button onclick="openSlipModal({{ $bill->id }}, '{{ $bill->room->room_number ?? '-' }}', {{ $bill->total_amount ?? 0 }}, '{{ $bill->payment_slip ? asset('storage/' . $bill->payment_slip) : '' }}')" class="{{ $bill->payment_slip ? 'bg-yellow-100 text-yellow-700' : 'bg-gray-100 text-gray-600' }} text-xs px-3 py-1.5 rounded-lg inline-flex items-center gap-1 hover:bg-gray-200 transition-all font-medium">
                                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-                                            ตรวจสลิป
+                                            {{ $bill->payment_slip ? 'ดูสลิป' : 'ตรวจสลิป' }}
                                         </button>
                                     @else
                                         <span class="text-gray-400 text-xs">-</span>
@@ -267,19 +269,31 @@
             <div class="p-6">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {{-- Slip Image Preview --}}
-                    <div class="border-2 border-dashed border-gray-300 rounded-xl p-4 flex items-center justify-center bg-gray-50 min-h-[300px]">
-                        <div id="slipPreview" class="text-center">
+                    <div class="border-2 border-dashed border-gray-300 rounded-xl p-4 flex flex-col items-center justify-center bg-gray-50 min-h-[300px]">
+                        {{-- Empty state --}}
+                        <div id="slipPreviewEmpty" class="text-center">
                             <svg class="w-16 h-16 mx-auto text-gray-300 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
                             </svg>
-                            <p class="text-gray-400 text-sm">ไม่มีสลิปที่อัปโหลด</p>
-                            <p class="text-gray-400 text-xs mt-1">(Mock: แสดงตัวอย่างสลิป)</p>
+                            <p class="text-gray-400 text-sm">ผู้เช่ายังไม่ได้อัปโหลดสลิป</p>
+                        </div>
+                        {{-- Tenant uploaded slip image --}}
+                        <img id="slipPreviewImage" src="" alt="Payment Slip" class="hidden max-w-full max-h-[250px] rounded-lg object-contain">
+                        {{-- Admin can also upload/attach slip --}}
+                        <div class="mt-3 w-full">
+                            <label class="block cursor-pointer">
+                                <div class="flex items-center justify-center gap-2 border border-gray-300 rounded-lg px-3 py-2 hover:border-[#4A90E2] transition-colors bg-white">
+                                    <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>
+                                    <span id="adminSlipFileName" class="text-xs text-gray-500">แนบสลิปเพิ่ม (แอดมิน)</span>
+                                </div>
+                                <input type="file" id="adminSlipFile" accept="image/*" class="hidden" onchange="previewAdminSlip(this)">
+                            </label>
                         </div>
                     </div>
 
                     {{-- Payment Form --}}
                     <div>
-                        <form id="slipForm" action="" method="POST">
+                        <form id="slipForm" action="" method="POST" enctype="multipart/form-data">
                             @csrf
                             <input type="hidden" name="bill_id" id="slipBillId">
 
@@ -353,7 +367,7 @@
                             <h4 class="font-bold text-gray-700">เดือน</h4>
                             <select id="yearSelect" class="border border-gray-300 rounded px-2 py-1 text-sm">
                                 @for($y = date('Y'); $y >= date('Y') - 2; $y--)
-                                <option value="{{ $y }}">{{ $y + 543 }}</option>
+                                <option value="{{ $y }}">{{ $y }}</option>
                                 @endfor
                             </select>
                         </div>
@@ -448,10 +462,28 @@
         });
 
         // Slip Modal Functions
-        function openSlipModal(billId, roomNumber, amount) {
+        function openSlipModal(billId, roomNumber, amount, slipUrl) {
             document.getElementById('slipBillId').value = billId;
             document.getElementById('paymentAmount').value = amount.toLocaleString() + ' บาท';
             document.getElementById('slipForm').action = `/bills/${billId}/confirm-payment`;
+
+            // Show/hide slip image
+            const previewEmpty = document.getElementById('slipPreviewEmpty');
+            const previewImage = document.getElementById('slipPreviewImage');
+
+            if (slipUrl && slipUrl !== '') {
+                previewEmpty.classList.add('hidden');
+                previewImage.src = slipUrl;
+                previewImage.classList.remove('hidden');
+            } else {
+                previewEmpty.classList.remove('hidden');
+                previewImage.classList.add('hidden');
+                previewImage.src = '';
+            }
+
+            // Reset admin file input
+            document.getElementById('adminSlipFile').value = '';
+            document.getElementById('adminSlipFileName').textContent = 'แนบสลิปเพิ่ม (แอดมิน)';
 
             document.getElementById('slipModal').classList.remove('hidden');
             document.getElementById('slipModal').classList.add('flex');
@@ -460,6 +492,22 @@
         function closeSlipModal() {
             document.getElementById('slipModal').classList.add('hidden');
             document.getElementById('slipModal').classList.remove('flex');
+        }
+
+        // Preview admin-uploaded slip
+        function previewAdminSlip(input) {
+            if (input.files && input.files[0]) {
+                document.getElementById('adminSlipFileName').textContent = input.files[0].name;
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const previewImage = document.getElementById('slipPreviewImage');
+                    const previewEmpty = document.getElementById('slipPreviewEmpty');
+                    previewImage.src = e.target.result;
+                    previewImage.classList.remove('hidden');
+                    previewEmpty.classList.add('hidden');
+                };
+                reader.readAsDataURL(input.files[0]);
+            }
         }
 
         // Filter Modal Functions
@@ -537,7 +585,7 @@
             closeDownloadModal();
         }
 
-        // Form submission
+        // Form submission (using FormData to support file upload)
         document.getElementById('slipForm').addEventListener('submit', function(e) {
             e.preventDefault();
 
@@ -545,16 +593,22 @@
             const paymentMethod = document.querySelector('input[name="payment_method"]:checked').value;
             const paymentDate = document.getElementById('paymentDate').value;
 
+            const formData = new FormData();
+            formData.append('payment_method', paymentMethod);
+            formData.append('payment_date', paymentDate);
+
+            // Attach admin's slip file if selected
+            const adminSlipInput = document.getElementById('adminSlipFile');
+            if (adminSlipInput.files.length > 0) {
+                formData.append('payment_slip', adminSlipInput.files[0]);
+            }
+
             fetch(`/bills/${billId}/confirm-payment`, {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json',
                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
                 },
-                body: JSON.stringify({
-                    payment_method: paymentMethod,
-                    payment_date: paymentDate
-                })
+                body: formData
             })
             .then(response => response.json())
             .then(data => {

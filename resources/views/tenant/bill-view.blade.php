@@ -38,16 +38,8 @@
                     <span class="text-white font-semibold text-lg">ระบบจัดการหอพัก {{ $setting->apartment_name ?? 'JJ Apartment' }}</span>
                 </div>
                 <div class="flex items-center gap-3">
-                    <button class="text-white"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg></button>
-                    <div class="flex items-center gap-2">
-                        <div class="w-9 h-9 bg-white/20 rounded-full flex items-center justify-center">
-                            <svg class="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
-                        </div>
-                        <div class="text-white text-sm hidden sm:block">
-                            <p class="font-semibold leading-tight">{{ $contract->tenant_name }}</p>
-                            <p class="text-white/80 text-xs">ห้อง {{ $contract->room->room_number }}</p>
-                        </div>
-                    </div>
+                    @include('tenant.partials.notification-bell')
+                    @include('tenant.partials.user-dropdown')
                 </div>
             </div>
         </header>
@@ -73,6 +65,8 @@
                 </div>
                 @if($bill->status == 'paid')
                     <span class="px-4 py-1 bg-green-100 text-green-600 rounded-full text-sm font-semibold">ชำระแล้ว</span>
+                @elseif($bill->status == 'reviewing')
+                    <span class="px-4 py-1 bg-orange-100 text-orange-600 rounded-full text-sm font-semibold">รอการอนุมัติ</span>
                 @else
                     <span class="px-4 py-1 bg-red-100 text-red-600 rounded-full text-sm font-semibold">ค้างชำระ</span>
                 @endif
@@ -152,14 +146,74 @@
                     </tfoot>
                 </table>
 
-                {{-- Payment Slip Upload Section (for unpaid) --}}
+                {{-- Payment Slip Upload Section --}}
                 @if($bill->status != 'paid')
                 <div class="mt-6 pt-6 border-t border-gray-200">
                     <h4 class="font-bold text-gray-800 mb-3">หลักฐานการชำระเงิน</h4>
-                    <div class="flex items-center gap-3">
-                        <input type="text" placeholder="กรุณาแนบสลิป" class="border border-gray-300 rounded-lg px-4 py-2 text-sm flex-1" disabled>
-                        <button class="px-4 py-2 bg-gray-200 text-gray-600 rounded-lg text-sm font-medium">อัปโหลด</button>
+
+                    @if($bill->payment_slip)
+                    {{-- Already uploaded --}}
+                    <div class="mb-4">
+                        <div class="border border-green-200 bg-green-50 rounded-xl p-4">
+                            <div class="flex items-center gap-2 mb-3">
+                                <svg class="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                <span class="text-green-700 font-semibold text-sm">อัปโหลดสลิปแล้ว - รอตรวจสอบจากแอดมิน</span>
+                            </div>
+                            <img src="{{ asset('storage/' . $bill->payment_slip) }}" alt="Payment Slip" class="max-w-xs rounded-lg border border-gray-200 shadow-sm">
+                        </div>
                     </div>
+                    {{-- Allow re-upload --}}
+                    <form action="{{ route('tenant.bills.uploadSlip', $bill->id) }}" method="POST" enctype="multipart/form-data" class="mt-3">
+                        @csrf
+                        <p class="text-gray-500 text-xs mb-2">ต้องการเปลี่ยนสลิป? อัปโหลดใหม่ด้านล่าง</p>
+                        <div class="flex items-center gap-3">
+                            <label class="flex-1 cursor-pointer">
+                                <div class="flex items-center gap-3 border border-gray-300 rounded-lg px-4 py-2 hover:border-red-400 transition-colors">
+                                    <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                                    <span id="reuploadFileName" class="text-sm text-gray-500">เลือกไฟล์สลิปใหม่...</span>
+                                </div>
+                                <input type="file" name="payment_slip" accept="image/*" class="hidden" onchange="document.getElementById('reuploadFileName').textContent = this.files[0]?.name || 'เลือกไฟล์สลิปใหม่...'">
+                            </label>
+                            <button type="submit" class="px-4 py-2 bg-red-500 text-white rounded-lg text-sm font-semibold hover:bg-red-600 transition-colors whitespace-nowrap">
+                                อัปโหลดใหม่
+                            </button>
+                        </div>
+                    </form>
+                    @else
+                    {{-- No slip yet --}}
+                    <form action="{{ route('tenant.bills.uploadSlip', $bill->id) }}" method="POST" enctype="multipart/form-data">
+                        @csrf
+                        <div class="flex items-center gap-3">
+                            <label class="flex-1 cursor-pointer">
+                                <div class="flex items-center gap-3 border-2 border-dashed border-gray-300 rounded-lg px-4 py-3 hover:border-red-400 transition-colors">
+                                    <svg class="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                                    <span id="uploadFileName" class="text-sm text-gray-500">กรุณาแนบสลิปการโอนเงิน...</span>
+                                </div>
+                                <input type="file" name="payment_slip" accept="image/*" class="hidden" required onchange="document.getElementById('uploadFileName').textContent = this.files[0]?.name || 'กรุณาแนบสลิปการโอนเงิน...'">
+                            </label>
+                            <button type="submit" class="px-5 py-3 bg-red-500 text-white rounded-lg text-sm font-semibold hover:bg-red-600 transition-colors whitespace-nowrap">
+                                อัปโหลด
+                            </button>
+                        </div>
+                    </form>
+                    @endif
+
+                    @if(session('slip_success'))
+                    <div class="mt-3 bg-green-50 border border-green-200 text-green-700 px-4 py-2 rounded-lg text-sm">
+                        {{ session('slip_success') }}
+                    </div>
+                    @endif
+                    @if($errors->has('payment_slip'))
+                    <div class="mt-3 bg-red-50 border border-red-200 text-red-600 px-4 py-2 rounded-lg text-sm">
+                        {{ $errors->first('payment_slip') }}
+                    </div>
+                    @endif
+                </div>
+                @elseif($bill->payment_slip)
+                {{-- Bill is paid but show the slip --}}
+                <div class="mt-6 pt-6 border-t border-gray-200">
+                    <h4 class="font-bold text-gray-800 mb-3">หลักฐานการชำระเงิน</h4>
+                    <img src="{{ asset('storage/' . $bill->payment_slip) }}" alt="Payment Slip" class="max-w-xs rounded-lg border border-gray-200 shadow-sm">
                 </div>
                 @endif
 

@@ -38,17 +38,27 @@ class Setting extends Model
 
     public static function getInstance()
     {
-        $setting = self::first();
-        if (!$setting) {
-            $setting = self::create([
-                'rent_per_month' => 4000,
-                'water_rate' => 25,
-                'electric_rate' => 8,
-                'late_fee_per_day' => 50,
-                'payment_due_day' => '5',
-                'apartment_name' => 'เจเจพาร์ทเมนต์',
-            ]);
-        }
-        return $setting;
+        return \Cache::remember('app_settings', 300, function () {
+            $setting = self::first();
+            if (!$setting) {
+                $setting = self::create([
+                    'rent_per_month' => 4000,
+                    'water_rate' => 25,
+                    'electric_rate' => 8,
+                    'late_fee_per_day' => 50,
+                    'payment_due_day' => '5',
+                    'apartment_name' => 'เจเจพาร์ทเมนต์',
+                ]);
+            }
+            return $setting;
+        });
+    }
+
+    protected static function boot()
+    {
+        parent::boot();
+        static::saved(function () {
+            \Cache::forget('app_settings');
+        });
     }
 }

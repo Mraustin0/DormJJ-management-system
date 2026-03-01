@@ -37,16 +37,8 @@
                     <span class="text-white font-semibold text-lg">ระบบจัดการหอพัก {{ $setting->apartment_name ?? 'JJ Apartment' }}</span>
                 </div>
                 <div class="flex items-center gap-3">
-                    <button class="text-white"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg></button>
-                    <div class="flex items-center gap-2">
-                        <div class="w-9 h-9 bg-white/20 rounded-full flex items-center justify-center">
-                            <svg class="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
-                        </div>
-                        <div class="text-white text-sm hidden sm:block">
-                            <p class="font-semibold leading-tight">{{ $contract->tenant_name }}</p>
-                            <p class="text-white/80 text-xs">ห้อง {{ $contract->room->room_number }}</p>
-                        </div>
-                    </div>
+                    @include('tenant.partials.notification-bell')
+                    @include('tenant.partials.user-dropdown')
                 </div>
             </div>
         </header>

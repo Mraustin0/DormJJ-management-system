@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Contract;
+use App\Models\Notification;
 use App\Models\Room;
 use App\Models\User;
 use App\Models\MeterReading;
@@ -98,12 +99,24 @@ class CustomerController extends Controller
                 ]);
             }
 
+            // Send notification to tenant
+            if ($userId) {
+                Notification::create([
+                    'user_id' => $userId,
+                    'type' => 'contract_created',
+                    'title' => 'สัญญาเช่าห้อง ' . $room->room_number,
+                    'message' => 'สัญญาเช่าของคุณถูกสร้างเรียบร้อยแล้ว ยินดีต้อนรับเข้าสู่หอพัก',
+                    'link' => route('tenant.contract.detail'),
+                ]);
+            }
+
             DB::commit();
             return redirect()->route('rooms.customers')->with('success', 'สร้างบัญชีผู้เช่าเรียบร้อยแล้ว');
 
         } catch (\Exception $e) {
             DB::rollBack();
-            return back()->withErrors(['error' => 'เกิดข้อผิดพลาด: ' . $e->getMessage()])->withInput();
+            \Log::error('Customer create error: ' . $e->getMessage());
+            return back()->withErrors(['error' => 'เกิดข้อผิดพลาดในระบบ กรุณาลองใหม่อีกครั้ง'])->withInput();
         }
     }
 
@@ -174,6 +187,17 @@ class CustomerController extends Controller
             'status' => 'ว่าง',
             'payment_status' => null,
         ]);
+
+        // Send notification to tenant
+        if ($contract->user_id) {
+            Notification::create([
+                'user_id' => $contract->user_id,
+                'type' => 'moveout_processed',
+                'title' => 'ดำเนินการย้ายออกเรียบร้อย',
+                'message' => 'การย้ายออกห้อง ' . $contract->room->room_number . ' ได้รับการดำเนินการแล้ว',
+                'link' => route('tenant.dashboard'),
+            ]);
+        }
 
         return response()->json(['success' => true, 'message' => 'บันทึกการย้ายออกเรียบร้อย']);
     }

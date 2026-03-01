@@ -9,6 +9,7 @@ use App\Http\Controllers\RoomController;
 use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\PasswordResetController;
 use App\Http\Controllers\TenantDashboardController;
+use App\Http\Controllers\RepairController;
 
 // 1. ส่วน Login/Logout
 Route::get('/', [AuthController::class, 'showLogin'])->name('login');
@@ -29,7 +30,7 @@ Route::post('/password/reset', [PasswordResetController::class, 'resetPassword']
 Route::middleware(['auth', 'role:admin,staff'])->group(function () {
 
     // หน้าหลัก Dashboard
-    Route::get('/dashboard', [AuthController::class, 'index'])->name('rooms.index');
+    Route::get('/dashboard', [AuthController::class, 'index'])->name('admin.dashboard');
 
     // หน้าข้อมูลการเข้าพัก
     Route::get('/accommodation', [AuthController::class, 'accommodation'])->name('rooms.accommodation');
@@ -76,13 +77,13 @@ Route::middleware(['auth', 'role:admin,staff'])->group(function () {
     // หน้าฟอร์มทำสัญญาเช่า (สำหรับห้องว่าง)
     Route::get('/rooms/{id}/assign', [RoomController::class, 'assign'])->name('rooms.assign');
 
-// ฟังก์ชันบันทึกข้อมูลสัญญาใหม่
+    // ฟังก์ชันบันทึกข้อมูลสัญญาใหม่
     Route::post('/rooms/{id}/assign', [RoomController::class, 'storeAssignment'])->name('rooms.storeAssignment');
 
         // หน้าสร้างสัญญาเช่า (หน้าใหม่)
     Route::get('/rooms/{id}/contract/create', [RoomController::class, 'createContract'])->name('rooms.createContract');
 
-// บันทึกสัญญาเช่า
+    // บันทึกสัญญาเช่า
     Route::post('/rooms/{id}/contract/store', [RoomController::class, 'storeContract'])->name('rooms.storeContract');
 
     // Settings
@@ -104,10 +105,25 @@ Route::middleware(['auth', 'role:tenant'])->prefix('tenant')->group(function () 
     Route::get('/dashboard', [TenantDashboardController::class, 'index'])->name('tenant.dashboard');
     Route::get('/bills', [TenantDashboardController::class, 'bills'])->name('tenant.bills');
     Route::get('/bills/{id}', [TenantDashboardController::class, 'viewBill'])->name('tenant.bills.view');
+    Route::post('/bills/{id}/upload-slip', [TenantDashboardController::class, 'uploadSlip'])->name('tenant.bills.uploadSlip');
     Route::get('/bills/{id}/receipt', [TenantDashboardController::class, 'receipt'])->name('tenant.receipt');
     Route::get('/contract', [TenantDashboardController::class, 'contract'])->name('tenant.contract');
     Route::get('/contract/detail', [TenantDashboardController::class, 'contractDetail'])->name('tenant.contract.detail');
+    Route::get('/contract/history', [TenantDashboardController::class, 'contractHistory'])->name('tenant.contract.history');
     Route::get('/meters', [TenantDashboardController::class, 'meters'])->name('tenant.meters');
+    Route::get('/room-info', [TenantDashboardController::class, 'roomInfo'])->name('tenant.room-info');
+    Route::get('/moveout', [TenantDashboardController::class, 'moveout'])->name('tenant.moveout');
+    Route::post('/moveout', [TenantDashboardController::class, 'storeMoveout'])->name('tenant.moveout.store');
+    Route::get('/moveout/status', [TenantDashboardController::class, 'moveoutStatus'])->name('tenant.moveout.status');
     Route::get('/profile', [TenantDashboardController::class, 'profile'])->name('tenant.profile');
     Route::put('/profile', [TenantDashboardController::class, 'updateProfile'])->name('tenant.profile.update');
+
+    // Repairs
+    Route::get('/repairs', [TenantDashboardController::class, 'repairIndex'])->name('tenant.repairs');
+    Route::get('/repairs/create', [TenantDashboardController::class, 'repairCreate'])->name('tenant.repairs.create');
+    Route::post('/repairs', [TenantDashboardController::class, 'repairStore'])->name('tenant.repairs.store');
+
+    // Notifications
+    Route::get('/notifications/{id}/read', [TenantDashboardController::class, 'readNotification'])->name('tenant.notifications.read');
+    Route::post('/notifications/mark-all-read', [TenantDashboardController::class, 'markAllRead'])->name('tenant.notifications.markAllRead');
 });
