@@ -169,19 +169,31 @@ class TenantDashboardController extends Controller
             'payment_slip.max' => 'ไฟล์ต้องมีขนาดไม่เกิน 5MB',
         ]);
 
-        // Delete old slip if exists
-        if ($bill->payment_slip) {
-            Storage::disk('public')->delete($bill->payment_slip);
+        try {
+            // Delete old slip if exists
+            if ($bill->payment_slip) {
+                Storage::disk('public')->delete($bill->payment_slip);
+            }
+
+            // Store new slip
+            $path = $request->file('payment_slip')->store('payment_slips', 'public');
+
+            if (!$path) {
+                return redirect()->route('tenant.bills.view', $id)
+                    ->withErrors(['payment_slip' => 'ไม่สามารถอัปโหลดไฟล์ได้ กรุณาลองใหม่']);
+            }
+
+            $bill->update([
+                'payment_slip' => $path,
+                'status' => 'reviewing',
+            ]);
+
+            return redirect()->route('tenant.bills.view', $id)->with('slip_success', 'อัปโหลดสลิปเรียบร้อยแล้ว รอแอดมินตรวจสอบ');
+        } catch (\Exception $e) {
+            \Log::error('Slip upload error: ' . $e->getMessage());
+            return redirect()->route('tenant.bills.view', $id)
+                ->withErrors(['payment_slip' => 'เกิดข้อผิดพลาดในการอัปโหลด กรุณาลองใหม่']);
         }
-
-        // Store new slip
-        $path = $request->file('payment_slip')->store('payment_slips', 'public');
-        $bill->update([
-            'payment_slip' => $path,
-            'status' => 'reviewing',
-        ]);
-
-        return redirect()->route('tenant.bills.view', $id)->with('slip_success', 'อัปโหลดสลิปเรียบร้อยแล้ว รอแอดมินตรวจสอบ');
     }
 
     /**

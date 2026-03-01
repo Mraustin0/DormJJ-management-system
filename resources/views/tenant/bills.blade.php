@@ -61,6 +61,10 @@
                                 <span>ค้างชำระ</span>
                             </label>
                             <label class="flex items-center gap-2 text-sm cursor-pointer">
+                                <input type="checkbox" class="status-filter rounded border-gray-300 text-red-600 focus:ring-red-500" value="reviewing" onchange="filterBills()" checked>
+                                <span>รอการอนุมัติ</span>
+                            </label>
+                            <label class="flex items-center gap-2 text-sm cursor-pointer">
                                 <input type="checkbox" class="status-filter rounded border-gray-300 text-red-600 focus:ring-red-500" value="paid" onchange="filterBills()">
                                 <span>ชำระแล้ว</span>
                             </label>

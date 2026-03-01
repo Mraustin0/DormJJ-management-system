@@ -57,7 +57,7 @@
                         </div>
                         <div class="max-h-80 overflow-y-auto">
                             @php
-                                $pendingBills = $bills->where('status', 'pending')->take(5);
+                                $pendingBills = $bills->where('status', 'reviewing')->take(5);
                             @endphp
                             @if($pendingBills->count() > 0)
                                 @foreach($pendingBills as $pBill)
@@ -349,6 +349,10 @@
                             <label class="flex items-center gap-2 cursor-pointer">
                                 <input type="checkbox" name="filter_status[]" value="overdue" class="status-checkbox w-4 h-4 text-[#4A90E2] rounded" {{ ($selectedStatus ?? '') == 'overdue' ? 'checked' : '' }}>
                                 <span class="text-gray-700">ค้างชำระ</span>
+                            </label>
+                            <label class="flex items-center gap-2 cursor-pointer">
+                                <input type="checkbox" name="filter_status[]" value="reviewing" class="status-checkbox w-4 h-4 text-[#4A90E2] rounded" {{ ($selectedStatus ?? '') == 'reviewing' ? 'checked' : '' }}>
+                                <span class="text-gray-700">รอการอนุมัติ</span>
                             </label>
                             <label class="flex items-center gap-2 cursor-pointer">
                                 <input type="checkbox" name="filter_status[]" value="paid" class="status-checkbox w-4 h-4 text-[#4A90E2] rounded" {{ ($selectedStatus ?? '') == 'paid' ? 'checked' : '' }}>
