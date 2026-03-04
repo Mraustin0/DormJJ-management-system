@@ -38,7 +38,7 @@
                         <div>
                             <label class="block text-sm font-bold text-gray-700 mb-2">ค่าเช่า/ต่อเดือน <span class="text-red-500">*</span></label>
                             <div class="flex">
-                                <input type="number" name="rent_per_month" value="{{ $setting->rent_per_month }}" class="flex-1 border border-gray-300 rounded-l-lg px-4 py-2.5 focus:border-[#4A90E2] focus:ring-1 focus:ring-[#4A90E2] outline-none" required>
+                                <input type="number" name="rent_per_month" value="{{ $setting->rent_per_month }}" min="0" class="flex-1 border border-gray-300 rounded-l-lg px-4 py-2.5 focus:border-[#4A90E2] focus:ring-1 focus:ring-[#4A90E2] outline-none" required>
                                 <span class="bg-gray-100 border border-l-0 border-gray-300 rounded-r-lg px-4 py-2.5 text-gray-500">บาท</span>
                             </div>
                         </div>
@@ -46,15 +46,15 @@
                         <div>
                             <label class="block text-sm font-bold text-gray-700 mb-2">ค่าน้ำ/หน่วย <span class="text-red-500">*</span></label>
                             <div class="flex">
-                                <input type="number" name="water_rate" value="{{ $setting->water_rate }}" class="flex-1 border border-gray-300 rounded-l-lg px-4 py-2.5 focus:border-[#4A90E2] focus:ring-1 focus:ring-[#4A90E2] outline-none" required>
-                                <span class="bg-gray-100 border border-l-0 border-gray-300 rounded-r-lg px-4 py-2.5 text-gray-500">หน่วย</span>
+                                <input type="number" name="water_rate" value="{{ $setting->water_rate }}" min="0" class="flex-1 border border-gray-300 rounded-l-lg px-4 py-2.5 focus:border-[#4A90E2] focus:ring-1 focus:ring-[#4A90E2] outline-none" required>
+                                <span class="bg-gray-100 border border-l-0 border-gray-300 rounded-r-lg px-4 py-2.5 text-gray-500">บาท</span>
                             </div>
                         </div>
 
                         <div>
                             <label class="block text-sm font-bold text-gray-700 mb-2">ค่าปรับจ่ายค่าเช่าล่าช้า/วัน <span class="text-red-500">*</span></label>
                             <div class="flex">
-                                <input type="number" name="late_fee_per_day" value="{{ $setting->late_fee_per_day }}" class="flex-1 border border-gray-300 rounded-l-lg px-4 py-2.5 focus:border-[#4A90E2] focus:ring-1 focus:ring-[#4A90E2] outline-none" required>
+                                <input type="number" name="late_fee_per_day" value="{{ $setting->late_fee_per_day }}" min="0" class="flex-1 border border-gray-300 rounded-l-lg px-4 py-2.5 focus:border-[#4A90E2] focus:ring-1 focus:ring-[#4A90E2] outline-none" required>
                                 <span class="bg-gray-100 border border-l-0 border-gray-300 rounded-r-lg px-4 py-2.5 text-gray-500">บาท</span>
                             </div>
                         </div>
@@ -62,17 +62,17 @@
                         <div>
                             <label class="block text-sm font-bold text-gray-700 mb-2">ค่าไฟ/หน่วย <span class="text-red-500">*</span></label>
                             <div class="flex">
-                                <input type="number" name="electric_rate" value="{{ $setting->electric_rate }}" class="flex-1 border border-gray-300 rounded-l-lg px-4 py-2.5 focus:border-[#4A90E2] focus:ring-1 focus:ring-[#4A90E2] outline-none" required>
-                                <span class="bg-gray-100 border border-l-0 border-gray-300 rounded-r-lg px-4 py-2.5 text-gray-500">หน่วย</span>
+                                <input type="number" name="electric_rate" value="{{ $setting->electric_rate }}" min="0" class="flex-1 border border-gray-300 rounded-l-lg px-4 py-2.5 focus:border-[#4A90E2] focus:ring-1 focus:ring-[#4A90E2] outline-none" required>
+                                <span class="bg-gray-100 border border-l-0 border-gray-300 rounded-r-lg px-4 py-2.5 text-gray-500">บาท</span>
                             </div>
                         </div>
                     </div>
 
                     <div class="mt-6">
-                        <label class="block text-sm font-bold text-gray-700 mb-2">กำหนดจ่ายค่าเช่า</label>
+                        <label class="block text-sm font-bold text-gray-700 mb-2">กำหนดจ่ายค่าเช่า (วันที่กี่ของเดือน)</label>
                         <div class="flex">
-                            <input type="text" name="payment_due_day" value="{{ $setting->payment_due_day }}" placeholder="ทุกๆวันที่ 5 ของเดือน" class="flex-1 border border-gray-300 rounded-l-lg px-4 py-2.5 focus:border-[#4A90E2] focus:ring-1 focus:ring-[#4A90E2] outline-none">
-                            <span class="bg-gray-100 border border-l-0 border-gray-300 rounded-r-lg px-4 py-2.5 text-gray-500">บาท</span>
+                            <input type="number" name="payment_due_day" value="{{ $setting->payment_due_day }}" min="1" max="31" placeholder="เช่น 5" class="flex-1 border border-gray-300 rounded-l-lg px-4 py-2.5 focus:border-[#4A90E2] focus:ring-1 focus:ring-[#4A90E2] outline-none">
+                            <span class="bg-gray-100 border border-l-0 border-gray-300 rounded-r-lg px-4 py-2.5 text-gray-500">ของเดือน</span>
                         </div>
                     </div>
                 </div>
@@ -140,6 +140,8 @@
                         </div>
                     </div>
                 </div>
+
+                {{-- ===== ช่องทางการชำระเงิน (อ่านอย่างเดียว — แก้ได้ในไฟล์ .env) ===== --}}
 
                 <div class="flex justify-end">
                     <button type="submit" class="bg-[#4A90E2] hover:bg-[#357abd] text-white font-bold py-3 px-12 rounded-lg shadow-md transition-colors">

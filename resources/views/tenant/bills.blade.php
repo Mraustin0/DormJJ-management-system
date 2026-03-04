@@ -6,9 +6,7 @@
     <title>รายการบิล - ผู้เช่า</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <style>
-        body { font-family: 'Sarabun', sans-serif; }
-    </style>
+    <style>body { font-family: 'Sarabun', sans-serif; }</style>
 </head>
 <body class="bg-gray-50 min-h-screen">
     @include('tenant.partials.sidebar', ['activePage' => 'bills'])
@@ -33,78 +31,38 @@
         </header>
 
         {{-- Content --}}
-        <div class="p-6 relative">
+        <div class="p-6">
+
+            {{-- Header --}}
             <div class="flex items-center justify-between mb-6">
                 <h2 class="text-xl font-bold text-gray-800">รายการบิลทั้งหมด</h2>
-                <div class="flex items-center gap-3">
-                    {{-- Search --}}
-                    <div class="relative">
-                        <input type="text" id="searchInput" placeholder="ค้นหา..." class="border border-gray-300 rounded-lg px-4 py-2 pl-9 text-sm focus:ring-2 focus:ring-red-400 focus:border-transparent w-48" oninput="filterBills()">
-                        <svg class="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-                    </div>
-                    {{-- Filter Toggle --}}
-                    <button onclick="toggleFilter()" class="p-2 border border-gray-300 rounded-lg hover:bg-gray-100 transition-colors" id="filterBtn">
-                        <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/></svg>
-                    </button>
-                </div>
-            </div>
 
-            {{-- Filter Dropdown --}}
-            <div id="filterDropdown" class="hidden absolute right-6 z-20 bg-white rounded-xl shadow-lg border border-gray-200 p-5" style="min-width: 400px;">
-                <div class="flex gap-8">
-                    {{-- Status --}}
-                    <div>
-                        <h4 class="font-bold text-sm text-gray-700 mb-3">สถานะ</h4>
-                        <div class="space-y-2">
-                            <label class="flex items-center gap-2 text-sm cursor-pointer">
-                                <input type="checkbox" class="status-filter rounded border-gray-300 text-red-600 focus:ring-red-500" value="pending" onchange="filterBills()" checked>
-                                <span>ค้างชำระ</span>
-                            </label>
-                            <label class="flex items-center gap-2 text-sm cursor-pointer">
-                                <input type="checkbox" class="status-filter rounded border-gray-300 text-red-600 focus:ring-red-500" value="reviewing" onchange="filterBills()" checked>
-                                <span>รอการอนุมัติ</span>
-                            </label>
-                            <label class="flex items-center gap-2 text-sm cursor-pointer">
-                                <input type="checkbox" class="status-filter rounded border-gray-300 text-red-600 focus:ring-red-500" value="paid" onchange="filterBills()">
-                                <span>ชำระแล้ว</span>
-                            </label>
-                        </div>
-                    </div>
-                    {{-- Month --}}
-                    <div>
-                        <div class="flex items-center gap-3 mb-3">
-                            <h4 class="font-bold text-sm text-gray-700">เดือน</h4>
-                            <select id="yearFilter" class="border border-gray-300 rounded px-2 py-1 text-xs" onchange="filterBills()">
-                                @php $currentYear = now()->year; @endphp
-                                @for($y = $currentYear; $y >= $currentYear - 2; $y--)
-                                    <option value="{{ $y }}">{{ $y }}</option>
-                                @endfor
-                            </select>
-                        </div>
-                        <div class="grid grid-cols-2 gap-x-4 gap-y-1.5">
-                            @php $thaiMonths = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม']; @endphp
-                            @foreach($thaiMonths as $idx => $mName)
-                            <label class="flex items-center gap-2 text-sm cursor-pointer">
-                                <input type="checkbox" class="month-filter rounded border-gray-300 text-red-600 focus:ring-red-500" value="{{ $idx + 1 }}" onchange="filterBills()">
-                                <span>{{ $mName }}</span>
-                            </label>
-                            @endforeach
-                        </div>
-                    </div>
+                {{-- Search --}}
+                <div class="relative">
+                    <input type="text" id="searchInput" placeholder="ค้นหาเดือน/ปี..." onkeyup="filterBills()"
+                           class="border border-gray-300 rounded-lg px-4 py-2 pl-9 text-sm focus:ring-2 focus:ring-red-400 focus:border-transparent w-44">
+                    <svg class="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                    </svg>
                 </div>
             </div>
 
             {{-- Bills List --}}
-            <div class="space-y-2" id="billsList">
+            <div class="space-y-2" id="billsGrid">
                 @forelse($bills as $bill)
+                @php
+                    $billingDate = \Carbon\Carbon::parse($bill->billing_month);
+                    $monthName   = thaiMonth($billingDate->format('m'));
+                    $yearAD      = $billingDate->format('Y');
+                @endphp
                 <a href="{{ route('tenant.bills.view', $bill->id) }}"
                    class="bill-item flex items-center justify-between bg-white rounded-xl border border-gray-200 px-5 py-4 hover:bg-gray-50 transition-colors group"
-                   data-status="{{ $bill->status }}"
-                   data-month="{{ \Carbon\Carbon::parse($bill->billing_month)->format('n') }}"
-                   data-year="{{ \Carbon\Carbon::parse($bill->billing_month)->format('Y') }}"
-                   data-text="บิลประจำเดือน{{ thaiMonth(\Carbon\Carbon::parse($bill->billing_month)->format('m')) }}">
+                   data-text="{{ $monthName }} {{ $yearAD }}">
                     <div class="flex items-center gap-4">
-                        <span class="text-gray-800 font-medium">บิลประจำเดือน{{ thaiMonth(\Carbon\Carbon::parse($bill->billing_month)->format('m')) }}</span>
+                        <div>
+                            <p class="text-gray-800 font-medium">บิลประจำเดือน{{ $monthName }} {{ $yearAD }}</p>
+                            <p class="text-xs text-gray-400 mt-0.5">฿{{ number_format($bill->total_amount, 0) }}</p>
+                        </div>
                         @if($bill->status == 'paid')
                             <span class="px-3 py-0.5 bg-green-100 text-green-600 rounded-full text-xs font-semibold">ชำระแล้ว</span>
                         @elseif($bill->status == 'reviewing')
@@ -122,6 +80,9 @@
                 @endforelse
             </div>
 
+            {{-- No search result --}}
+            <div id="noResult" class="hidden text-center py-10 text-gray-400 text-sm">ไม่พบบิลที่ค้นหา</div>
+
             @if($bills->hasPages())
             <div class="mt-6">{{ $bills->links() }}</div>
             @endif
@@ -129,32 +90,16 @@
     </main>
 
     <script>
-        function toggleFilter() {
-            document.getElementById('filterDropdown').classList.toggle('hidden');
-        }
-        document.addEventListener('click', function(e) {
-            const dd = document.getElementById('filterDropdown');
-            const btn = document.getElementById('filterBtn');
-            if (!dd.contains(e.target) && !btn.contains(e.target)) dd.classList.add('hidden');
-        });
         function filterBills() {
-            const search = document.getElementById('searchInput').value.toLowerCase();
-            const statuses = Array.from(document.querySelectorAll('.status-filter:checked')).map(c => c.value);
-            const months = Array.from(document.querySelectorAll('.month-filter:checked')).map(c => c.value);
-            const yearVal = document.getElementById('yearFilter').value;
-
-            document.querySelectorAll('.bill-item').forEach(item => {
-                const s = item.dataset.status === 'overdue' ? 'pending' : item.dataset.status;
-                let show = true;
-                if (search && !item.dataset.text.toLowerCase().includes(search)) show = false;
-                if (statuses.length > 0 && !statuses.includes(s)) show = false;
-                if (months.length > 0 && !months.includes(item.dataset.month)) show = false;
-                if (yearVal && item.dataset.year !== yearVal) show = false;
-                item.style.display = show ? '' : 'none';
+            const q = document.getElementById('searchInput').value.trim().toLowerCase();
+            let visible = 0;
+            document.querySelectorAll('.bill-item').forEach(el => {
+                const match = !q || el.dataset.text.toLowerCase().includes(q);
+                el.style.display = match ? '' : 'none';
+                if (match) visible++;
             });
+            document.getElementById('noResult').classList.toggle('hidden', visible > 0);
         }
-        // Apply default filter on load
-        filterBills();
     </script>
 </body>
 </html>

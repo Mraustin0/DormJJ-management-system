@@ -127,6 +127,20 @@ class RoomController extends Controller
         return view('rooms.create_contract', compact('room'));
     }
 
+    public function viewContract($id)
+    {
+        $room = Room::with('contract')->findOrFail($id);
+        $contract = $room->contract;
+
+        if (!$contract) {
+            return redirect()->route('rooms.index')->with('error', 'ไม่พบสัญญาเช่าสำหรับห้องนี้');
+        }
+
+        $setting = \App\Models\Setting::getInstance();
+
+        return view('rooms.view_contract', compact('room', 'contract', 'setting'));
+    }
+
     public function storeContract(Request $request, $id)
     {
         $request->validate([

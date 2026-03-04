@@ -394,6 +394,11 @@ class TenantDashboardController extends Controller
             ->whereIn('status', ['pending', 'approved'])
             ->exists();
 
+        // ถ้ามี request อยู่แล้ว ให้ redirect ไปหน้า status เสมอ
+        if ($hasMoveoutRequest) {
+            return redirect()->route('tenant.moveout.status');
+        }
+
         return view('tenant.moveout', compact('contract', 'setting', 'hasMoveoutRequest'));
     }
 

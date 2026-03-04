@@ -167,7 +167,10 @@
                         </div>
                         <div class="grid grid-cols-[140px_1fr]">
                             <span class="text-gray-400">หนังสือสัญญาเช่า:</span>
-                            <span class="font-medium text-gray-800 underline cursor-pointer">📄 ดูสัญญาเช่า</span>
+                            <a id="btnContractLink" href="#" target="_blank"
+                               class="font-medium text-[#4A90E2] underline cursor-pointer hover:text-[#357abd] transition-colors">
+                               📄 ดูสัญญาเช่า
+                            </a>
                         </div>
                     </div>
 
@@ -250,7 +253,13 @@
                 // Link: แก้ไข (ไปหน้าใหม่ตามที่ขอ)
                 const btnEdit = document.getElementById('btnEdit');
                 if (btnEdit) {
-                    btnEdit.href = "/rooms/" + rId + "/edit"; 
+                    btnEdit.href = "/rooms/" + rId + "/edit";
+                }
+
+                // Link: ดูสัญญาเช่า
+                const btnContractLink = document.getElementById('btnContractLink');
+                if (btnContractLink) {
+                    btnContractLink.href = "/rooms/" + rId + "/contract/view";
                 }
             }
         }

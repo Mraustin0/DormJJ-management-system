@@ -10,6 +10,7 @@ use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\PasswordResetController;
 use App\Http\Controllers\TenantDashboardController;
 use App\Http\Controllers\RepairController;
+use App\Http\Controllers\MoveoutController;
 
 // 1. ส่วน Login/Logout
 Route::get('/', [AuthController::class, 'showLogin'])->name('login');
@@ -54,6 +55,7 @@ Route::middleware(['auth', 'role:admin,staff'])->group(function () {
     Route::get('/bills/create', [BillController::class, 'create'])->name('bills.create');
     Route::get('/bills/create/{id}', [BillController::class, 'createForRoom'])->name('bills.createForRoom');
     Route::post('/bills/store', [BillController::class, 'store'])->name('bills.store');
+    Route::post('/bills/store-all', [BillController::class, 'storeAll'])->name('bills.storeAll');
     Route::get('/bills/view/{id}', [BillController::class, 'view'])->name('bills.view');
 
     // ยืนยันการชำระและใบเสร็จ
@@ -64,7 +66,18 @@ Route::middleware(['auth', 'role:admin,staff'])->group(function () {
     Route::get('/customers', [CustomerController::class, 'index'])->name('rooms.customers');
     Route::post('/customers/update', [CustomerController::class, 'update'])->name('customers.update');
 
-    // แจ้งย้ายออก
+    // แจ้งซ่อม (admin จัดการคำร้องจาก tenant)
+    Route::get('/repairs', [RepairController::class, 'index'])->name('repairs.index');
+    Route::get('/repairs/{id}', [RepairController::class, 'show'])->name('repairs.show');
+    Route::post('/repairs/{id}/status', [RepairController::class, 'updateStatus'])->name('repairs.updateStatus');
+
+    // แจ้งย้ายออก (admin จัดการคำร้องจาก tenant)
+    Route::get('/moveout-requests', [MoveoutController::class, 'index'])->name('moveout.requests');
+    Route::get('/moveout-requests/{id}', [MoveoutController::class, 'show'])->name('moveout.show');
+    Route::post('/moveout-requests/{id}/approve', [MoveoutController::class, 'approve'])->name('moveout.approve');
+    Route::post('/moveout-requests/{id}/reject', [MoveoutController::class, 'reject'])->name('moveout.reject');
+
+    // เก็บไว้ (backwards compat)
     Route::get('/rooms/{id}/moveout', [RoomController::class, 'moveOutForm'])->name('rooms.moveout');
     Route::post('/contracts/moveout', [CustomerController::class, 'moveOut'])->name('contracts.moveout');
 
@@ -85,6 +98,9 @@ Route::middleware(['auth', 'role:admin,staff'])->group(function () {
 
     // บันทึกสัญญาเช่า
     Route::post('/rooms/{id}/contract/store', [RoomController::class, 'storeContract'])->name('rooms.storeContract');
+
+    // ดูสัญญาเช่า (admin)
+    Route::get('/rooms/{id}/contract/view', [RoomController::class, 'viewContract'])->name('rooms.viewContract');
 
     // Settings
     Route::get('/settings', [SettingsController::class, 'index'])->name('settings.index');

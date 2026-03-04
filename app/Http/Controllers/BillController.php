@@ -91,7 +91,44 @@ class BillController extends Controller
 
         $rooms = $query->orderBy('room_number', 'asc')->get();
 
-        return view('rooms.bills_create', compact('rooms', 'currentFloor', 'selectedMonth', 'search'));
+        // ดึง room_id ที่มีบิลสำหรับเดือนนี้แล้ว
+        $existingBillRoomIds = Bill::where('billing_month', $selectedMonth)
+            ->pluck('room_id')
+            ->toArray();
+
+        // ดึงห้องที่มีผู้เช่าทั้งหมด สำหรับ modal สร้างบิลทั้งหมด
+        $setting = Setting::getInstance();
+        $allOccupiedRooms = Room::with(['contract', 'meterReadings' => function($q) use ($selectedMonth) {
+            $q->where('billing_month', $selectedMonth);
+        }])->where('status', 'ไม่ว่าง')->orderBy('floor')->orderBy('room_number')->get();
+
+        $allRoomsData = $allOccupiedRooms->map(function($room) use ($setting, $existingBillRoomIds) {
+            $meter = $room->meterReadings->first();
+            $elecUnits = $meter ? floatval($meter->elec_unit ?? 0) : 0;
+            $waterUnits = $meter ? floatval($meter->water_unit ?? 0) : 0;
+            $elecAmount = round($elecUnits * floatval($setting->electric_rate ?? 0), 2);
+            $waterAmount = round($waterUnits * floatval($setting->water_rate ?? 0), 2);
+            $roomRate = floatval($setting->rent_per_month ?? 0);
+            return [
+                'room_id'         => $room->id,
+                'room_number'     => $room->room_number,
+                'floor'           => $room->floor,
+                'tenant_name'     => $room->contract ? $room->contract->tenant_name : '',
+                'has_meter'       => $meter !== null,
+                'electric_units'  => $elecUnits,
+                'electric_amount' => $elecAmount,
+                'water_units'     => $waterUnits,
+                'water_amount'    => $waterAmount,
+                'room_rate'       => $roomRate,
+                'other_fees'      => 0,
+                'has_bill'        => in_array($room->id, $existingBillRoomIds),
+            ];
+        })->values()->toArray();
+
+        return view('rooms.bills_create', compact(
+            'rooms', 'currentFloor', 'selectedMonth', 'search',
+            'existingBillRoomIds', 'allRoomsData', 'setting'
+        ));
     }
 
     /**
@@ -105,7 +142,15 @@ class BillController extends Controller
             $q->where('billing_month', $selectedMonth);
         }])->findOrFail($id);
 
-        return view('rooms.bill_form', compact('room', 'selectedMonth'));
+        // ตรวจว่ามีบิลของเดือนนี้อยู่แล้วไหม
+        $existingBill = Bill::where('room_id', $id)
+            ->where('billing_month', $selectedMonth . '-01')
+            ->first()
+            ?? Bill::where('room_id', $id)
+            ->whereRaw("DATE_FORMAT(billing_month, '%Y-%m') = ?", [$selectedMonth])
+            ->first();
+
+        return view('rooms.bill_form', compact('room', 'selectedMonth', 'existingBill'));
     }
 
     /**
@@ -149,6 +194,110 @@ class BillController extends Controller
         );
 
         return response()->json(['success' => true, 'message' => 'บันทึกบิลเรียบร้อยแล้ว']);
+    }
+
+    /**
+     * สร้างบิลทั้งหมดอัตโนมัติ
+     */
+    public function storeAll(Request $request)
+    {
+        $request->validate([
+            'billing_month' => 'required|date_format:Y-m',
+        ]);
+
+        $billingMonth = $request->billing_month;
+        $setting = Setting::getInstance();
+        $count = 0;
+        $monthLabel = Carbon::parse($billingMonth)->translatedFormat('F Y');
+
+        $roomsInput = $request->input('rooms', []);
+
+        if (!empty($roomsInput)) {
+            // โหมด modal — รับข้อมูลต่อห้องที่ผู้ใช้แก้ไขแล้ว
+            foreach ($roomsInput as $rd) {
+                $roomId = $rd['room_id'] ?? null;
+                if (!$roomId) continue;
+
+                $room = Room::with('contract')->find($roomId);
+                if (!$room || !$room->contract) continue;
+
+                $elecUnits  = floatval($rd['electric_units']  ?? 0);
+                $waterUnits = floatval($rd['water_units']     ?? 0);
+                $elecAmt    = floatval($rd['electric_amount'] ?? 0);
+                $waterAmt   = floatval($rd['water_amount']    ?? 0);
+                $roomRate   = floatval($rd['room_rate']       ?? 0);
+                $otherFees  = floatval($rd['other_fees']      ?? 0);
+                $total      = $roomRate + $elecAmt + $waterAmt + $otherFees;
+
+                Bill::updateOrCreate(
+                    ['room_id' => $roomId, 'billing_month' => $billingMonth],
+                    [
+                        'electric_units'  => $elecUnits,
+                        'electric_amount' => $elecAmt,
+                        'water_units'     => $waterUnits,
+                        'water_amount'    => $waterAmt,
+                        'room_rate'       => $roomRate,
+                        'other_fees'      => $otherFees,
+                        'total_amount'    => $total,
+                        'status'          => 'pending',
+                    ]
+                );
+
+                Notification::notifyTenantByRoom(
+                    $roomId, 'bill_created',
+                    'บิลค่าเช่าประจำเดือน ' . $monthLabel,
+                    'มีบิลค่าเช่าห้อง ' . $room->room_number . ' จำนวน ' . number_format($total, 2) . ' บาท',
+                    route('tenant.bills')
+                );
+                $count++;
+            }
+        } else {
+            // โหมด auto — คำนวณจากมิเตอร์และ settings
+            $rooms = Room::with(['contract', 'meterReadings' => function($q) use ($billingMonth) {
+                $q->where('billing_month', $billingMonth);
+            }])->where('status', 'ไม่ว่าง')->get();
+
+            foreach ($rooms as $room) {
+                if (!$room->contract) continue;
+                $meter = $room->meterReadings->first();
+                if (!$meter) continue;
+
+                $elecUnits  = $meter->elec_unit  ?? 0;
+                $waterUnits = $meter->water_unit ?? 0;
+                $elecAmt    = $elecUnits  * ($setting->electric_rate ?? 0);
+                $waterAmt   = $waterUnits * ($setting->water_rate    ?? 0);
+                $roomRate   = $setting->rent_per_month ?? 0;
+                $total      = $roomRate + $elecAmt + $waterAmt;
+
+                Bill::updateOrCreate(
+                    ['room_id' => $room->id, 'billing_month' => $billingMonth],
+                    [
+                        'electric_units'  => $elecUnits,
+                        'electric_amount' => $elecAmt,
+                        'water_units'     => $waterUnits,
+                        'water_amount'    => $waterAmt,
+                        'room_rate'       => $roomRate,
+                        'other_fees'      => 0,
+                        'total_amount'    => $total,
+                        'status'          => 'pending',
+                    ]
+                );
+
+                Notification::notifyTenantByRoom(
+                    $room->id, 'bill_created',
+                    'บิลค่าเช่าประจำเดือน ' . $monthLabel,
+                    'มีบิลค่าเช่าห้อง ' . $room->room_number . ' จำนวน ' . number_format($total, 2) . ' บาท',
+                    route('tenant.bills')
+                );
+                $count++;
+            }
+        }
+
+        if ($count === 0) {
+            return response()->json(['success' => false, 'message' => 'ไม่มีห้องที่มีข้อมูลมิเตอร์ครบถ้วน']);
+        }
+
+        return response()->json(['success' => true, 'count' => $count]);
     }
 
     /**

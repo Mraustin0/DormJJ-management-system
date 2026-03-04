@@ -28,17 +28,6 @@
                 <h2 class="text-2xl font-bold text-[#4A90E2]">บันทึกมิเตอร์น้ำ</h2>
             </div>
             <div class="flex items-center gap-4">
-                <form action="{{ route('meters.water') }}" method="GET" class="flex items-center gap-3">
-                    <select name="floor" onchange="this.form.submit()" class="border border-gray-300 rounded-lg px-4 py-2.5 text-sm font-medium text-gray-700 focus:outline-none focus:border-[#4A90E2] cursor-pointer appearance-none bg-white bg-[url('data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2212%22%20height%3D%2212%22%20viewBox%3D%220%200%2012%2012%22%3E%3Cpath%20fill%3D%22%23666%22%20d%3D%22M6%208L1%203h10z%22%2F%3E%3C%2Fsvg%3E')] bg-[length:12px] bg-[right_12px_center] bg-no-repeat pr-9 min-w-[120px]">
-                        <option value="">ทุกชั้น</option>
-                        @for($i = 1; $i <= 4; $i++)
-                            <option value="{{ $i }}" {{ request('floor') == $i ? 'selected' : '' }}>ชั้น {{ $i }}</option>
-                        @endfor
-                    </select>
-                    <div class="relative">
-                        <input type="month" name="month" value="{{ $selectedMonth }}" onchange="this.form.submit()" class="border border-gray-300 rounded-lg px-4 py-2.5 text-sm font-medium text-gray-700 focus:outline-none focus:border-[#4A90E2] cursor-pointer min-w-[180px]">
-                    </div>
-                </form>
 
                 {{-- Notification Bell with Dropdown --}}
                 <div class="relative" id="notificationContainer">
@@ -146,9 +135,20 @@
         </nav>
 
         <main class="p-8">
+            {{-- Filter bar ใต้ navbar --}}
+            <div class="mb-4 flex items-center gap-3">
+                <form action="{{ route('meters.water') }}" method="GET" class="flex items-center gap-3">
+                    <select name="floor" onchange="this.form.submit()" class="border border-gray-300 rounded-lg px-4 py-2.5 text-sm font-medium text-gray-700 focus:outline-none focus:border-[#4A90E2] cursor-pointer appearance-none bg-white bg-[url('data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2212%22%20height%3D%2212%22%20viewBox%3D%220%200%2012%2012%22%3E%3Cpath%20fill%3D%22%23666%22%20d%3D%22M6%208L1%203h10z%22%2F%3E%3C%2Fsvg%3E')] bg-[length:12px] bg-[right_12px_center] bg-no-repeat pr-9 min-w-[120px]">
+                        <option value="">ทุกชั้น</option>
+                        @for($i = 1; $i <= 4; $i++)
+                            <option value="{{ $i }}" {{ request('floor') == $i ? 'selected' : '' }}>ชั้น {{ $i }}</option>
+                        @endfor
+                    </select>
+                    <input type="month" name="month" value="{{ $selectedMonth }}" onchange="this.form.submit()" class="border border-gray-300 rounded-lg px-4 py-2.5 text-sm font-medium text-gray-700 focus:outline-none focus:border-[#4A90E2] cursor-pointer min-w-[180px]">
+                </form>
+            </div>
+
             <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 min-h-[80vh]">
-
-
                 <div class="overflow-x-auto">
                     <table class="w-full text-left border-collapse" id="meterTable">
                         <thead>
@@ -158,8 +158,7 @@
                                 <th class="py-4 px-4 font-bold text-gray-600">ชื่อ สกุล</th>
                                 <th class="py-4 px-4 font-bold text-gray-600 text-center">เลขมิเตอร์เดิม</th>
                                 <th class="py-4 px-4 font-bold text-gray-600 text-center">เลขมิเตอร์ใหม่</th>
-                                <th class="py-4 px-4 font-bold text-gray-600 text-center">หน่วยที่ใช้</th>
-                                <th class="py-4 px-4 font-bold text-gray-600 text-center rounded-tr-lg">บันทึก</th>
+                                <th class="py-4 px-4 font-bold text-gray-600 text-center rounded-tr-lg">หน่วยที่ใช้</th>
                             </tr>
                         </thead>
                         <tbody class="text-sm">
@@ -170,7 +169,7 @@
                                 $waterCurr = $meter ? $meter->water_curr : null;
                                 $waterUnit = $meter ? $meter->water_unit : null;
                             @endphp
-                            <tr class="border-b border-gray-100 hover:bg-blue-50/30 transition-colors" data-room="{{ $room->room_number }}">
+                            <tr class="border-b border-gray-100 hover:bg-blue-50/30 transition-colors" data-room="{{ $room->room_number }}" data-room-id="{{ $room->id }}">
                                 <td class="py-4 px-4 text-gray-500">{{ $loop->iteration }}</td>
                                 <td class="py-4 px-4 font-bold text-[#4A90E2]">{{ $room->room_number }}</td>
                                 <td class="py-4 px-4 text-gray-700 font-medium">
@@ -180,15 +179,17 @@
                                     <input type="number"
                                            id="waterPrev_{{ $room->id }}"
                                            value="{{ $waterPrev }}"
-                                           oninput="calcWaterUnit({{ $room->id }})"
+                                           min="0"
+                                           oninput="if(this.value<0)this.value=0; calcWaterUnit({{ $room->id }})"
                                            class="w-24 text-center border border-gray-300 rounded-lg px-2 py-1.5 focus:ring-2 focus:ring-blue-300 outline-none">
                                 </td>
                                 <td class="py-4 px-4 text-center">
                                     <input type="number"
                                            id="waterCurr_{{ $room->id }}"
                                            value="{{ $waterCurr }}"
+                                           min="0"
                                            placeholder="--"
-                                           oninput="calcWaterUnit({{ $room->id }})"
+                                           oninput="if(this.value<0)this.value=0; calcWaterUnit({{ $room->id }})"
                                            class="w-24 text-center border border-gray-300 rounded-lg px-2 py-1.5 focus:ring-2 focus:ring-blue-300 outline-none">
                                 </td>
                                 <td class="py-4 px-4 text-center">
@@ -196,17 +197,20 @@
                                         {{ $waterUnit !== null ? $waterUnit . ' หน่วย' : '-' }}
                                     </span>
                                 </td>
-                                <td class="py-4 px-4 text-center">
-                                    <button onclick="saveWater({{ $room->id }})"
-                                            id="saveBtn_{{ $room->id }}"
-                                            class="bg-[#4A90E2] hover:bg-[#357abd] text-white font-bold py-1.5 px-4 rounded-lg transition-colors text-xs shadow-sm">
-                                        บันทึก
-                                    </button>
-                                </td>
                             </tr>
                             @endforeach
                         </tbody>
                     </table>
+                </div>
+
+                {{-- ปุ่มบันทึกทั้งหมด --}}
+                <div class="mt-6 flex justify-end">
+                    <button onclick="saveAll()"
+                            id="saveAllBtn"
+                            class="bg-[#4A90E2] hover:bg-[#357abd] text-white font-bold py-2.5 px-8 rounded-lg transition-colors shadow-md flex items-center gap-2">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                        บันทึกทั้งหมด
+                    </button>
                 </div>
             </div>
         </main>
@@ -221,17 +225,17 @@
         }
 
         function saveWater(roomId) {
+            return saveWaterSilent(roomId, true);
+        }
+
+        function saveWaterSilent(roomId, showAlert = false) {
             const prev = document.getElementById('waterPrev_' + roomId).value;
             const curr = document.getElementById('waterCurr_' + roomId).value;
-            const btn = document.getElementById('saveBtn_' + roomId);
 
             if (!curr || curr === '') {
-                Swal.fire({ icon: 'warning', title: 'กรุณากรอกเลขมิเตอร์ใหม่', showConfirmButton: true });
-                return;
+                if (showAlert) Swal.fire({ icon: 'warning', title: 'กรุณากรอกเลขมิเตอร์ใหม่', showConfirmButton: true });
+                return Promise.resolve(false);
             }
-
-            btn.disabled = true;
-            btn.innerText = '...';
 
             const formData = new FormData();
             formData.append('room_id', roomId);
@@ -239,7 +243,7 @@
             formData.append('water_prev', prev);
             formData.append('water_curr', curr);
 
-            fetch("{{ route('meters.water.update') }}", {
+            return fetch("{{ route('meters.water.update') }}", {
                 method: 'POST',
                 headers: {
                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
@@ -249,25 +253,44 @@
             })
             .then(response => response.json())
             .then(data => {
-                btn.disabled = false;
-                btn.innerText = 'บันทึก';
-                if (data.success) {
+                if (data.success && showAlert) {
                     Swal.fire({ icon: 'success', title: 'บันทึกค่าน้ำสำเร็จ!', showConfirmButton: false, timer: 1200 });
-                    btn.classList.remove('bg-[#4A90E2]', 'hover:bg-[#357abd]');
-                    btn.classList.add('bg-green-500', 'hover:bg-green-600');
-                    btn.innerText = 'บันทึกแล้ว';
-                    setTimeout(() => {
-                        btn.classList.remove('bg-green-500', 'hover:bg-green-600');
-                        btn.classList.add('bg-[#4A90E2]', 'hover:bg-[#357abd]');
-                        btn.innerText = 'บันทึก';
-                    }, 2000);
                 }
+                return data.success;
             })
             .catch(error => {
-                btn.disabled = false;
-                btn.innerText = 'บันทึก';
                 console.error('Error:', error);
-                Swal.fire('Oops...', 'เกิดข้อผิดพลาดในการบันทึก', 'error');
+                return false;
+            });
+        }
+
+        function saveAll() {
+            const rows = document.querySelectorAll('tr[data-room-id]');
+            const promises = [];
+
+            rows.forEach(row => {
+                const roomId = row.dataset.roomId;
+                if (!roomId) return;
+                const curr = document.getElementById('waterCurr_' + roomId)?.value;
+                if (curr && curr !== '') {
+                    promises.push(saveWaterSilent(roomId, false));
+                }
+            });
+
+            if (promises.length === 0) {
+                Swal.fire({ icon: 'warning', title: 'ไม่มีข้อมูลมิเตอร์ใหม่', text: 'กรุณากรอกเลขมิเตอร์ใหม่อย่างน้อย 1 ห้อง' });
+                return;
+            }
+
+            const btn = document.getElementById('saveAllBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<svg class="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg> กำลังบันทึก...';
+
+            Promise.all(promises).then(results => {
+                btn.disabled = false;
+                btn.innerHTML = '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg> บันทึกทั้งหมด';
+                const success = results.filter(r => r).length;
+                Swal.fire({ icon: 'success', title: `บันทึกสำเร็จ ${success}/${promises.length} ห้อง!`, showConfirmButton: false, timer: 1500 });
             });
         }
 

@@ -62,6 +62,32 @@
                         ข้อมูลการเข้าพัก
                     </a>
                 </li>
+                <li>
+                    <a href="{{ route('moveout.requests') }}" class="block px-2 {{ ($activePage ?? '') == 'moveout' ? 'py-2 bg-[#A0A0A0] text-white rounded-lg shadow-sm' : 'py-1.5 text-gray-800 hover:text-[#4A90E2]' }} font-medium text-lg flex items-center gap-2">
+                        แจ้งย้ายออก
+                        @php
+                            $pendingMoveouts = \App\Models\MoveoutRequest::where('status', 'pending')->count();
+                        @endphp
+                        @if($pendingMoveouts > 0)
+                            <span class="bg-red-500 text-white text-xs font-bold px-1.5 py-0.5 rounded-full min-w-[20px] text-center">
+                                {{ $pendingMoveouts > 9 ? '9+' : $pendingMoveouts }}
+                            </span>
+                        @endif
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ route('repairs.index') }}" class="block px-2 {{ ($activePage ?? '') == 'repairs' ? 'py-2 bg-[#A0A0A0] text-white rounded-lg shadow-sm' : 'py-1.5 text-gray-800 hover:text-[#4A90E2]' }} font-medium text-lg flex items-center gap-2">
+                        แจ้งซ่อม
+                        @php
+                            $pendingRepairs = \App\Models\Repair::where('status', 'pending')->count();
+                        @endphp
+                        @if($pendingRepairs > 0)
+                            <span class="bg-red-500 text-white text-xs font-bold px-1.5 py-0.5 rounded-full min-w-[20px] text-center">
+                                {{ $pendingRepairs > 9 ? '9+' : $pendingRepairs }}
+                            </span>
+                        @endif
+                    </a>
+                </li>
             </ul>
         </div>
 

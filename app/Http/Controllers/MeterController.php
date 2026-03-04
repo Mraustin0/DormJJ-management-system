@@ -23,37 +23,29 @@ class MeterController extends Controller
     public function waterIndex(Request $request)
     {
         $selectedMonth = $request->input('month', Carbon::now()->format('Y-m'));
-        $floor = $request->input('floor');
+        $floor = $request->input('floor', 1); // default ชั้น 1 = 10 ห้อง
 
-        $query = Room::with(['contract', 'meterReadings' => function($q) use ($selectedMonth) {
+        $rooms = Room::with(['contract', 'meterReadings' => function($q) use ($selectedMonth) {
             $q->where('billing_month', $selectedMonth);
-        }]);
+        }])->where('room_number', 'like', $floor . '%')
+          ->orderBy('room_number', 'asc')
+          ->get();
 
-        if ($floor) {
-            $query->where('room_number', 'like', $floor . '%');
-        }
-
-        $rooms = $query->orderBy('room_number', 'asc')->get();
-
-        return view('rooms.meters_water', compact('rooms', 'selectedMonth'));
+        return view('rooms.meters_water', compact('rooms', 'selectedMonth', 'floor'));
     }
 
     public function electricIndex(Request $request)
     {
         $selectedMonth = $request->input('month', Carbon::now()->format('Y-m'));
-        $floor = $request->input('floor');
+        $floor = $request->input('floor', 1); // default ชั้น 1 = 10 ห้อง
 
-        $query = Room::with(['contract', 'meterReadings' => function($q) use ($selectedMonth) {
+        $rooms = Room::with(['contract', 'meterReadings' => function($q) use ($selectedMonth) {
             $q->where('billing_month', $selectedMonth);
-        }]);
+        }])->where('room_number', 'like', $floor . '%')
+          ->orderBy('room_number', 'asc')
+          ->get();
 
-        if ($floor) {
-            $query->where('room_number', 'like', $floor . '%');
-        }
-
-        $rooms = $query->orderBy('room_number', 'asc')->get();
-
-        return view('rooms.meters_electric', compact('rooms', 'selectedMonth'));
+        return view('rooms.meters_electric', compact('rooms', 'selectedMonth', 'floor'));
     }
 
     public function update(Request $request)

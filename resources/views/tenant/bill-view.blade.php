@@ -6,6 +6,7 @@
     <title>บิลประจำเดือน{{ thaiMonth(\Carbon\Carbon::parse($bill->billing_month)->format('m')) }} {{ \Carbon\Carbon::parse($bill->billing_month)->format('Y') }}</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
         body { font-family: 'Sarabun', sans-serif; }
         @media print {
@@ -15,17 +16,13 @@
             .no-print { display: none !important; }
             @page { margin: 10mm; }
         }
-        .bill-table { border-collapse: collapse; width: 100%; }
-        .bill-table th, .bill-table td { border: 1px solid #000; padding: 8px 12px; }
-        .bill-table th { background-color: #fff; font-weight: normal; }
-        .info-table { border-collapse: collapse; }
-        .info-table td { border: 1px solid #000; padding: 6px 12px; }
     </style>
 </head>
 <body class="bg-gray-50 min-h-screen">
     @include('tenant.partials.sidebar', ['activePage' => 'bills'])
 
     <main id="mainContent" class="md:ml-72 min-h-screen transition-all duration-300">
+
         {{-- Top Bar --}}
         <header class="bg-red-600 sticky top-0 z-30 no-print">
             <div class="flex items-center justify-between px-6 py-4">
@@ -44,194 +41,285 @@
             </div>
         </header>
 
-        {{-- Sub Header --}}
-        <div class="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between no-print">
-            <div class="flex items-center gap-4">
-                <a href="{{ route('tenant.bills') }}" class="text-gray-500 hover:text-gray-700">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
-                </a>
-                <h2 class="text-xl font-bold text-gray-800">บิลประจำเดือน{{ thaiMonth(\Carbon\Carbon::parse($bill->billing_month)->format('m')) }} {{ \Carbon\Carbon::parse($bill->billing_month)->format('Y') }}</h2>
-            </div>
-        </div>
-
         {{-- Content --}}
-        <div class="p-6">
-            {{-- Room Info Card --}}
-            <div class="bg-white rounded-xl border border-gray-200 p-5 mb-6 flex items-start justify-between">
+        <div class="p-5 max-w-2xl mx-auto">
+
+            {{-- Back + Title --}}
+            <div class="flex items-center gap-3 mb-5 no-print">
+                <a href="{{ route('tenant.bills') }}" class="text-gray-500 hover:text-gray-700 transition-colors">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+                    </svg>
+                </a>
+                <h2 class="text-xl font-bold text-gray-800">
+                    บิลประจำเดือน{{ thaiMonth(\Carbon\Carbon::parse($bill->billing_month)->format('m')) }} {{ \Carbon\Carbon::parse($bill->billing_month)->format('Y') }}
+                </h2>
+            </div>
+
+            {{-- ===== Room Info Card ===== --}}
+            <div class="bg-white rounded-xl border border-gray-200 p-4 mb-4 flex items-start justify-between">
                 <div>
-                    <p class="text-lg font-bold text-gray-800">ห้อง {{ $contract->room->room_number }}</p>
-                    <p class="text-gray-600">{{ $contract->tenant_name }}</p>
+                    <p class="font-bold text-gray-800">ห้อง {{ $contract->room->room_number }}</p>
+                    <p class="text-gray-600 text-sm">{{ $contract->tenant_name }}</p>
                     <p class="text-gray-500 text-sm">เบอร์โทร {{ $contract->phone ?? '-' }}</p>
                 </div>
                 @if($bill->status == 'paid')
-                    <span class="px-4 py-1 bg-green-100 text-green-600 rounded-full text-sm font-semibold">ชำระแล้ว</span>
+                    <span class="px-3 py-1 bg-green-100 text-green-600 rounded-full text-xs font-semibold">ชำระแล้ว</span>
                 @elseif($bill->status == 'reviewing')
-                    <span class="px-4 py-1 bg-orange-100 text-orange-600 rounded-full text-sm font-semibold">รอการอนุมัติ</span>
+                    <span class="px-3 py-1 bg-orange-100 text-orange-600 rounded-full text-xs font-semibold">รอการอนุมัติ</span>
                 @else
-                    <span class="px-4 py-1 bg-red-100 text-red-600 rounded-full text-sm font-semibold">ค้างชำระ</span>
+                    <span class="px-3 py-1 bg-red-100 text-red-600 rounded-full text-xs font-semibold">ค้างชำระ</span>
                 @endif
             </div>
 
-            {{-- Bill Document --}}
-            <div class="print-area bg-white rounded-xl border border-gray-200 p-8 mb-6">
-                <div class="flex items-center justify-between mb-4">
+            {{-- ===== Bill Table ===== --}}
+            <div class="bg-white rounded-xl border border-gray-200 p-5 mb-4 print-area">
+
+                {{-- Header --}}
+                <div class="flex items-center justify-between mb-3">
                     <div>
-                        <h3 class="text-lg font-bold text-gray-800">รายการชำระเงิน</h3>
-                        <p class="text-red-500 text-sm">กำหนดชำระ: {{ \Carbon\Carbon::parse($bill->due_date)->format('j M Y') }}</p>
-                    </div>
-                    <div class="flex gap-2 no-print">
-                        @if($bill->status == 'paid' && $bill->receipt)
-                            <a href="{{ route('tenant.receipt', $bill->id) }}" class="px-4 py-2 bg-red-500 text-white rounded-full text-sm font-semibold hover:bg-red-600 transition-colors">
-                                ดาวน์โหลดใบเสร็จ
-                            </a>
+                        <h3 class="font-bold text-gray-800">รายการชำระเงิน</h3>
+                        @if($bill->due_date)
+                            <p class="text-red-500 text-sm mt-0.5">
+                                กำหนดชำระ: {{ \Carbon\Carbon::parse($bill->due_date)->format('j') }}
+                                {{ thaiMonth(\Carbon\Carbon::parse($bill->due_date)->format('m')) }}
+                                {{ \Carbon\Carbon::parse($bill->due_date)->format('Y') + 543 }}
+                            </p>
                         @endif
-                        <button onclick="window.print()" class="px-4 py-2 bg-red-500 text-white rounded-full text-sm font-semibold hover:bg-red-600 transition-colors">
-                            ดาวน์โหลดบิล
-                        </button>
                     </div>
+                    <button onclick="window.print()"
+                            class="no-print px-4 py-1.5 bg-blue-500 hover:bg-blue-600 text-white rounded-full text-sm font-semibold transition-colors">
+                        ดาวน์โหลดใบเสร็จ
+                    </button>
                 </div>
 
                 @php
-                    $apartmentAddress = ($setting->address ?? '') . ' ถ.' . ($setting->subdistrict ?? '') . ' ต.' . ($setting->district ?? '') . ' อ.เมือง จ.' . ($setting->province ?? '') . ' ' . ($setting->postal_code ?? '');
-                    $meterReading = $contract->room->meterReadings()->where('billing_month', $bill->billing_month)->first();
+                    $meterReading = $contract->room->meterReadings()
+                        ->where('billing_month', $bill->billing_month)->first();
+                    $billMonth = thaiMonth(\Carbon\Carbon::parse($bill->billing_month)->format('m'));
+                    $billYearBE = \Carbon\Carbon::parse($bill->billing_month)->format('Y') + 543;
+                    $shortYearBE = substr((string)$billYearBE, 2); // e.g. "68"
                 @endphp
 
-                {{-- Bill Table --}}
-                <table class="bill-table text-sm mb-4">
+                {{-- Table --}}
+                <table class="w-full text-base border-collapse">
                     <thead>
-                        <tr>
-                            <th class="text-left">รายการ</th>
-                            <th class="text-center w-28">จำนวนหน่วยที่ใช้</th>
-                            <th class="text-right w-28">จำนวนเงิน(บาท)</th>
+                        <tr class="border border-gray-300">
+                            <th class="border border-gray-300 px-4 py-3 text-left font-semibold bg-gray-50">รายการ</th>
+                            <th class="border border-gray-300 px-4 py-3 text-center font-semibold bg-gray-50 w-32">จำนวนหน่วยที่ใช้</th>
+                            <th class="border border-gray-300 px-4 py-3 text-right font-semibold bg-gray-50 w-36">จำนวนเงิน(บาท)</th>
                         </tr>
                     </thead>
                     <tbody>
-                        <tr>
-                            <td>
-                                ค่าน้ำ เดือน {{ thaiMonth(\Carbon\Carbon::parse($bill->billing_month)->format('m')) }}
+                        {{-- Water --}}
+                        <tr class="border border-gray-300">
+                            <td class="border border-gray-300 px-4 py-3">
+                                ค่าน้ำ เดือน {{ $billMonth }} {{ $shortYearBE }}
                                 @if($meterReading)
                                     ({{ $meterReading->water_prev }}-{{ $meterReading->water_curr }})
                                 @endif
                             </td>
-                            <td class="text-center">{{ $bill->water_units ?? 0 }}</td>
-                            <td class="text-right">{{ number_format($bill->water_amount ?? 0) }}</td>
+                            <td class="border border-gray-300 px-4 py-3 text-center">{{ $bill->water_units ?? 0 }}</td>
+                            <td class="border border-gray-300 px-4 py-3 text-right">{{ number_format($bill->water_amount ?? 0) }}</td>
                         </tr>
-                        <tr>
-                            <td>
-                                ค่าไฟ เดือน {{ thaiMonth(\Carbon\Carbon::parse($bill->billing_month)->format('m')) }}
+                        {{-- Electric --}}
+                        <tr class="border border-gray-300">
+                            <td class="border border-gray-300 px-4 py-3">
+                                ค่าไฟ เดือน {{ $billMonth }} {{ $shortYearBE }}
                                 @if($meterReading)
                                     ({{ $meterReading->elec_prev }}-{{ $meterReading->elec_curr }})
                                 @endif
                             </td>
-                            <td class="text-center">{{ $bill->electric_units ?? 0 }}</td>
-                            <td class="text-right">{{ number_format($bill->electric_amount ?? 0) }}</td>
+                            <td class="border border-gray-300 px-4 py-3 text-center">{{ $bill->electric_units ?? 0 }}</td>
+                            <td class="border border-gray-300 px-4 py-3 text-right">{{ number_format($bill->electric_amount ?? 0) }}</td>
                         </tr>
-                        <tr>
-                            <td>ค่าเช่าห้อง</td>
-                            <td class="text-center"></td>
-                            <td class="text-right">{{ number_format($bill->room_rate ?? 0) }}</td>
+                        {{-- Room rate --}}
+                        <tr class="border border-gray-300">
+                            <td class="border border-gray-300 px-4 py-3">ค่าเช่าห้อง</td>
+                            <td class="border border-gray-300 px-4 py-3 text-center">1</td>
+                            <td class="border border-gray-300 px-4 py-3 text-right">{{ number_format($bill->room_rate ?? 0) }}</td>
                         </tr>
-                        <tr>
-                            <td>ค่าปรับจ่ายบิลล่าช้า</td>
-                            <td class="text-center"></td>
-                            <td class="text-right">{{ number_format($bill->other_fees ?? 0) }}</td>
+                        {{-- Late fee --}}
+                        @if(($bill->other_fees ?? 0) > 0)
+                        <tr class="border border-gray-300">
+                            <td class="border border-gray-300 px-4 py-3">ค่าปรับจ่ายบิลล่าช้า</td>
+                            <td class="border border-gray-300 px-4 py-3"></td>
+                            <td class="border border-gray-300 px-4 py-3 text-right">{{ number_format($bill->other_fees ?? 0) }}</td>
                         </tr>
+                        @endif
                     </tbody>
                     <tfoot>
-                        <tr class="font-bold">
-                            <td>รวมสุทธิ</td>
-                            <td class="text-center"></td>
-                            <td class="text-right">{{ number_format($bill->total_amount ?? 0) }}</td>
+                        <tr class="border border-gray-300 font-bold bg-gray-50">
+                            <td class="border border-gray-300 px-4 py-3">รวมสุทธิ</td>
+                            <td class="border border-gray-300 px-4 py-3"></td>
+                            <td class="border border-gray-300 px-4 py-3 text-right">{{ number_format($bill->total_amount ?? 0) }}</td>
                         </tr>
                     </tfoot>
                 </table>
+            </div>
 
-                {{-- Payment Slip Upload Section --}}
-                @if($bill->status != 'paid')
-                <div class="mt-6 pt-6 border-t border-gray-200">
-                    <h4 class="font-bold text-gray-800 mb-3">หลักฐานการชำระเงิน</h4>
+            {{-- ===== ช่องทางการชำระเงิน ===== --}}
+            @if($bill->status != 'paid')
+            <div class="bg-white rounded-xl border border-gray-200 p-5 mb-4 no-print">
+                <h3 class="font-bold text-gray-800 mb-4">ช่องทางการชำระเงิน</h3>
 
-                    @if($bill->payment_slip)
-                    {{-- Already uploaded --}}
-                    <div class="mb-4">
-                        <div class="border border-green-200 bg-green-50 rounded-xl p-4">
-                            <div class="flex items-center gap-2 mb-3">
-                                <svg class="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                                <span class="text-green-700 font-semibold text-sm">อัปโหลดสลิปแล้ว - รอตรวจสอบจากแอดมิน</span>
-                            </div>
-                            <img src="{{ asset('storage/' . $bill->payment_slip) }}" alt="Payment Slip" class="max-w-xs rounded-lg border border-gray-200 shadow-sm">
-                        </div>
-                    </div>
-                    {{-- Allow re-upload --}}
-                    <form action="{{ route('tenant.bills.uploadSlip', $bill->id) }}" method="POST" enctype="multipart/form-data" class="mt-3" id="reuploadForm">
-                        @csrf
-                        <p class="text-gray-500 text-xs mb-2">ต้องการเปลี่ยนสลิป? อัปโหลดใหม่ด้านล่าง</p>
-                        <div class="flex items-center gap-3">
-                            <label class="flex-1 cursor-pointer">
-                                <div class="flex items-center gap-3 border border-gray-300 rounded-lg px-4 py-2 hover:border-red-400 transition-colors">
-                                    <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-                                    <span id="reuploadFileName" class="text-sm text-gray-500">เลือกไฟล์สลิปใหม่...</span>
-                                </div>
-                                <input type="file" name="payment_slip" accept="image/*" class="hidden" required onchange="document.getElementById('reuploadFileName').textContent = this.files[0]?.name || 'เลือกไฟล์สลิปใหม่...'">
-                            </label>
-                            <button type="submit" class="px-4 py-2 bg-red-500 text-white rounded-lg text-sm font-semibold hover:bg-red-600 transition-colors whitespace-nowrap">
-                                อัปโหลดใหม่
-                            </button>
-                        </div>
-                    </form>
-                    @else
-                    {{-- No slip yet --}}
-                    <form action="{{ route('tenant.bills.uploadSlip', $bill->id) }}" method="POST" enctype="multipart/form-data">
-                        @csrf
-                        <div class="flex items-center gap-3">
-                            <label class="flex-1 cursor-pointer">
-                                <div class="flex items-center gap-3 border-2 border-dashed border-gray-300 rounded-lg px-4 py-3 hover:border-red-400 transition-colors">
-                                    <svg class="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-                                    <span id="uploadFileName" class="text-sm text-gray-500">กรุณาแนบสลิปการโอนเงิน...</span>
-                                </div>
-                                <input type="file" name="payment_slip" accept="image/*" class="hidden" required onchange="document.getElementById('uploadFileName').textContent = this.files[0]?.name || 'กรุณาแนบสลิปการโอนเงิน...'">
-                            </label>
-                            <button type="submit" class="px-5 py-3 bg-red-500 text-white rounded-lg text-sm font-semibold hover:bg-red-600 transition-colors whitespace-nowrap">
-                                อัปโหลด
-                            </button>
-                        </div>
-                    </form>
-                    @endif
+                @php
+                    $payBankName    = config('payment.bank_name');
+                    $payBankAccount = config('payment.bank_account');
+                    $payBankHolder  = config('payment.bank_account_name');
+                    $payPromptpay   = config('payment.promptpay_id');
+                @endphp
 
-                    @if(session('slip_success'))
-                    <div class="mt-3 bg-green-50 border border-green-200 text-green-700 px-4 py-2 rounded-lg text-sm">
-                        {{ session('slip_success') }}
+                {{-- Bank Account Card --}}
+                @if($payBankAccount)
+                <div class="border border-gray-200 rounded-xl p-4 mb-4 flex items-center gap-4">
+                    <div class="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
+                        <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/>
+                        </svg>
                     </div>
-                    @endif
-                    @if($errors->has('payment_slip'))
-                    <div class="mt-3 bg-red-50 border border-red-200 text-red-600 px-4 py-2 rounded-lg text-sm">
-                        {{ $errors->first('payment_slip') }}
+                    <div>
+                        <p class="text-sm text-gray-500">{{ $payBankName ?: 'ธนาคาร' }}</p>
+                        <p class="text-lg font-bold text-gray-800 tracking-wide">{{ $payBankAccount }}</p>
+                        <p class="text-sm text-gray-500">ชื่อบัญชี : {{ $payBankHolder ?: $setting->apartment_name }}</p>
                     </div>
-                    @endif
-                </div>
-                @elseif($bill->payment_slip)
-                {{-- Bill is paid but show the slip --}}
-                <div class="mt-6 pt-6 border-t border-gray-200">
-                    <h4 class="font-bold text-gray-800 mb-3">หลักฐานการชำระเงิน</h4>
-                    <img src="{{ asset('storage/' . $bill->payment_slip) }}" alt="Payment Slip" class="max-w-xs rounded-lg border border-gray-200 shadow-sm">
                 </div>
                 @endif
 
-                {{-- Notes --}}
-                <div class="mt-6 pt-6 border-t border-gray-200 text-sm text-gray-600">
-                    <h4 class="font-bold text-gray-800 mb-2">หมายเหตุ</h4>
-                    <ol class="list-decimal list-inside space-y-1 ml-2">
-                        <li>กรุณาโอนเงินเข้าบัญชี "{{ $setting->apartment_name ?? 'นาย เจเจ อพาร์ท' }}" และนำสลิปโอนเงิน แจ้งที่สำนักงานทราบ
-                            <ul class="ml-6 mt-1 space-y-0.5">
-                                <li>ธนาคารกสิกรไทย จำกัด สาขา {{ $setting->province ?? 'ขอนแก่น' }} เลขที่ xxx-xxxxxx-x</li>
-                                <li>ธนาคารไทยพาณิชย์ จำกัด สาขา {{ $setting->province ?? 'ขอนแก่น' }} เลขที่ xxx-xxxxxx-x</li>
-                                <li>ธนาคารกรุงเทพ จำกัด สาขา {{ $setting->province ?? 'ขอนแก่น' }} เลขที่ xxx-xxxxxx-x</li>
-                            </ul>
-                        </li>
-                        <li>ค่าเช่าชำระไม่เกินวันที่ 5 ของเดือน เกินกำหนดจะปรับวันละ {{ number_format($setting->late_fee_per_day ?? 100) }} บาท</li>
-                    </ol>
+                {{-- QR Code --}}
+                @if($payPromptpay)
+                <div class="rounded-xl overflow-hidden border border-gray-200">
+
+                    {{-- THAI QR PAYMENT — full-width header --}}
+                    <div class="bg-[#173269] px-6 py-4 flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-full border-2 border-white flex items-center justify-center flex-shrink-0">
+                            <svg class="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M19 3H5C3.9 3 3 3.9 3 5v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-2 10h-4v4h-2v-4H7v-2h4V7h2v4h4v2z"/>
+                            </svg>
+                        </div>
+                        <div class="leading-tight">
+                            <p class="text-white font-extrabold text-base tracking-[0.15em]">THAI QR</p>
+                            <p class="text-white font-extrabold text-base tracking-[0.15em]">PAYMENT</p>
+                        </div>
+                    </div>
+
+                    {{-- White body --}}
+                    <div class="bg-white px-6 py-6 flex flex-col items-center">
+
+                        {{-- PromptPay logo styled --}}
+                        <div class="border border-gray-300 rounded-lg px-6 py-2.5 mb-5 flex flex-col items-center">
+                            <span class="text-[10px] text-gray-400 tracking-widest mb-0.5">พร้อมเพย์</span>
+                            <div class="flex items-baseline gap-0">
+                                <span class="text-xl font-bold text-gray-800">Prompt</span>
+                                <span class="text-xl font-bold text-[#00a89c]">Pay</span>
+                            </div>
+                        </div>
+
+                        {{-- QR Code Image --}}
+                        <img src="https://promptpay.io/{{ $payPromptpay }}/{{ $bill->total_amount }}.png"
+                             alt="PromptPay QR Code"
+                             class="w-40 h-40 object-contain"
+                             onerror="this.src='https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=PromptPay:{{ $payPromptpay }}'">
+
+                        {{-- Info below QR --}}
+                        <div class="mt-4 text-center space-y-1">
+                            <p class="text-sm text-gray-500">{{ $payBankHolder ?: $setting->apartment_name }}</p>
+                            <p class="text-sm text-gray-400">{{ $payPromptpay }}</p>
+                            <p class="text-lg font-bold text-gray-800 pt-1">฿ {{ number_format($bill->total_amount, 0) }}</p>
+                        </div>
+                    </div>
+                </div>
+                @endif
+            </div>
+            @endif
+
+            {{-- ===== หลักฐานการชำระเงิน ===== --}}
+            @if($bill->status != 'paid')
+            <div class="bg-white rounded-xl border border-gray-200 p-5 mb-4 no-print">
+                <h3 class="font-bold text-gray-800 mb-3">หลักฐานการชำระเงิน</h3>
+
+                @if($bill->payment_slip)
+                {{-- Already uploaded --}}
+                <div class="mb-4 p-3 bg-green-50 border border-green-200 rounded-xl flex items-center gap-2">
+                    <svg class="w-5 h-5 text-green-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                    <span class="text-green-700 text-sm font-medium">อัปโหลดสลิปแล้ว — รอแอดมินตรวจสอบ</span>
+                </div>
+                <img src="{{ asset('storage/' . $bill->payment_slip) }}" alt="slip" class="max-w-[200px] rounded-lg border border-gray-200 mb-4 shadow-sm">
+                <p class="text-xs text-gray-400 mb-2">ต้องการเปลี่ยนสลิป?</p>
+                @endif
+
+                <form action="{{ route('tenant.bills.uploadSlip', $bill->id) }}" method="POST"
+                      enctype="multipart/form-data" id="slipForm">
+                    @csrf
+                    <div class="flex gap-2">
+                        <label class="flex-1 cursor-pointer">
+                            <div class="flex items-center border border-gray-300 rounded-lg overflow-hidden">
+                                <span id="slipFileName" class="flex-1 px-4 py-2.5 text-sm text-gray-400 bg-white truncate">
+                                    กรุณาแนบสลิป
+                                </span>
+                                <span class="px-4 py-2.5 bg-gray-200 text-gray-700 text-sm border-l border-gray-300">
+                                    เลือกไฟล์
+                                </span>
+                            </div>
+                            <input type="file" name="payment_slip" accept="image/*" class="hidden"
+                                   required
+                                   onchange="document.getElementById('slipFileName').textContent = this.files[0]?.name || 'กรุณาแนบสลิป'">
+                        </label>
+                        <button type="submit"
+                                class="px-5 py-2.5 bg-gray-600 hover:bg-gray-700 text-white rounded-lg text-sm font-semibold transition-colors whitespace-nowrap">
+                            อัปโหลด
+                        </button>
+                    </div>
+                    @error('payment_slip')
+                    <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                    @enderror
+                </form>
+
+                {{-- ยืนยัน button --}}
+                <div class="flex justify-end mt-4">
+                    <button type="submit" form="slipForm"
+                            class="px-8 py-2.5 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-bold transition-colors">
+                        ยืนยัน
+                    </button>
                 </div>
             </div>
+            @elseif($bill->payment_slip)
+            {{-- Paid - show slip --}}
+            <div class="bg-white rounded-xl border border-gray-200 p-5 mb-4">
+                <h3 class="font-bold text-gray-800 mb-3">หลักฐานการชำระเงิน</h3>
+                <img src="{{ asset('storage/' . $bill->payment_slip) }}" alt="slip" class="max-w-[200px] rounded-lg border border-gray-200 shadow-sm">
+                @if($bill->status == 'paid' && $bill->receipt)
+                <div class="mt-3">
+                    <a href="{{ route('tenant.receipt', $bill->id) }}"
+                       class="inline-flex items-center gap-2 px-4 py-2 bg-green-500 text-white rounded-lg text-sm font-semibold hover:bg-green-600 transition-colors">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+                        </svg>
+                        ดาวน์โหลดใบเสร็จ
+                    </a>
+                </div>
+                @endif
+            </div>
+            @endif
+
+            {{-- ===== หมายเหตุ ===== --}}
+            <div class="bg-white rounded-xl border border-gray-200 p-5 mb-6">
+                <h3 class="font-bold text-gray-800 mb-3">หมายเหตุ</h3>
+                <ol class="list-decimal list-inside space-y-2 text-sm text-gray-600 ml-1">
+                    <li>
+                        กรุณาโอนเงินเข้าบัญชี "{{ config('payment.bank_account_name') ?: ($setting->apartment_name ?? 'หอพัก') }}" และนำสลิปโอนเงินแจ้งให้สำนักงานทราบ
+                        @if(config('payment.bank_name') && config('payment.bank_account'))
+                        <ul class="ml-5 mt-1 space-y-0.5 text-gray-500">
+                            <li>{{ config('payment.bank_name') }} เลขที่ {{ config('payment.bank_account') }}</li>
+                        </ul>
+                        @endif
+                    </li>
+                    <li>ค่าเช่าชำระไม่เกินวันที่ {{ $setting->payment_due_day ?? '5' }} ของเดือน เกินกำหนดจะปรับวันละ {{ number_format($setting->late_fee_per_day ?? 100) }} บาท</li>
+                </ol>
+            </div>
+
         </div>
     </main>
 </body>

@@ -70,7 +70,7 @@
 
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-1">เบอร์ <span class="text-red-500">*</span></label>
-                                <input type="text" name="phone" value="{{ old('phone') }}" placeholder="กรุณากรอกเบอร์โทรศัพท์" class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:border-[#4A90E2] focus:ring-1 focus:ring-[#4A90E2] outline-none" required>
+                                <input type="text" name="phone" value="{{ old('phone') }}" placeholder="กรุณากรอกเบอร์โทรศัพท์" inputmode="numeric" oninput="this.value=this.value.replace(/[^0-9]/g,'')" maxlength="10" class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:border-[#4A90E2] focus:ring-1 focus:ring-[#4A90E2] outline-none" required>
                             </div>
 
                             <div>
@@ -80,7 +80,8 @@
 
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-1">เลขบัตรประชาชน <span class="text-red-500">*</span></label>
-                                <input type="text" name="nid" value="{{ old('nid') }}" placeholder="กรุณากรอกเลขบัตรประชาชน" class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:border-[#4A90E2] focus:ring-1 focus:ring-[#4A90E2] outline-none" required>
+                                <input type="text" name="nid" value="{{ old('nid') }}" placeholder="กรุณากรอกเลขบัตรประชาชน" inputmode="numeric" maxlength="13" oninput="validateNumericField(this, 'nid-error')" class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:border-[#4A90E2] focus:ring-1 focus:ring-[#4A90E2] outline-none" required>
+                                <p id="nid-error" class="hidden text-red-500 text-xs mt-1">⚠️ กรุณากรอกเฉพาะตัวเลขเท่านั้น</p>
                             </div>
 
                             {{-- Login Information --}}
@@ -112,7 +113,7 @@
 
                                     <div>
                                         <label class="block text-sm font-medium text-gray-700 mb-1">เบอร์ติดต่อฉุกเฉิน <span class="text-red-500">*</span></label>
-                                        <input type="text" name="emergency_contact_phone" value="{{ old('emergency_contact_phone') }}" placeholder="กรุณากรอกเบอร์โทรศัพท์" class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:border-[#4A90E2] focus:ring-1 focus:ring-[#4A90E2] outline-none">
+                                        <input type="text" name="emergency_contact_phone" value="{{ old('emergency_contact_phone') }}" placeholder="กรุณากรอกเบอร์โทรศัพท์" inputmode="numeric" oninput="this.value=this.value.replace(/[^0-9]/g,'')" maxlength="10" class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:border-[#4A90E2] focus:ring-1 focus:ring-[#4A90E2] outline-none">
                                     </div>
                                 </div>
                             </div>
@@ -155,22 +156,12 @@
 
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-1">วันที่เข้าพัก <span class="text-red-500">*</span></label>
-                                <div class="relative">
-                                    <input type="date" name="check_in_date" value="{{ old('check_in_date') }}" placeholder="วว/ดด/ปปปป" class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:border-[#4A90E2] outline-none cursor-pointer" required>
-                                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-gray-400">
-                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-                                    </div>
-                                </div>
+                                <input type="date" name="check_in_date" value="{{ old('check_in_date') }}" class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:border-[#4A90E2] outline-none cursor-pointer" required>
                             </div>
 
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-1">วันที่ทำสัญญา <span class="text-red-500">*</span></label>
-                                <div class="relative">
-                                    <input type="date" name="contract_date" value="{{ old('contract_date') }}" placeholder="วว/ดด/ปปปป" class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:border-[#4A90E2] outline-none cursor-pointer" required>
-                                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-gray-400">
-                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-                                    </div>
-                                </div>
+                                <input type="date" name="contract_date" value="{{ old('contract_date') }}" class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:border-[#4A90E2] outline-none cursor-pointer" required>
                             </div>
 
                             <div>
@@ -194,12 +185,14 @@
                                 <div class="space-y-4">
                                     <div>
                                         <label class="block text-sm font-medium text-gray-700 mb-1">เลขมิเตอร์ไฟ</label>
-                                        <input type="number" name="initial_electric_meter" value="{{ old('initial_electric_meter') }}" placeholder="กรุณากรอกมิเตอร์ไฟเริ่มต้น" class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:border-[#4A90E2] outline-none">
+                                        <input type="number" name="initial_electric_meter" value="{{ old('initial_electric_meter', 0) }}" min="0" oninput="preventNegative(this, 'elec-error')" placeholder="กรุณากรอกมิเตอร์ไฟเริ่มต้น" class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:border-[#4A90E2] outline-none">
+                                        <p id="elec-error" class="hidden text-red-500 text-xs mt-1">⚠️ ค่ามิเตอร์ต้องไม่ติดลบ</p>
                                     </div>
 
                                     <div>
                                         <label class="block text-sm font-medium text-gray-700 mb-1">เลขมิเตอร์น้ำ</label>
-                                        <input type="number" name="initial_water_meter" value="{{ old('initial_water_meter') }}" placeholder="กรุณากรอกมิเตอร์น้ำเริ่มต้น" class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:border-[#4A90E2] outline-none">
+                                        <input type="number" name="initial_water_meter" value="{{ old('initial_water_meter', 0) }}" min="0" oninput="preventNegative(this, 'water-error')" placeholder="กรุณากรอกมิเตอร์น้ำเริ่มต้น" class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:border-[#4A90E2] outline-none">
+                                        <p id="water-error" class="hidden text-red-500 text-xs mt-1">⚠️ ค่ามิเตอร์ต้องไม่ติดลบ</p>
                                     </div>
                                 </div>
                             </div>
@@ -260,6 +253,29 @@
                 display.textContent = 'เลือกไฟล์';
                 display.classList.add('text-gray-400');
                 display.classList.remove('text-gray-800');
+            }
+        }
+
+        // ตรวจสอบว่ากรอกเฉพาะตัวเลข (สำหรับ text fields เช่น NID)
+        function validateNumericField(input, errorId) {
+            const before = input.value;
+            input.value = input.value.replace(/[^0-9]/g, '');
+            const errEl = document.getElementById(errorId);
+            if (before !== input.value) {
+                errEl.classList.remove('hidden');
+                setTimeout(() => errEl.classList.add('hidden'), 2500);
+            }
+        }
+
+        // ป้องกันตัวเลขติดลบ (สำหรับ number inputs)
+        function preventNegative(input, errorId) {
+            const errEl = document.getElementById(errorId);
+            if (input.value !== '' && parseFloat(input.value) < 0) {
+                input.value = 0;
+                errEl.classList.remove('hidden');
+                setTimeout(() => errEl.classList.add('hidden'), 2500);
+            } else {
+                errEl.classList.add('hidden');
             }
         }
     </script>

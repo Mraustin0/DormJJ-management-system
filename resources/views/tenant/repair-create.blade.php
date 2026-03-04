@@ -65,31 +65,28 @@
                 <form action="{{ route('tenant.repairs.store') }}" method="POST" enctype="multipart/form-data">
                     @csrf
 
-                    {{-- วันที่แจ้งซ่อม --}}
+                    {{-- วันที่แจ้งซ่อม (auto วันนี้ ไม่ให้แก้) --}}
                     <div class="mb-5">
-                        <label class="block text-gray-700 font-medium mb-1.5">วันที่แจ้งซ่อม <span class="text-red-500">*</span></label>
-                        <input type="date" name="repair_date" value="{{ old('repair_date', date('Y-m-d')) }}"
-                               class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-gray-700 focus:ring-2 focus:ring-red-400 focus:border-transparent">
+                        <label class="block text-gray-700 font-medium mb-1.5">วันที่แจ้งซ่อม</label>
+                        <input type="date" name="repair_date" value="{{ date('Y-m-d') }}" readonly
+                               class="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-gray-500 bg-gray-50 cursor-not-allowed">
                     </div>
 
-                    {{-- ปัญหาที่แจ้งซ่อม (Category) --}}
+                    {{-- ปัญหาที่แจ้งซ่อม (Category) - พิมได้ + มี suggestion --}}
                     <div class="mb-5">
                         <label class="block text-gray-700 font-medium mb-1.5">ปัญหาที่แจ้งซ่อม <span class="text-red-500">*</span></label>
-                        <div class="relative">
-                            <select name="category" required
-                                    class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-gray-700 focus:ring-2 focus:ring-red-400 focus:border-transparent appearance-none bg-white @error('category') border-red-500 @enderror">
-                                <option value="" disabled {{ old('category') ? '' : 'selected' }}>กรุณาเลือกปัญหาที่พบ</option>
-                                <option value="ระบบไฟฟ้า" {{ old('category') == 'ระบบไฟฟ้า' ? 'selected' : '' }}>ระบบไฟฟ้า</option>
-                                <option value="ระบบประปา" {{ old('category') == 'ระบบประปา' ? 'selected' : '' }}>ระบบประปา</option>
-                                <option value="ประตูและหน้าต่าง" {{ old('category') == 'ประตูและหน้าต่าง' ? 'selected' : '' }}>ประตูและหน้าต่าง</option>
-                                <option value="เครื่องใช้และอุปกรณ์ในห้อง" {{ old('category') == 'เครื่องใช้และอุปกรณ์ในห้อง' ? 'selected' : '' }}>เครื่องใช้และอุปกรณ์ในห้อง</option>
-                                <option value="พื้นผนังฝ้า" {{ old('category') == 'พื้นผนังฝ้า' ? 'selected' : '' }}>พื้นผนังฝ้า</option>
-                                <option value="อื่นๆ" {{ old('category') == 'อื่นๆ' ? 'selected' : '' }}>อื่นๆ</option>
-                            </select>
-                            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
-                                <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
-                            </div>
-                        </div>
+                        <input type="text" name="category" list="categoryList" required
+                               value="{{ old('category') }}"
+                               placeholder="พิมหรือเลือกปัญหาที่พบ"
+                               class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-gray-700 focus:ring-2 focus:ring-red-400 focus:border-transparent @error('category') border-red-500 @enderror">
+                        <datalist id="categoryList">
+                            <option value="ระบบไฟฟ้า">
+                            <option value="ระบบประปา">
+                            <option value="ประตูและหน้าต่าง">
+                            <option value="เครื่องใช้และอุปกรณ์ในห้อง">
+                            <option value="พื้นผนังฝ้า">
+                            <option value="อื่นๆ">
+                        </datalist>
                         @error('category')
                             <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
                         @enderror
@@ -144,15 +141,18 @@
     </main>
 
     <script>
-        // Auto-fill title from category
-        document.querySelector('select[name="category"]')?.addEventListener('change', function() {
-            document.getElementById('titleField').value = this.value;
-        });
-
-        // Set title on page load if category is already selected
-        const catSelect = document.querySelector('select[name="category"]');
-        if (catSelect && catSelect.value) {
-            document.getElementById('titleField').value = catSelect.value;
+        // Auto-fill title from category input
+        const catInput = document.querySelector('input[name="category"]');
+        if (catInput) {
+            catInput.addEventListener('input', function() {
+                document.getElementById('titleField').value = this.value;
+            });
+            catInput.addEventListener('change', function() {
+                document.getElementById('titleField').value = this.value;
+            });
+            if (catInput.value) {
+                document.getElementById('titleField').value = catInput.value;
+            }
         }
 
         // Image upload preview
