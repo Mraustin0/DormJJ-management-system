@@ -10,10 +10,8 @@
     <style>
         body { font-family: 'Sarabun', sans-serif; }
         @media print {
-            body * { visibility: hidden; }
-            .print-area, .print-area * { visibility: visible; }
-            .print-area { position: absolute; left: 0; top: 0; width: 100%; padding: 20px; }
             .no-print { display: none !important; }
+            #mainContent { margin-left: 0 !important; }
             @page { margin: 10mm; }
         }
     </style>
@@ -160,7 +158,8 @@
 
             {{-- ===== ช่องทางการชำระเงิน ===== --}}
             @if($bill->status != 'paid')
-            <div class="bg-white rounded-xl border border-gray-200 p-5 mb-4 no-print">
+            <div class="bg-white rounded-xl border border-gray-200 p-5 mb-4">
+
                 <h3 class="font-bold text-gray-800 mb-4">ช่องทางการชำระเงิน</h3>
 
                 @php
@@ -170,13 +169,13 @@
                     $payPromptpay   = config('payment.promptpay_id');
                 @endphp
 
-                {{-- Bank Account Card --}}
+                {{-- Bank Account Details --}}
                 @if($payBankAccount)
-                <div class="border border-gray-200 rounded-xl p-4 mb-4 flex items-center gap-4">
-                    <div class="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
-                        <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/>
-                        </svg>
+                <div class="border border-gray-200 rounded-xl px-4 py-3 flex items-center gap-4 mb-4">
+                    {{-- Bank logo --}}
+                    <div class="w-12 h-12 rounded-full border border-gray-200 flex items-center justify-center flex-shrink-0 overflow-hidden bg-white">
+                        <img src="{{ asset('images/logoKasikorm.png') }}" alt="bank"
+                             class="w-12 h-12 object-contain rounded-full">
                     </div>
                     <div>
                         <p class="text-sm text-gray-500">{{ $payBankName ?: 'ธนาคาร' }}</p>
@@ -186,55 +185,26 @@
                 </div>
                 @endif
 
-                {{-- QR Code --}}
+                {{-- PromptPay QR Code --}}
                 @if($payPromptpay)
-                <div class="rounded-xl overflow-hidden border border-gray-200">
+                <div class="border border-gray-200 rounded-xl py-6 flex flex-col items-center">
 
-                    {{-- THAI QR PAYMENT — full-width header --}}
-                    <div class="bg-[#173269] px-6 py-4 flex items-center gap-3">
-                        <div class="w-10 h-10 rounded-full border-2 border-white flex items-center justify-center flex-shrink-0">
-                            <svg class="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
-                                <path d="M19 3H5C3.9 3 3 3.9 3 5v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-2 10h-4v4h-2v-4H7v-2h4V7h2v4h4v2z"/>
-                            </svg>
-                        </div>
-                        <div class="leading-tight">
-                            <p class="text-white font-extrabold text-base tracking-[0.15em]">THAI QR</p>
-                            <p class="text-white font-extrabold text-base tracking-[0.15em]">PAYMENT</p>
-                        </div>
-                    </div>
+                    {{-- QR Code Image --}}
+                    <img src="{{ asset('images/image_11.png') }}"
+                         alt="PromptPay QR Code"
+                         class="w-64 h-64 object-contain mb-4">
 
-                    {{-- White body --}}
-                    <div class="bg-white px-6 py-6 flex flex-col items-center">
-
-                        {{-- PromptPay logo styled --}}
-                        <div class="border border-gray-300 rounded-lg px-6 py-2.5 mb-5 flex flex-col items-center">
-                            <span class="text-[10px] text-gray-400 tracking-widest mb-0.5">พร้อมเพย์</span>
-                            <div class="flex items-baseline gap-0">
-                                <span class="text-xl font-bold text-gray-800">Prompt</span>
-                                <span class="text-xl font-bold text-[#00a89c]">Pay</span>
-                            </div>
-                        </div>
-
-                        {{-- QR Code Image --}}
-                        <img src="https://promptpay.io/{{ $payPromptpay }}/{{ $bill->total_amount }}.png"
-                             alt="PromptPay QR Code"
-                             class="w-40 h-40 object-contain"
-                             onerror="this.src='https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=PromptPay:{{ $payPromptpay }}'">
-
-                        {{-- Info below QR --}}
-                        <div class="mt-4 text-center space-y-1">
-                            <p class="text-sm text-gray-500">{{ $payBankHolder ?: $setting->apartment_name }}</p>
-                            <p class="text-sm text-gray-400">{{ $payPromptpay }}</p>
-                            <p class="text-lg font-bold text-gray-800 pt-1">฿ {{ number_format($bill->total_amount, 0) }}</p>
-                        </div>
+                    {{-- Info below QR --}}
+                    <div class="text-center space-y-0.5">
+                        <p class="text-base font-bold text-blue-600 tracking-wide">{{ $payPromptpay }}</p>
+                        <p class="text-sm text-gray-600">ชื่อบัญชี : {{ $payBankHolder ?: $setting->apartment_name }}</p>
+                        <p class="text-base font-bold text-blue-600">จำนวน  {{ number_format($bill->total_amount, 0) }} บาท</p>
                     </div>
                 </div>
                 @endif
             </div>
-            @endif
 
             {{-- ===== หลักฐานการชำระเงิน ===== --}}
-            @if($bill->status != 'paid')
             <div class="bg-white rounded-xl border border-gray-200 p-5 mb-4 no-print">
                 <h3 class="font-bold text-gray-800 mb-3">หลักฐานการชำระเงิน</h3>
 
@@ -276,15 +246,16 @@
                     <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
                     @enderror
                 </form>
-
-                {{-- ยืนยัน button --}}
-                <div class="flex justify-end mt-4">
-                    <button type="submit" form="slipForm"
-                            class="px-8 py-2.5 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-bold transition-colors">
-                        ยืนยัน
-                    </button>
-                </div>
             </div>
+
+            {{-- ยืนยัน button --}}
+            <div class="flex justify-end mb-4 no-print">
+                <button type="submit" form="slipForm"
+                        class="px-8 py-2.5 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-bold transition-colors">
+                    ยืนยัน
+                </button>
+            </div>
+
             @elseif($bill->payment_slip)
             {{-- Paid - show slip --}}
             <div class="bg-white rounded-xl border border-gray-200 p-5 mb-4">
