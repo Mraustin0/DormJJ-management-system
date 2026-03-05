@@ -11,6 +11,9 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
         body { font-family: 'Sarabun', 'Inter', sans-serif; }
+        input[type=number]::-webkit-inner-spin-button,
+        input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+        input[type=number] { -moz-appearance: textfield; }
     </style>
 </head>
 <body class="bg-gray-50 text-gray-800 overflow-x-hidden">
@@ -69,7 +72,7 @@
             @endphp
 
             <div class="flex items-center gap-3 mb-6">
-                <a href="{{ route('rooms.bills') }}" class="p-2 rounded-lg hover:bg-gray-100 text-gray-600 transition-colors shrink-0">
+                <a href="{{ route('bills.create') }}?month={{ $selectedMonth }}" class="text-gray-500 hover:text-gray-700 transition-colors shrink-0">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
                 </a>
                 <h3 class="text-xl font-bold text-gray-800">
@@ -249,9 +252,9 @@
                             </button>
                             @elseif($existingBill)
                             <button type="button" onclick="saveBill()"
-                                    class="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 rounded-lg transition-colors shadow-md flex items-center justify-center gap-2">
+                                    class="w-full bg-[#4A90E2] hover:bg-[#357abd] text-white font-bold py-3 rounded-lg transition-colors shadow-md flex items-center justify-center gap-2">
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
                                 </svg>
                                 แก้ไขบิล
                             </button>
