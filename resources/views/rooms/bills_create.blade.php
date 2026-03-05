@@ -133,7 +133,7 @@
                 @foreach($rooms as $room)
                 @php
                     $hasContract = $room->contract && $room->status == 'ไม่ว่าง';
-                    $hasBill = in_array($room->id, $existingBillRoomIds ?? []);
+                    $hasBill = $hasContract && in_array($room->id, $existingBillRoomIds ?? []);
                 @endphp
                 <div onclick="selectRoom({{ $room->id }}, '{{ $room->room_number }}', {{ $hasContract ? 'true' : 'false' }})"
                      class="room-card p-3 rounded-2xl shadow-sm border-2 flex flex-col items-center justify-center text-center relative cursor-pointer hover:shadow-lg hover:scale-105 transition-all
