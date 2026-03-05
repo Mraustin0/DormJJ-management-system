@@ -49,7 +49,7 @@
             <ul class="space-y-2">
                 <li>
                     <a href="{{ route('tenant.room-info') }}" class="block px-2 {{ ($activePage ?? '') == 'room-info' ? 'py-2 bg-gray-500 text-white rounded-lg shadow-sm' : 'py-1.5 text-gray-800 hover:text-red-600' }} font-medium text-base">
-                        ข้อมูลห้องพัก
+                        ข้อมูลหอพัก
                     </a>
                 </li>
             </ul>
