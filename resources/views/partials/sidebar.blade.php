@@ -97,7 +97,7 @@
             <ul class="space-y-2">
                 <li>
                     <a href="{{ route('settings.index') }}" class="block px-2 {{ ($activePage ?? '') == 'settings' ? 'py-2 bg-[#A0A0A0] text-white rounded-lg shadow-sm' : 'py-1.5 text-gray-800 hover:text-[#4A90E2]' }} font-medium text-lg">
-                        ตั้งค่าระบบ
+                        ตั้งค่า
                     </a>
                 </li>
                 <li>

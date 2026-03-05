@@ -166,13 +166,7 @@
                                 ซ่อมเสร็จสิ้น
                             </button>
 
-                            <button onclick="confirmStatus('cancelled')"
-                                    class="w-full bg-white hover:bg-red-50 text-red-500 border border-red-300 font-bold py-3 px-6 rounded-xl transition-all flex items-center justify-center gap-2">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                                </svg>
-                                ยกเลิกคำร้อง
-                            </button>
+                            
                         </div>
                         @endif
 

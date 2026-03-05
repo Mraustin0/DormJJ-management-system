@@ -10,6 +10,7 @@ use App\Models\User;
 use App\Models\MeterReading;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
+use Carbon\Carbon;
 
 class CustomerController extends Controller
 {
@@ -26,8 +27,8 @@ class CustomerController extends Controller
             'phone' => 'required|string|max:20',
             'email' => 'nullable|email|max:100',
             'nid' => 'required|string|max:20',
-            'username' => 'nullable|string|max:255|unique:users,username',
-            'password' => 'nullable|string|min:6',
+            'username' => 'nullable|string|max:255|unique:users,username|required_with:password',
+            'password' => 'nullable|string|min:6|required_with:username',
             'emergency_contact_name' => 'nullable|string|max:255',
             'emergency_contact_phone' => 'nullable|string|max:20',
             'room_id' => 'required|exists:rooms,id',
@@ -43,16 +44,20 @@ class CustomerController extends Controller
 
         DB::beginTransaction();
         try {
-            // Create user account if username provided
+            // Create user login account if both username and password are provided
             $userId = null;
+            $hasLoginAccount = false;
+            $email = !empty($request->email) ? $request->email : null;
+
             if (!empty($request->username) && !empty($request->password)) {
                 $user = User::create([
                     'username' => $request->username,
                     'password' => Hash::make($request->password),
-                    'email' => $request->email,
+                    'email' => $email,
                     'tenant_role' => true,
                 ]);
                 $userId = $user->id;
+                $hasLoginAccount = true;
             }
 
             // Handle file uploads
@@ -89,15 +94,15 @@ class CustomerController extends Controller
                 'status' => $request->tenant_status == 'active' ? 'ไม่ว่าง' : 'จอง',
             ]);
 
-            // Create initial meter readings if provided
-            if (!empty($request->initial_electric_meter) || !empty($request->initial_water_meter)) {
-                MeterReading::create([
-                    'room_id' => $request->room_id,
-                    'electric_reading' => $request->initial_electric_meter ?? 0,
-                    'water_reading' => $request->initial_water_meter ?? 0,
-                    'reading_date' => $request->check_in_date,
-                ]);
-            }
+            // Always create initial meter reading for the check-in month
+            $billingMonth = Carbon::parse($request->check_in_date)->format('Y-m');
+            MeterReading::updateOrCreate(
+                ['room_id' => $request->room_id, 'billing_month' => $billingMonth],
+                [
+                    'water_prev' => (int) ($request->initial_water_meter ?? 0),
+                    'elec_prev'  => (int) ($request->initial_electric_meter ?? 0),
+                ]
+            );
 
             // Send notification to tenant
             if ($userId) {
@@ -111,7 +116,10 @@ class CustomerController extends Controller
             }
 
             DB::commit();
-            return redirect()->route('rooms.customers')->with('success', 'สร้างบัญชีผู้เช่าเรียบร้อยแล้ว');
+            $message = $hasLoginAccount
+                ? 'สร้างบัญชีผู้เช่าเรียบร้อยแล้ว (มีบัญชี Login: ' . $request->username . ')'
+                : 'สร้างข้อมูลผู้เช่าเรียบร้อยแล้ว (ไม่มีบัญชี Login)';
+            return redirect()->route('rooms.customers')->with('success', $message);
 
         } catch (\Exception $e) {
             DB::rollBack();

@@ -165,7 +165,7 @@
                             @foreach($rooms as $room)
                             @php
                                 $meter = $room->meterReadings->first();
-                                $elecPrev = $meter ? $meter->elec_prev : 0;
+                                $elecPrev = $meter ? $meter->elec_prev : ($room->display_elec_prev ?? 0);
                                 $elecCurr = $meter ? $meter->elec_curr : null;
                                 $elecUnit = $meter ? $meter->elec_unit : null;
                             @endphp

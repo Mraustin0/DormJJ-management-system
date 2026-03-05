@@ -27,16 +27,36 @@
                 <h2 class="text-xl font-bold text-[#4A90E2]">ระบบจัดการหอพัก JJ Apartment</h2>
             </div>
             <div class="flex items-center gap-4">
-                <button class="p-2 rounded-lg hover:bg-gray-100 text-gray-500">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
-                </button>
-                <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-full bg-gray-300 flex items-center justify-center">
-                        <svg class="w-6 h-6 text-gray-600" fill="currentColor" viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
-                    </div>
-                    <div class="text-right hidden sm:block">
-                        <p class="text-sm font-bold text-gray-900">{{ Auth::user()->username ?? 'Admin1' }}</p>
-                        <p class="text-xs text-gray-500">Admin</p>
+                {{-- Profile Dropdown --}}
+                <div class="relative" id="profileContainer">
+                    <button onclick="toggleProfileDropdown()" class="flex items-center gap-3 hover:bg-gray-50 rounded-lg p-1 pr-2 transition-colors">
+                        <div class="text-right hidden sm:block">
+                            <p class="text-sm font-bold text-gray-900">{{ Auth::user()->username ?? 'Admin' }}</p>
+                            <p class="text-xs text-gray-500">Admin</p>
+                        </div>
+                        <div class="w-10 h-10 rounded-full bg-[#4A90E2] flex items-center justify-center text-white font-bold shadow-md">
+                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+                        </div>
+                    </button>
+                    <div id="profileDropdown" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden z-50">
+                        <div class="py-2">
+                            <a href="{{ route('profile.index') }}" class="flex items-center gap-3 px-4 py-2.5 text-gray-700 hover:bg-gray-50 transition-colors">
+                                <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                                <span class="font-medium">แก้ไขโปรไฟล์</span>
+                            </a>
+                            <a href="{{ route('settings.index') }}" class="flex items-center gap-3 px-4 py-2.5 text-gray-700 hover:bg-gray-50 transition-colors">
+                                <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                                <span class="font-medium">ตั้งค่าระบบ</span>
+                            </a>
+                            <hr class="my-2">
+                            <form id="logoutForm" action="{{ route('logout') }}" method="POST">
+                                @csrf
+                                <button type="button" onclick="confirmLogout()" class="flex items-center gap-3 px-4 py-2.5 text-red-500 hover:bg-red-50 transition-colors w-full">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+                                    <span class="font-medium">ออกจากระบบ</span>
+                                </button>
+                            </form>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -49,13 +69,25 @@
             @endphp
 
             <div class="flex items-center gap-3 mb-6">
+                <a href="{{ route('rooms.bills') }}" class="p-2 rounded-lg hover:bg-gray-100 text-gray-600 transition-colors shrink-0">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+                </a>
                 <h3 class="text-xl font-bold text-gray-800">
                     {{ $existingBill ? 'แก้ไขบิล' : 'สร้างบิล' }} ห้อง {{ $room->room_number }} ประจำเดือน {{ $monthName }}
                 </h3>
-                @if($existingBill)
+                @if($existingBill && $existingBill->status === 'paid')
+                <span class="px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-semibold">ชำระแล้ว — ไม่สามารถแก้ไขได้</span>
+                @elseif($existingBill)
                 <span class="px-3 py-1 bg-yellow-100 text-yellow-700 rounded-full text-xs font-semibold">มีบิลอยู่แล้ว — แก้ไขได้</span>
                 @endif
             </div>
+
+            @if($existingBill && $existingBill->status === 'paid')
+            <div class="mb-4 p-4 bg-green-50 border border-green-200 rounded-xl flex items-center gap-3">
+                <svg class="w-5 h-5 text-green-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                <p class="text-sm text-green-700">บิลนี้ชำระเงินและออกใบเสร็จแล้ว ไม่สามารถแก้ไขได้ หากต้องการแก้ไขให้ยกเลิกใบเสร็จก่อน</p>
+            </div>
+            @endif
 
             <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
                 {{-- Tenant Info --}}
@@ -69,7 +101,7 @@
                     </div>
                 </div>
 
-                <form id="billForm" class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <form id="billForm" class="grid grid-cols-1 lg:grid-cols-2 gap-8" @if($existingBill && $existingBill->status === 'paid') inert @endif>
                     <input type="hidden" name="room_id" value="{{ $room->id }}">
                     <input type="hidden" name="billing_month" value="{{ $selectedMonth }}">
 
@@ -207,13 +239,21 @@
 
                         {{-- Submit Button --}}
                         <div class="pt-4">
-                            @if($existingBill)
+                            @if($existingBill && $existingBill->status === 'paid')
+                            <button type="button" disabled
+                                    class="w-full bg-gray-300 text-gray-500 font-bold py-3 rounded-lg cursor-not-allowed flex items-center justify-center gap-2">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                                </svg>
+                                ชำระแล้ว — ไม่สามารถแก้ไข
+                            </button>
+                            @elseif($existingBill)
                             <button type="button" onclick="saveBill()"
-                                    class="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold py-3 rounded-lg transition-colors shadow-md flex items-center justify-center gap-2">
+                                    class="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 rounded-lg transition-colors shadow-md flex items-center justify-center gap-2">
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
                                 </svg>
-                                แก้ไขข้อมูล
+                                แก้ไขบิล
                             </button>
                             @else
                             <button type="button" onclick="saveBill()"
@@ -299,10 +339,50 @@
             });
         }
 
+        function toggleProfileDropdown() {
+            const dropdown = document.getElementById('profileDropdown');
+            dropdown.classList.toggle('hidden');
+        }
+
+        function confirmLogout() {
+            Swal.fire({
+                title: 'ออกจากระบบ?',
+                text: 'คุณต้องการออกจากระบบใช่หรือไม่',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#f27b6d',
+                cancelButtonColor: '#6b7280',
+                confirmButtonText: 'ออกจากระบบ',
+                cancelButtonText: 'ยกเลิก',
+                reverseButtons: true
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    document.getElementById('logoutForm').submit();
+                }
+            });
+        }
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(e) {
+            const container = document.getElementById('profileContainer');
+            if (container && !container.contains(e.target)) {
+                document.getElementById('profileDropdown')?.classList.add('hidden');
+            }
+        });
+
         // Calculate on page load
         document.addEventListener('DOMContentLoaded', function() {
+            @if($existingBill)
+            // Pre-fill from existing saved bill
+            document.getElementById('water_units').value = {{ $existingBill->water_units ?? 0 }};
+            document.getElementById('water_amount').value = {{ $existingBill->water_amount ?? 0 }};
+            document.getElementById('elec_units').value = {{ $existingBill->electric_units ?? 0 }};
+            document.getElementById('elec_amount').value = {{ $existingBill->electric_amount ?? 0 }};
+            calculateTotal();
+            @else
             calculateWater();
             calculateElec();
+            @endif
         });
     </script>
 </body>

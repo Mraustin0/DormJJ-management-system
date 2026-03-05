@@ -78,7 +78,7 @@
                 </div>
 
                 <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-8 mb-8">
-                    <h3 class="text-xl font-bold text-gray-800 mb-6">ตั้งค่าข้อมูลหอพัก</h3>
+                    <h3 class="text-xl font-bold text-gray-800 mb-6">ข้อมูลหอพัก</h3>
 
                     <div class="space-y-6">
                         <div>
@@ -141,77 +141,7 @@
                     </div>
                 </div>
 
-                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-8 mb-8">
-                    <h3 class="text-xl font-bold text-gray-800 mb-6">ช่องทางการชำระเงิน <span class="text-sm font-normal text-gray-500">(อ่านอย่างเดียว — แก้ไขได้ในไฟล์ .env)</span></h3>
-
-                    @php
-                        $payBankName    = config('payment.bank_name');
-                        $payBankAccount = config('payment.bank_account');
-                        $payBankHolder  = config('payment.bank_account_name');
-                        $payPromptpay   = config('payment.promptpay_id');
-                    @endphp
-
-                    @if(!$payBankAccount && !$payPromptpay)
-                        <div class="text-center py-10 text-gray-500">
-                            ยังไม่ได้ตั้งค่าช่องทางการชำระเงินในไฟล์ .env
-                        </div>
-                    @else
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                            {{-- Bank Account Card --}}
-                            @if($payBankAccount)
-                            <div>
-                                <h4 class="font-bold text-gray-700 mb-3">โอนผ่านบัญชีธนาคาร</h4>
-                                <div class="border border-gray-200 rounded-xl p-4 flex items-center gap-4">
-                                    <div class="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
-                                        <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/>
-                                        </svg>
-                                    </div>
-                                    <div>
-                                        <p class="text-sm text-gray-500">{{ $payBankName ?: 'ธนาคาร' }}</p>
-                                        <p class="text-lg font-bold text-gray-800 tracking-wide">{{ $payBankAccount }}</p>
-                                        <p class="text-sm text-gray-500">ชื่อบัญชี : {{ $payBankHolder ?: ($setting->apartment_name ?? 'JJ Apartment') }}</p>
-                                    </div>
-                                </div>
-                            </div>
-                            @endif
-
-                            {{-- QR Code --}}
-                            @if($payPromptpay)
-                            <div>
-                                <h4 class="font-bold text-gray-700 mb-3">สแกน QR Code (พร้อมเพย์)</h4>
-                                <div class="rounded-xl overflow-hidden border border-gray-200 max-w-xs mx-auto md:mx-0">
-                                    {{-- THAI QR PAYMENT Header --}}
-                                    <div class="bg-[#173269] px-6 py-4 flex items-center gap-3">
-                                        <div class="w-10 h-10 rounded-full border-2 border-white flex items-center justify-center flex-shrink-0">
-                                            <svg class="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M19 3H5C3.9 3 3 3.9 3 5v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-2 10h-4v4h-2v-4H7v-2h4V7h2v4h4v2z"/></svg>
-                                        </div>
-                                        <div class="leading-tight">
-                                            <p class="text-white font-extrabold text-base tracking-[0.15em]">THAI QR</p>
-                                            <p class="text-white font-extrabold text-base tracking-[0.15em]">PAYMENT</p>
-                                        </div>
-                                    </div>
-                                    {{-- White body --}}
-                                    <div class="bg-white px-6 py-6 flex flex-col items-center">
-                                        {{-- PromptPay logo --}}
-                                        <div class="border border-gray-300 rounded-lg px-6 py-2.5 mb-5 flex flex-col items-center">
-                                            <span class="text-[10px] text-gray-400 tracking-widest mb-0.5">พร้อมเพย์</span>
-                                            <div class="flex items-baseline gap-0"><span class="text-xl font-bold text-gray-800">Prompt</span><span class="text-xl font-bold text-[#00a89c]">Pay</span></div>
-                                        </div>
-                                        {{-- QR Code Image --}}
-                                        <img src="https://promptpay.io/{{ $payPromptpay }}.png" alt="PromptPay QR Code" class="w-40 h-40 object-contain">
-                                        {{-- Info below QR --}}
-                                        <div class="mt-4 text-center space-y-1">
-                                            <p class="text-sm text-gray-500">{{ $payBankHolder ?: ($setting->apartment_name ?? 'JJ Apartment') }}</p>
-                                            <p class="text-sm text-gray-400">{{ $payPromptpay }}</p>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            @endif
-                        </div>
-                    @endif
-                </div>
+            
 
                 <div class="flex justify-end">
                     <button type="submit" class="bg-[#4A90E2] hover:bg-[#357abd] text-white font-bold py-3 px-12 rounded-lg shadow-md transition-colors">

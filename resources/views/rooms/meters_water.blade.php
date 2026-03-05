@@ -165,7 +165,7 @@
                             @foreach($rooms as $room)
                             @php
                                 $meter = $room->meterReadings->first();
-                                $waterPrev = $meter ? $meter->water_prev : 0;
+                                $waterPrev = $meter ? $meter->water_prev : ($room->display_water_prev ?? 0);
                                 $waterCurr = $meter ? $meter->water_curr : null;
                                 $waterUnit = $meter ? $meter->water_unit : null;
                             @endphp

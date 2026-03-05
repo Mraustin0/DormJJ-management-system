@@ -15,7 +15,35 @@ class MeterController extends Controller
 
         $rooms = Room::with(['contract', 'meterReadings' => function($q) use ($selectedMonth) {
             $q->where('billing_month', $selectedMonth);
+        }, 'allMeterReadings' => function($q) {
+            $q->orderBy('billing_month', 'asc');
         }])->orderBy('room_number', 'asc')->get();
+
+        $rooms->each(function ($room) use ($selectedMonth) {
+            $currentMonthReading = $room->meterReadings->first();
+            
+            if ($currentMonthReading) {
+                $room->display_water_prev = $currentMonthReading->water_prev;
+                $room->display_elec_prev = $currentMonthReading->elec_prev;
+            } else {
+                // Find the latest meter reading before the selected month
+                $previousReading = $room->allMeterReadings
+                                        ->filter(function ($reading) use ($selectedMonth) {
+                                            return $reading->billing_month < $selectedMonth;
+                                        })
+                                        ->last();
+                
+                if ($previousReading) {
+                    $room->display_water_prev = $previousReading->water_curr ?? $previousReading->water_prev;
+                    $room->display_elec_prev = $previousReading->elec_curr ?? $previousReading->elec_prev;
+                } else {
+                    // No previous reading, use the very first initial reading (water_prev/elec_prev of the earliest entry)
+                    $firstReading = $room->allMeterReadings->first();
+                    $room->display_water_prev = $firstReading ? ($firstReading->water_prev ?? 0) : 0;
+                    $room->display_elec_prev = $firstReading ? ($firstReading->elec_prev ?? 0) : 0;
+                }
+            }
+        });
 
         return view('rooms.meters', compact('rooms', 'selectedMonth'));
     }
@@ -27,9 +55,34 @@ class MeterController extends Controller
 
         $rooms = Room::with(['contract', 'meterReadings' => function($q) use ($selectedMonth) {
             $q->where('billing_month', $selectedMonth);
+        }, 'allMeterReadings' => function($q) {
+            $q->orderBy('billing_month', 'asc'); // Order by asc to get the earliest reading
         }])->where('room_number', 'like', $floor . '%')
           ->orderBy('room_number', 'asc')
           ->get();
+
+        $rooms->each(function ($room) use ($selectedMonth) {
+            $currentMonthReading = $room->meterReadings->first();
+            
+            if ($currentMonthReading) {
+                $room->display_water_prev = $currentMonthReading->water_prev;
+            } else {
+                // Find the latest meter reading before the selected month
+                $previousReading = $room->allMeterReadings
+                                        ->filter(function ($reading) use ($selectedMonth) {
+                                            return $reading->billing_month < $selectedMonth;
+                                        })
+                                        ->last(); // Use last() since ordered by asc
+
+                if ($previousReading) {
+                    $room->display_water_prev = $previousReading->water_curr ?? $previousReading->water_prev;
+                } else {
+                    // No previous reading, use the very first initial reading (water_prev of the earliest entry)
+                    $firstReading = $room->allMeterReadings->first();
+                    $room->display_water_prev = $firstReading ? ($firstReading->water_prev ?? 0) : 0;
+                }
+            }
+        });
 
         return view('rooms.meters_water', compact('rooms', 'selectedMonth', 'floor'));
     }
@@ -41,9 +94,34 @@ class MeterController extends Controller
 
         $rooms = Room::with(['contract', 'meterReadings' => function($q) use ($selectedMonth) {
             $q->where('billing_month', $selectedMonth);
+        }, 'allMeterReadings' => function($q) {
+            $q->orderBy('billing_month', 'asc');
         }])->where('room_number', 'like', $floor . '%')
           ->orderBy('room_number', 'asc')
           ->get();
+
+        $rooms->each(function ($room) use ($selectedMonth) {
+            $currentMonthReading = $room->meterReadings->first();
+            
+            if ($currentMonthReading) {
+                $room->display_elec_prev = $currentMonthReading->elec_prev;
+            } else {
+                // Find the latest meter reading before the selected month
+                $previousReading = $room->allMeterReadings
+                                        ->filter(function ($reading) use ($selectedMonth) {
+                                            return $reading->billing_month < $selectedMonth;
+                                        })
+                                        ->last();
+                
+                if ($previousReading) {
+                    $room->display_elec_prev = $previousReading->elec_curr ?? $previousReading->elec_prev;
+                } else {
+                    // No previous reading, use the very first initial reading (elec_prev of the earliest entry)
+                    $firstReading = $room->allMeterReadings->first();
+                    $room->display_elec_prev = $firstReading ? ($firstReading->elec_prev ?? 0) : 0;
+                }
+            }
+        });
 
         return view('rooms.meters_electric', compact('rooms', 'selectedMonth', 'floor'));
     }

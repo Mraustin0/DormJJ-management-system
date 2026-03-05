@@ -33,7 +33,7 @@
 
         {{-- Utilities Section --}}
         <div>
-            <h3 class="text-gray-400 font-bold text-xs uppercase mb-3">UTILITIES</h3>
+            <h3 class="text-gray-400 font-bold text-xs uppercase mb-3">สาธารณูปโภค</h3>
             <ul class="space-y-2">
                 <li>
                     <a href="{{ route('tenant.meters') }}" class="block px-2 {{ ($activePage ?? '') == 'meters' ? 'py-2 bg-gray-500 text-white rounded-lg shadow-sm' : 'py-1.5 text-gray-800 hover:text-red-600' }} font-medium text-base">

@@ -60,7 +60,13 @@ class BillController extends Controller
             'overdue' => 'ค้างชำระ',
         ];
 
-        return view('rooms.bills', compact('bills', 'months', 'selectedMonth', 'statuses', 'selectedStatus'));
+        // ดึง bills ทั้งหมดที่มีใบเสร็จ สำหรับ download modal (ไม่ paginate)
+        $paidBills = Bill::with(['room.contract', 'receipt'])
+            ->whereHas('receipt')
+            ->orderBy('billing_month', 'desc')
+            ->get();
+
+        return view('rooms.bills', compact('bills', 'months', 'selectedMonth', 'statuses', 'selectedStatus', 'paidBills'));
     }
 
     /**
@@ -142,12 +148,9 @@ class BillController extends Controller
             $q->where('billing_month', $selectedMonth);
         }])->findOrFail($id);
 
-        // ตรวจว่ามีบิลของเดือนนี้อยู่แล้วไหม
+        // ตรวจว่ามีบิลของเดือนนี้อยู่แล้วไหม (billing_month เก็บเป็น string Y-m เช่น "2026-03")
         $existingBill = Bill::where('room_id', $id)
-            ->where('billing_month', $selectedMonth . '-01')
-            ->first()
-            ?? Bill::where('room_id', $id)
-            ->whereRaw("DATE_FORMAT(billing_month, '%Y-%m') = ?", [$selectedMonth])
+            ->where('billing_month', $selectedMonth)
             ->first();
 
         return view('rooms.bill_form', compact('room', 'selectedMonth', 'existingBill'));
@@ -164,6 +167,14 @@ class BillController extends Controller
             'total_amount' => 'required|numeric|min:0|max:999999',
         ]);
 
+        // ตรวจสอบว่าบิลที่มีอยู่แล้วชำระแล้วหรือไม่
+        $existingBill = Bill::where('room_id', $request->room_id)
+            ->where('billing_month', $request->billing_month)
+            ->first();
+        if ($existingBill && $existingBill->status === 'paid') {
+            return response()->json(['success' => false, 'message' => 'ไม่สามารถแก้ไขบิลที่ชำระแล้วได้'], 422);
+        }
+
         // สร้างหรืออัปเดตบิล
         $bill = Bill::updateOrCreate(
             [
@@ -171,14 +182,17 @@ class BillController extends Controller
                 'billing_month' => $request->billing_month,
             ],
             [
-                'water_units' => $request->water_units ?? 0,
-                'water_amount' => $request->water_amount ?? 0,
+                'bill_date'      => now()->toDateString(),
+                'total_price'    => $request->total_amount,
+                'water_units'    => $request->water_units ?? 0,
+                'water_amount'   => $request->water_amount ?? 0,
                 'electric_units' => $request->electric_units ?? 0,
-                'electric_amount' => $request->electric_amount ?? 0,
-                'room_rate' => $request->room_rate ?? 0,
-                'other_fees' => $request->other_fees ?? 0,
-                'total_amount' => $request->total_amount,
-                'status' => 'pending',
+                'electric_amount'=> $request->electric_amount ?? 0,
+                'room_rate'      => $request->room_rate ?? 0,
+                'other_fees'     => $request->other_fees ?? 0,
+                'due_date'       => $request->due_date ?? null,
+                'total_amount'   => $request->total_amount,
+                'status'         => 'pending',
             ]
         );
 

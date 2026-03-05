@@ -277,14 +277,25 @@
                             </svg>
                             <p class="text-gray-400 text-sm">ผู้เช่ายังไม่ได้อัปโหลดสลิป</p>
                         </div>
-                        {{-- Tenant uploaded slip image --}}
-                        <img id="slipPreviewImage" src="" alt="Payment Slip" class="hidden max-w-full max-h-[250px] rounded-lg object-contain">
+                        {{-- Tenant uploaded slip image (clickable to enlarge) --}}
+                        <img id="slipPreviewImage" src="" alt="Payment Slip"
+                             class="hidden max-w-full max-h-[220px] rounded-lg object-contain cursor-zoom-in hover:opacity-90 transition-opacity"
+                             onclick="openLightbox(this.src)"
+                             title="คลิกเพื่อดูรูปเต็ม">
+                        {{-- View full + upload --}}
+                        <div id="slipActions" class="hidden mt-2 w-full space-y-2">
+                            <button type="button" onclick="openLightbox(document.getElementById('slipPreviewImage').src)"
+                                    class="w-full flex items-center justify-center gap-2 bg-blue-50 border border-[#4A90E2] text-[#4A90E2] rounded-lg px-3 py-2 text-xs font-bold hover:bg-[#4A90E2] hover:text-white transition-colors">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                                ดูรูปเต็ม
+                            </button>
+                        </div>
                         {{-- Admin can also upload/attach slip --}}
-                        <div class="mt-3 w-full">
+                        <div class="mt-2 w-full">
                             <label class="block cursor-pointer">
                                 <div class="flex items-center justify-center gap-2 border border-gray-300 rounded-lg px-3 py-2 hover:border-[#4A90E2] transition-colors bg-white">
                                     <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>
-                                    <span id="adminSlipFileName" class="text-xs text-gray-500">แนบสลิปเพิ่ม (แอดมิน)</span>
+                                    <span id="adminSlipFileName" class="text-xs text-gray-500">แนบสลิปเพิ่ม</span>
                                 </div>
                                 <input type="file" id="adminSlipFile" accept="image/*" class="hidden" onchange="previewAdminSlip(this)">
                             </label>
@@ -329,6 +340,20 @@
                 </div>
             </div>
         </div>
+    </div>
+
+    <!-- Image Lightbox -->
+    <div id="imageLightbox" class="fixed inset-0 bg-black bg-opacity-90 hidden items-center justify-center z-[200]" onclick="closeLightbox()">
+        <button class="absolute top-4 right-4 text-white hover:text-gray-300 bg-black bg-opacity-40 rounded-full p-2 z-10">
+            <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+        <img id="lightboxImg" src="" alt="Slip" class="max-w-[92vw] max-h-[92vh] object-contain rounded-xl shadow-2xl" onclick="event.stopPropagation()">
+        <a id="lightboxOpenLink" href="" target="_blank" rel="noopener"
+           onclick="event.stopPropagation()"
+           class="absolute bottom-5 left-1/2 -translate-x-1/2 bg-white text-gray-800 text-sm font-bold px-5 py-2 rounded-full shadow hover:bg-gray-100 flex items-center gap-2">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+            เปิดในแท็บใหม่
+        </a>
     </div>
 
     <!-- Filter Modal -->
@@ -414,28 +439,43 @@
                 </button>
             </div>
             <div class="p-6">
-                <p class="text-gray-600 mb-4">เลือกห้องที่ต้องการดาวน์โหลดใบเสร็จ</p>
+                <p class="text-sm text-gray-500 mb-4">เลือกใบเสร็จที่ต้องการดาวน์โหลด</p>
 
-                <div class="flex items-center gap-2 mb-4">
-                    <input type="checkbox" id="selectAllRooms" class="w-4 h-4 text-[#4A90E2] rounded" onchange="toggleSelectAll()">
-                    <label for="selectAllRooms" class="text-sm font-bold text-gray-700">เลือกทั้งหมด</label>
+                <div class="flex items-center gap-2 mb-3 pb-3 border-b border-gray-200">
+                    <input type="checkbox" id="selectAllRooms" class="w-4 h-4 text-[#4A90E2] rounded cursor-pointer" onchange="toggleSelectAll()">
+                    <label for="selectAllRooms" class="text-sm font-semibold text-gray-700 cursor-pointer">เลือกทั้งหมด</label>
                 </div>
 
-                <div class="max-h-64 overflow-y-auto border border-gray-200 rounded-lg">
-                    @foreach($bills->filter(fn($b) => $b->receipt) as $bill)
-                    <label class="flex items-center gap-3 p-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-0">
-                        <input type="checkbox" name="download_bills[]" value="{{ $bill->id }}" class="room-checkbox w-4 h-4 text-[#4A90E2] rounded">
-                        <span class="font-bold text-[#4A90E2]">{{ $bill->room->room_number ?? '-' }}</span>
-                        <span class="text-gray-600 text-sm">{{ $bill->room->contract->tenant_name ?? '-' }}</span>
-                        <span class="ml-auto text-xs text-gray-400">{{ $bill->receipt->receipt_number ?? '-' }}</span>
-                    </label>
-                    @endforeach
-                    @if($bills->filter(fn($b) => $b->receipt)->isEmpty())
-                    <div class="p-6 text-center text-gray-400">
-                        <svg class="w-12 h-12 mx-auto mb-2 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-                        <p>ไม่พบใบเสร็จที่สามารถดาวน์โหลดได้</p>
+                <div class="max-h-72 overflow-y-auto space-y-1">
+                    @php
+                        $grouped = $paidBills->groupBy(fn($b) => \Carbon\Carbon::parse($b->billing_month)->year)
+                            ->map(fn($yearGroup) => $yearGroup->groupBy(fn($b) => \Carbon\Carbon::parse($b->billing_month)->locale('th')->translatedFormat('F')));
+                    @endphp
+
+                    @forelse($grouped as $year => $monthGroups)
+                    <div class="mb-2">
+                        <p class="text-xs font-bold text-gray-400 uppercase tracking-wider px-1 mb-1">{{ $year }}</p>
+
+                        @foreach($monthGroups as $monthName => $monthBills)
+                        <div class="mb-1">
+                            <p class="text-xs font-semibold text-gray-500 px-2 py-1 bg-gray-50 rounded">{{ $monthName }}</p>
+                            @foreach($monthBills as $bill)
+                            <label class="flex items-center gap-3 px-3 py-2.5 hover:bg-blue-50 cursor-pointer rounded-lg transition-colors">
+                                <input type="checkbox" name="download_bills[]" value="{{ $bill->id }}" class="room-checkbox w-4 h-4 text-[#4A90E2] rounded cursor-pointer">
+                                <span class="font-bold text-[#4A90E2] text-sm w-12 shrink-0">{{ $bill->room->room_number ?? '-' }}</span>
+                                <span class="text-gray-700 text-sm flex-1 truncate">{{ $bill->room->contract->tenant_name ?? '-' }}</span>
+                                <span class="text-xs text-gray-400 shrink-0">{{ $bill->receipt->receipt_number ?? '' }}</span>
+                            </label>
+                            @endforeach
+                        </div>
+                        @endforeach
                     </div>
-                    @endif
+                    @empty
+                    <div class="py-10 text-center text-gray-400">
+                        <svg class="w-12 h-12 mx-auto mb-2 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                        <p class="text-sm">ยังไม่มีใบเสร็จที่ออกแล้ว</p>
+                    </div>
+                    @endforelse
                 </div>
             </div>
             <div class="bg-gray-50 px-6 py-4 flex justify-end gap-3">
@@ -465,6 +505,24 @@
             }
         });
 
+        // Lightbox
+        function openLightbox(src) {
+            if (!src) return;
+            document.getElementById('lightboxImg').src = src;
+            document.getElementById('lightboxOpenLink').href = src;
+            document.getElementById('imageLightbox').classList.remove('hidden');
+            document.getElementById('imageLightbox').classList.add('flex');
+        }
+
+        function closeLightbox() {
+            document.getElementById('imageLightbox').classList.add('hidden');
+            document.getElementById('imageLightbox').classList.remove('flex');
+        }
+
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') closeLightbox();
+        });
+
         // Slip Modal Functions
         function openSlipModal(billId, roomNumber, amount, slipUrl) {
             document.getElementById('slipBillId').value = billId;
@@ -474,20 +532,23 @@
             // Show/hide slip image
             const previewEmpty = document.getElementById('slipPreviewEmpty');
             const previewImage = document.getElementById('slipPreviewImage');
+            const slipActions = document.getElementById('slipActions');
 
             if (slipUrl && slipUrl !== '') {
                 previewEmpty.classList.add('hidden');
                 previewImage.src = slipUrl;
                 previewImage.classList.remove('hidden');
+                slipActions.classList.remove('hidden');
             } else {
                 previewEmpty.classList.remove('hidden');
                 previewImage.classList.add('hidden');
                 previewImage.src = '';
+                slipActions.classList.add('hidden');
             }
 
             // Reset admin file input
             document.getElementById('adminSlipFile').value = '';
-            document.getElementById('adminSlipFileName').textContent = 'แนบสลิปเพิ่ม (แอดมิน)';
+            document.getElementById('adminSlipFileName').textContent = 'แนบสลิปเพิ่ม';
 
             document.getElementById('slipModal').classList.remove('hidden');
             document.getElementById('slipModal').classList.add('flex');
@@ -506,9 +567,11 @@
                 reader.onload = function(e) {
                     const previewImage = document.getElementById('slipPreviewImage');
                     const previewEmpty = document.getElementById('slipPreviewEmpty');
+                    const slipActions = document.getElementById('slipActions');
                     previewImage.src = e.target.result;
                     previewImage.classList.remove('hidden');
                     previewEmpty.classList.add('hidden');
+                    slipActions.classList.remove('hidden');
                 };
                 reader.readAsDataURL(input.files[0]);
             }

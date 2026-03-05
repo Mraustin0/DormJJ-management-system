@@ -29,6 +29,11 @@ class Room extends Model
         return $this->hasMany(MeterReading::class, 'room_id');
     }
 
+    public function allMeterReadings()
+    {
+        return $this->hasMany(MeterReading::class, 'room_id')->orderBy('billing_month', 'asc');
+    }
+
     public function bills()
     {
         return $this->hasMany(Bill::class, 'room_id');
