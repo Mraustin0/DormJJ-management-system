@@ -26,10 +26,6 @@
                 <button onclick="toggleSidebar()" class="p-2 rounded-lg hover:bg-gray-100 text-gray-600 transition-colors focus:outline-none">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
                 </button>
-                <a href="{{ route('rooms.bills') }}" class="p-2 rounded-lg hover:bg-gray-100 text-gray-600 transition-colors flex items-center gap-1">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
-                    <span class="text-sm font-medium">กลับ</span>
-                </a>
                 <h2 class="text-xl font-bold text-[#4A90E2]">ระบบจัดการหอพัก JJ Apartment</h2>
             </div>
             <div class="flex items-center gap-3">
@@ -45,8 +41,11 @@
 
             {{-- Header: Title + Month picker + Search (left) | Create All button (right) --}}
             <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-5 gap-4">
-                {{-- Left: Title + Month + Search --}}
+                {{-- Left: Back + Title + Month + Search --}}
                 <div class="flex flex-wrap items-center gap-3">
+                    <a href="{{ route('rooms.bills') }}" class="p-2 rounded-lg hover:bg-gray-100 text-gray-600 transition-colors shrink-0">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+                    </a>
                     <h3 class="text-2xl font-bold text-gray-800">สร้างบิลประจำเดือน</h3>
 
                     <form action="{{ route('bills.create') }}" method="GET" class="flex items-center gap-3 flex-wrap">
@@ -212,7 +211,7 @@
                 <span class="flex items-center gap-1">
                     <span class="w-3 h-3 rounded-full bg-yellow-400 inline-block"></span> ไม่มีข้อมูลมิเตอร์
                 </span>
-                <span class="ml-auto text-gray-400">* แก้ไขตัวเลขได้โดยตรงในตาราง</span>
+                <span class="ml-auto text-gray-400">* แก้ไขค่าอื่นๆ ได้โดยตรงในตาราง</span>
             </div>
 
             {{-- Modal Table --}}
@@ -342,24 +341,15 @@
                         ${noMeterBadge}
                     </td>
                     <td class="px-4 py-3 text-center align-middle">
-                        <input type="number" min="0" step="1"
-                               class="w-28 border border-gray-200 rounded-lg px-2 py-1.5 text-sm text-center focus:border-[#4A90E2] focus:outline-none"
-                               value="${room.room_rate}"
-                               oninput="updateField(${idx}, 'room_rate', this.value)">
+                        <span class="font-medium text-gray-800 text-sm">${Number(room.room_rate).toLocaleString('th-TH')}</span>
                         <div class="text-xs text-transparent mt-0.5">-</div>
                     </td>
                     <td class="px-4 py-3 text-center align-middle">
-                        <input type="number" min="0" step="0.01"
-                               class="w-28 border border-gray-200 rounded-lg px-2 py-1.5 text-sm text-center focus:border-[#4A90E2] focus:outline-none"
-                               value="${room.electric_amount}"
-                               oninput="updateField(${idx}, 'electric_amount', this.value)">
+                        <span class="font-medium text-gray-800 text-sm">${Number(room.electric_amount).toLocaleString('th-TH', {minimumFractionDigits: 0, maximumFractionDigits: 2})}</span>
                         <div class="text-xs text-gray-400 mt-0.5">${room.electric_units} หน่วย</div>
                     </td>
                     <td class="px-4 py-3 text-center align-middle">
-                        <input type="number" min="0" step="0.01"
-                               class="w-28 border border-gray-200 rounded-lg px-2 py-1.5 text-sm text-center focus:border-[#4A90E2] focus:outline-none"
-                               value="${room.water_amount}"
-                               oninput="updateField(${idx}, 'water_amount', this.value)">
+                        <span class="font-medium text-gray-800 text-sm">${Number(room.water_amount).toLocaleString('th-TH', {minimumFractionDigits: 0, maximumFractionDigits: 2})}</span>
                         <div class="text-xs text-gray-400 mt-0.5">${room.water_units} หน่วย</div>
                     </td>
                     <td class="px-4 py-3 text-center align-middle">
