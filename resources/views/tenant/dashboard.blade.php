@@ -87,7 +87,11 @@
                                 <span>{{ number_format($pendingBill->electric_amount, 0, '.', ',') }} บาท</span>
                             </div>
                             <div class="flex justify-between">
-                                <span>ค่าน้ำ</span>
+                                <span>ค่าน้ำ
+                                    @if($elecMeter)
+                                        <span class="text-gray-400 ml-4">{{ $elecMeter->water_prev }} - {{ $elecMeter->water_curr }} = {{ $elecMeter->water_unit }} หน่วย</span>
+                                    @endif
+                                </span>
                                 <span>{{ number_format($pendingBill->water_amount, 0, '.', ',') }} บาท</span>
                             </div>
                             @if($pendingBill->other_fees > 0)
@@ -199,7 +203,11 @@
                                             <span>{{ number_format($bill->electric_amount, 0, '.', ',') }} บาท</span>
                                         </div>
                                         <div class="flex justify-between">
-                                            <span>ค่าน้ำ</span>
+                                            <span>ค่าน้ำ
+                                                @if($m)
+                                                    <span class="text-gray-400 text-xs ml-4">{{ $m->water_prev }} - {{ $m->water_curr }} = {{ $m->water_unit }} หน่วย</span>
+                                                @endif
+                                            </span>
                                             <span>{{ number_format($bill->water_amount, 0, '.', ',') }} บาท</span>
                                         </div>
                                         @if($bill->other_fees > 0)

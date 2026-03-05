@@ -35,17 +35,17 @@
 
         {{-- Content --}}
         <div class="px-6 py-8">
-            <div class="max-w-2xl mx-auto">
-                {{-- Back + Title --}}
-                <div class="flex items-center gap-3 mb-6">
-                    <a href="{{ route('tenant.contract') }}" class="text-gray-500 hover:text-gray-700 transition-colors">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
-                        </svg>
-                    </a>
-                    <h2 class="text-xl font-bold text-gray-800">ประวัติการทำรายการสัญญาเช่า</h2>
-                </div>
+            {{-- Back + Title - ชิดซ้าย --}}
+            <div class="flex items-center gap-3 mb-6">
+                <a href="{{ route('tenant.contract') }}" class="text-gray-500 hover:text-gray-700 transition-colors">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+                    </svg>
+                </a>
+                <h2 class="text-xl font-bold text-gray-800">ประวัติการทำรายการสัญญาเช่า</h2>
+            </div>
 
+            <div class="max-w-2xl mx-auto">
                 {{-- Contract Summary --}}
                 <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-5 mb-6">
                     <div class="grid grid-cols-2 gap-4 text-sm">

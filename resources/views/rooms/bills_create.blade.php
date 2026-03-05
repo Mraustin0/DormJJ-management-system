@@ -43,34 +43,37 @@
 
         <main class="p-6">
 
-            {{-- Header: Title + Create All button + Month picker + Search --}}
+            {{-- Header: Title + Month picker + Search (left) | Create All button (right) --}}
             <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-5 gap-4">
-                <div class="flex items-center gap-3">
+                {{-- Left: Title + Month + Search --}}
+                <div class="flex flex-wrap items-center gap-3">
                     <h3 class="text-2xl font-bold text-gray-800">สร้างบิลประจำเดือน</h3>
-                    <button onclick="openCreateAllModal()"
-                            class="bg-[#4A90E2] hover:bg-[#357abd] text-white font-bold py-2 px-4 rounded-lg shadow-sm transition-colors flex items-center gap-2 text-sm">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                  d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-                        </svg>
-                        สร้างบิลทั้งหมด
-                    </button>
+
+                    <form action="{{ route('bills.create') }}" method="GET" class="flex items-center gap-3 flex-wrap">
+                        <input type="hidden" name="floor" value="{{ $currentFloor }}">
+                        {{-- Month Picker --}}
+                        <input type="month" name="month" value="{{ $selectedMonth }}" onchange="this.form.submit()"
+                               class="border border-gray-300 rounded-lg px-4 py-2.5 text-sm text-gray-700 focus:outline-none focus:border-[#4A90E2] cursor-pointer">
+                        {{-- Search --}}
+                        <div class="relative">
+                            <input type="text" name="search" placeholder="ค้นหาห้อง..." value="{{ request('search') }}"
+                                   class="border border-gray-300 rounded-lg pl-9 pr-4 py-2.5 text-sm focus:outline-none focus:border-[#4A90E2] w-44">
+                            <svg class="w-4 h-4 text-gray-400 absolute left-3 top-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                            </svg>
+                        </div>
+                    </form>
                 </div>
 
-                <form action="{{ route('bills.create') }}" method="GET" class="flex items-center gap-3 flex-wrap">
-                    <input type="hidden" name="floor" value="{{ $currentFloor }}">
-                    {{-- Month Picker --}}
-                    <input type="month" name="month" value="{{ $selectedMonth }}" onchange="this.form.submit()"
-                           class="border border-gray-300 rounded-lg px-4 py-2.5 text-sm text-gray-700 focus:outline-none focus:border-[#4A90E2] cursor-pointer">
-                    {{-- Search --}}
-                    <div class="relative">
-                        <input type="text" name="search" placeholder="ค้นหาห้อง..." value="{{ request('search') }}"
-                               class="border border-gray-300 rounded-lg pl-9 pr-4 py-2.5 text-sm focus:outline-none focus:border-[#4A90E2] w-44">
-                        <svg class="w-4 h-4 text-gray-400 absolute left-3 top-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
-                        </svg>
-                    </div>
-                </form>
+                {{-- Right: Create All button --}}
+                <button onclick="openCreateAllModal()"
+                        class="bg-[#4A90E2] hover:bg-[#357abd] text-white font-bold py-2.5 px-5 rounded-lg shadow-sm transition-colors flex items-center gap-2 text-sm shrink-0">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                              d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                    </svg>
+                    สร้างบิลทั้งหมด
+                </button>
             </div>
 
             {{-- Floor navigation --}}
@@ -410,6 +413,35 @@
             btn.innerHTML = `<svg class="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
             </svg> กำลังสร้างบิล...`;
+
+            const roomsMissingMeters = editableRooms.filter(room => !room.has_meter);
+
+            if (roomsMissingMeters.length > 0) {
+                const roomList = roomsMissingMeters.map(room => `ห้อง ${room.room_number}`).join(', ');
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'ไม่สามารถสร้างบิลได้',
+                    html: `ไม่สามารถสร้างบิลได้เนื่องจากยังไม่มีการบันทึกค่ามิเตอร์สำหรับห้องเหล่านี้:<br><b>${roomList}</b><br>กรุณากรอกค่ามิเตอร์ให้ครบถ้วนก่อนดำเนินการ`,
+                    showCancelButton: true,
+                    confirmButtonText: 'ตกลง',
+                    cancelButtonText: 'กรอกมิเตอร์',
+                    confirmButtonColor: '#6b7280', // Gray for "Ok"
+                    cancelButtonColor: '#4A90E2' // Blue for "Enter Meter"
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        // User clicked "ตกลง" (OK), do nothing or close alert
+                    } else if (result.isDismissed && result.dismiss === Swal.DismissReason.cancel) {
+                        // User clicked "กรอกมิเตอร์" (Enter Meter)
+                        window.location.href = '{{ route("rooms.meters") }}?month=' + selectedMonth;
+                    }
+                });
+                btn.disabled = false;
+                btn.innerHTML = `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                  d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                        </svg> ยืนยันสร้างบิลทั้งหมด`;
+                return;
+            }
 
             const payload = {
                 billing_month: selectedMonth,
