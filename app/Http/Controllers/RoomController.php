@@ -102,17 +102,10 @@ class RoomController extends Controller
             $contractData
         );
 
-        // 6. อัปเดตสถานะห้อง (ถ้ามีการเลือกสถานะมา)
+        // 6. อัปเดตสถานะห้อง
         if ($request->has('tenant_status')) {
-            if ($request->tenant_status == 'moving_out') {
-                // กรณีแจ้งย้ายออก อาจจะแค่อัปเดตสถานะห้อง หรือทำอย่างอื่นตาม Logic
-                // $room->status = 'แจ้งย้ายออก'; 
-                // $room->save();
-            } else {
-                // ปกติถ้ามีคนเช่า สถานะควรเป็น "ไม่ว่าง"
-                $room->status = 'ไม่ว่าง';
-                $room->save();
-            }
+            $room->status = $request->tenant_status == 'moving_out' ? 'แจ้งย้ายออก' : 'ไม่ว่าง';
+            $room->save();
         }
 
         // 7. เด้งกลับไปหน้า Dashboard พร้อมข้อความแจ้งเตือน
