@@ -1,3 +1,10 @@
+{{-- Hide number input spinners globally --}}
+<style>
+    input[type=number]::-webkit-outer-spin-button,
+    input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+    input[type=number] { -moz-appearance: textfield; }
+</style>
+
 {{-- Sidebar Overlay (Mobile) --}}
 <div id="sidebarOverlay" class="fixed inset-0 bg-black/50 z-40 hidden opacity-0 transition-opacity duration-300 md:hidden" onclick="toggleSidebar()"></div>
 
