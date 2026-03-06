@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Room;
 use App\Models\MeterReading;
+use App\Models\Bill;
 use Carbon\Carbon;
 
 class MeterController extends Controller
@@ -50,47 +51,10 @@ class MeterController extends Controller
 
     public function waterIndex(Request $request)
     {
-        $selectedMonth = $request->input('month', Carbon::now()->format('Y-m'));
-        $floor = $request->input('floor', 1); // default ชั้น 1 = 10 ห้อง
-
-        $rooms = Room::with(['contract', 'meterReadings' => function($q) use ($selectedMonth) {
-            $q->where('billing_month', $selectedMonth);
-        }, 'allMeterReadings' => function($q) {
-            $q->orderBy('billing_month', 'asc'); // Order by asc to get the earliest reading
-        }])->where('room_number', 'like', $floor . '%')
-          ->orderBy('room_number', 'asc')
-          ->get();
-
-        $rooms->each(function ($room) use ($selectedMonth) {
-            $currentMonthReading = $room->meterReadings->first();
-            
-            if ($currentMonthReading) {
-                $room->display_water_prev = $currentMonthReading->water_prev;
-            } else {
-                // Find the latest meter reading before the selected month
-                $previousReading = $room->allMeterReadings
-                                        ->filter(function ($reading) use ($selectedMonth) {
-                                            return $reading->billing_month < $selectedMonth;
-                                        })
-                                        ->last(); // Use last() since ordered by asc
-
-                if ($previousReading) {
-                    $room->display_water_prev = $previousReading->water_curr ?? $previousReading->water_prev;
-                } else {
-                    // No previous reading, use the very first initial reading (water_prev of the earliest entry)
-                    $firstReading = $room->allMeterReadings->first();
-                    $room->display_water_prev = $firstReading ? ($firstReading->water_prev ?? 0) : 0;
-                }
-            }
-        });
-
-        return view('rooms.meters_water', compact('rooms', 'selectedMonth', 'floor'));
-    }
-
-    public function electricIndex(Request $request)
-    {
-        $selectedMonth = $request->input('month', Carbon::now()->format('Y-m'));
-        $floor = $request->input('floor', 1); // default ชั้น 1 = 10 ห้อง
+        $currentMonth = Carbon::now()->format('Y-m');
+        $selectedMonth = $request->input('month', $currentMonth);
+        $isCurrentMonth = $selectedMonth === $currentMonth;
+        $floor = $request->input('floor', 1);
 
         $rooms = Room::with(['contract', 'meterReadings' => function($q) use ($selectedMonth) {
             $q->where('billing_month', $selectedMonth);
@@ -102,28 +66,65 @@ class MeterController extends Controller
 
         $rooms->each(function ($room) use ($selectedMonth) {
             $currentMonthReading = $room->meterReadings->first();
-            
+            if ($currentMonthReading) {
+                $room->display_water_prev = $currentMonthReading->water_prev;
+            } else {
+                $previousReading = $room->allMeterReadings
+                    ->filter(fn($r) => $r->billing_month < $selectedMonth)->last();
+                if ($previousReading) {
+                    $room->display_water_prev = $previousReading->water_curr ?? $previousReading->water_prev;
+                } else {
+                    $firstReading = $room->allMeterReadings->first();
+                    $room->display_water_prev = $firstReading ? ($firstReading->water_prev ?? 0) : 0;
+                }
+            }
+        });
+
+        // ดึงสถานะบิลของทุกห้องในเดือนที่เลือก (room_id => status)
+        $billStatuses = Bill::where('billing_month', $selectedMonth)
+            ->pluck('status', 'room_id')
+            ->toArray();
+
+        return view('rooms.meters_water', compact('rooms', 'selectedMonth', 'floor', 'isCurrentMonth', 'billStatuses'));
+    }
+
+    public function electricIndex(Request $request)
+    {
+        $currentMonth = Carbon::now()->format('Y-m');
+        $selectedMonth = $request->input('month', $currentMonth);
+        $isCurrentMonth = $selectedMonth === $currentMonth;
+        $floor = $request->input('floor', 1);
+
+        $rooms = Room::with(['contract', 'meterReadings' => function($q) use ($selectedMonth) {
+            $q->where('billing_month', $selectedMonth);
+        }, 'allMeterReadings' => function($q) {
+            $q->orderBy('billing_month', 'asc');
+        }])->where('room_number', 'like', $floor . '%')
+          ->orderBy('room_number', 'asc')
+          ->get();
+
+        $rooms->each(function ($room) use ($selectedMonth) {
+            $currentMonthReading = $room->meterReadings->first();
             if ($currentMonthReading) {
                 $room->display_elec_prev = $currentMonthReading->elec_prev;
             } else {
-                // Find the latest meter reading before the selected month
                 $previousReading = $room->allMeterReadings
-                                        ->filter(function ($reading) use ($selectedMonth) {
-                                            return $reading->billing_month < $selectedMonth;
-                                        })
-                                        ->last();
-                
+                    ->filter(fn($r) => $r->billing_month < $selectedMonth)->last();
                 if ($previousReading) {
                     $room->display_elec_prev = $previousReading->elec_curr ?? $previousReading->elec_prev;
                 } else {
-                    // No previous reading, use the very first initial reading (elec_prev of the earliest entry)
                     $firstReading = $room->allMeterReadings->first();
                     $room->display_elec_prev = $firstReading ? ($firstReading->elec_prev ?? 0) : 0;
                 }
             }
         });
 
-        return view('rooms.meters_electric', compact('rooms', 'selectedMonth', 'floor'));
+        // ดึงสถานะบิลของทุกห้องในเดือนที่เลือก (room_id => status)
+        $billStatuses = Bill::where('billing_month', $selectedMonth)
+            ->pluck('status', 'room_id')
+            ->toArray();
+
+        return view('rooms.meters_electric', compact('rooms', 'selectedMonth', 'floor', 'isCurrentMonth', 'billStatuses'));
     }
 
     public function update(Request $request)

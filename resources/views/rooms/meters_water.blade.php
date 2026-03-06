@@ -148,6 +148,20 @@
                 </form>
             </div>
 
+            {{-- Banner: โหมดอ่านอย่างเดียว (เดือนในอดีต) --}}
+            @if(!$isCurrentMonth)
+            <div class="mb-4 flex items-center gap-3 bg-amber-50 border border-amber-200 rounded-xl px-5 py-3">
+                <svg class="w-5 h-5 text-amber-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>
+                <span class="text-amber-700 font-medium text-sm">กำลังดูข้อมูลเดือน <b>{{ \Carbon\Carbon::parse($selectedMonth)->locale('th')->translatedFormat('F Y') }}</b> — โหมดอ่านอย่างเดียว (ไม่สามารถแก้ไขได้)</span>
+            </div>
+
+            {{-- Override mode banner (ซ่อนไว้ก่อน) --}}
+            <div id="overrideBanner" class="hidden mb-4 flex items-center gap-3 bg-red-50 border border-red-300 rounded-xl px-5 py-3">
+                <svg class="w-5 h-5 text-red-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>
+                <span class="text-red-700 font-medium text-sm">⚠️ โหมดแก้ไขฉุกเฉิน — ห้องที่บิล <b>ชำระแล้ว</b> จะไม่สามารถแก้ไขได้</span>
+            </div>
+            @endif
+
             <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 min-h-[80vh]">
                 <div class="overflow-x-auto">
                     <table class="w-full text-left border-collapse" id="meterTable">
@@ -169,9 +183,17 @@
                                 $waterCurr = $meter ? $meter->water_curr : null;
                                 $waterUnit = $meter ? $meter->water_unit : null;
                                 $isVacant = $room->status !== 'ไม่ว่าง';
+                                $roomBillStatus = $billStatuses[$room->id] ?? null;
+                                $isPaid = $roomBillStatus === 'paid';
+                                // ล็อก input: ถ้าไม่ใช่เดือนปัจจุบัน → readonly เสมอ (จนกว่าจะ override)
+                                $inputReadonly = !$isCurrentMonth;
                             @endphp
                             <tr class="border-b border-gray-100 transition-colors {{ $isVacant ? 'bg-gray-50' : 'hover:bg-blue-50/30' }}"
-                                data-room="{{ $room->room_number }}" data-room-id="{{ $room->id }}" data-vacant="{{ $isVacant ? 'true' : 'false' }}">
+                                data-room="{{ $room->room_number }}"
+                                data-room-id="{{ $room->id }}"
+                                data-vacant="{{ $isVacant ? 'true' : 'false' }}"
+                                data-bill-status="{{ $roomBillStatus ?? 'none' }}"
+                                data-is-paid="{{ $isPaid ? 'true' : 'false' }}">
                                 <td class="py-4 px-4 text-gray-400">{{ $loop->iteration }}</td>
                                 <td class="py-4 px-4 font-bold {{ $isVacant ? 'text-gray-400' : 'text-[#4A90E2]' }}">{{ $room->room_number }}</td>
                                 <td class="py-4 px-4 font-medium {{ $isVacant ? 'text-gray-400' : 'text-gray-700' }}">
@@ -192,7 +214,24 @@
                                 <td class="py-4 px-4 text-center">
                                     @if($isVacant)
                                         <span class="text-gray-300">—</span>
+                                    @elseif($inputReadonly)
+                                        {{-- เดือนในอดีต: readonly จนกว่าจะ override --}}
+                                        <div>
+                                            <input type="number"
+                                                   id="waterCurr_{{ $room->id }}"
+                                                   value="{{ $waterCurr }}"
+                                                   placeholder="--"
+                                                   readonly
+                                                   oninput="calcWaterUnit({{ $room->id }})"
+                                                   class="w-24 text-center border rounded-lg px-2 py-1.5 outline-none border-gray-200 bg-gray-100 text-gray-500 cursor-not-allowed"
+                                                   data-override-class="w-24 text-center border border-amber-300 rounded-lg px-2 py-1.5 focus:ring-2 focus:ring-amber-300 outline-none bg-amber-50">
+                                            @if($isPaid)
+                                                <span class="text-xs text-red-400 mt-1 block">บิลชำระแล้ว</span>
+                                            @endif
+                                            <span id="waterCurrError_{{ $room->id }}" class="hidden text-red-500 text-xs mt-1 block">ต้องมากกว่าค่าเดิม</span>
+                                        </div>
                                     @else
+                                        {{-- เดือนปัจจุบัน: กรอกได้ปกติ --}}
                                         <div>
                                             <input type="number"
                                                    id="waterCurr_{{ $room->id }}"
@@ -216,10 +255,20 @@
                 </div>
 
                 {{-- ปุ่มบันทึกทั้งหมด --}}
-                <div class="mt-6 flex justify-end">
+                <div class="mt-6 flex justify-between items-end">
+                    {{-- ปุ่ม Override (ซ่อนเล็กๆ ใช้เฉพาะเดือนในอดีต) --}}
+                    @if(!$isCurrentMonth)
+                    <button id="overrideBtn" onclick="enterOverrideMode()"
+                            class="text-xs text-gray-300 hover:text-gray-500 transition-colors underline underline-offset-2 cursor-pointer">
+                        ⚙ แก้ไขข้อมูลย้อนหลัง (กรณีฉุกเฉิน)
+                    </button>
+                    @else
+                    <div></div>
+                    @endif
+
                     <button onclick="saveAll()"
                             id="saveAllBtn"
-                            class="bg-[#4A90E2] hover:bg-[#357abd] text-white font-bold py-2.5 px-8 rounded-lg transition-colors shadow-md flex items-center gap-2">
+                            class="{{ !$isCurrentMonth ? 'hidden' : '' }} bg-[#4A90E2] hover:bg-[#357abd] text-white font-bold py-2.5 px-8 rounded-lg transition-colors shadow-md flex items-center gap-2">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
                         บันทึกทั้งหมด
                     </button>
@@ -229,6 +278,65 @@
     </div>
 
     <script>
+        const IS_CURRENT_MONTH = {{ $isCurrentMonth ? 'true' : 'false' }};
+
+        // =========================================================
+        // Override Mode (แก้ไขข้อมูลย้อนหลัง)
+        // =========================================================
+        function enterOverrideMode() {
+            Swal.fire({
+                title: '⚠️ แก้ไขข้อมูลย้อนหลัง',
+                html: `การแก้ไขข้อมูลย้อนหลังจะส่งผลต่อ<b>ค่ายกมาของเดือนถัดไป</b><br>และอาจทำให้ยอดบิลเปลี่ยนแปลง<br><br>คุณแน่ใจหรือไม่?`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#f59e0b',
+                cancelButtonColor: '#6b7280',
+                confirmButtonText: 'แก้ไขต่อ',
+                cancelButtonText: 'ยกเลิก',
+                reverseButtons: true,
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    unlockOverrideRooms();
+                }
+            });
+        }
+
+        function unlockOverrideRooms() {
+            const rows = document.querySelectorAll('tr[data-room-id]');
+            let unlockedCount = 0;
+            let blockedCount = 0;
+
+            rows.forEach(row => {
+                if (row.dataset.vacant === 'true') return;
+                const roomId = row.dataset.roomId;
+                const isPaid = row.dataset.isPaid === 'true';
+                const currInput = document.getElementById('waterCurr_' + roomId);
+                if (!currInput) return;
+
+                if (isPaid) {
+                    // บิลชำระแล้ว → ล็อกแน่นอน ไม่ให้แก้
+                    blockedCount++;
+                } else {
+                    // บิลยังไม่จ่าย → ปลดล็อก
+                    currInput.removeAttribute('readonly');
+                    const overrideClass = currInput.dataset.overrideClass;
+                    if (overrideClass) currInput.className = overrideClass;
+                    currInput.style.cursor = '';
+                    unlockedCount++;
+                }
+            });
+
+            // แสดง override banner + ปุ่มบันทึก + ซ่อนปุ่ม override
+            document.getElementById('overrideBanner')?.classList.remove('hidden');
+            document.getElementById('overrideBanner')?.classList.add('flex');
+            document.getElementById('saveAllBtn')?.classList.remove('hidden');
+            document.getElementById('overrideBtn')?.classList.add('hidden');
+
+            let msg = `ปลดล็อก <b>${unlockedCount}</b> ห้อง`;
+            if (blockedCount > 0) msg += ` — ล็อก <b>${blockedCount}</b> ห้อง (บิลชำระแล้ว)`;
+            Swal.fire({ icon: 'info', html: msg, timer: 2500, showConfirmButton: false });
+        }
+
         function calcWaterUnit(roomId) {
             const prevEl = document.getElementById('waterPrev_' + roomId);
             const currEl = document.getElementById('waterCurr_' + roomId);
