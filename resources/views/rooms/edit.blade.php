@@ -118,7 +118,7 @@
 
                             <div>
                                 <label class="block text-sm font-bold text-gray-700 mb-1">วันที่เข้าพัก <span class="text-red-500">*</span></label>
-                                <input type="date" name="check_in_date" value="{{ $room->contract->check_in_date ?? $room->contract->created_at?->format('Y-m-d') }}" class="w-full bg-gray-50 border border-gray-300 rounded-lg px-4 py-2.5 focus:border-[#4A90E2] outline-none">
+                                <input type="date" name="check_in_date" value="{{ $room->contract->check_in_date?->format('Y-m-d') ?? $room->contract->created_at?->format('Y-m-d') }}" class="w-full bg-gray-50 border border-gray-300 rounded-lg px-4 py-2.5 focus:border-[#4A90E2] outline-none">
                             </div>
 
                             <div>
