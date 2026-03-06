@@ -223,25 +223,19 @@
                 <form action="{{ route('tenant.bills.uploadSlip', $bill->id) }}" method="POST"
                       enctype="multipart/form-data" id="slipForm">
                     @csrf
-                    <div class="flex gap-2">
-                        <label class="flex-1 cursor-pointer">
-                            <div class="flex items-center border border-gray-300 rounded-lg overflow-hidden">
-                                <span id="slipFileName" class="flex-1 px-4 py-2.5 text-sm text-gray-400 bg-white truncate">
-                                    กรุณาแนบสลิป
-                                </span>
-                                <span class="px-4 py-2.5 bg-gray-200 text-gray-700 text-sm border-l border-gray-300">
-                                    เลือกไฟล์
-                                </span>
-                            </div>
-                            <input type="file" name="payment_slip" accept="image/*" class="hidden"
-                                   required
-                                   onchange="document.getElementById('slipFileName').textContent = this.files[0]?.name || 'กรุณาแนบสลิป'">
-                        </label>
-                        <button type="submit"
-                                class="px-5 py-2.5 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-sm font-semibold transition-colors whitespace-nowrap">
-                            อัปโหลด
-                        </button>
-                    </div>
+                    <label class="w-full cursor-pointer">
+                        <div class="flex items-center border border-gray-300 rounded-lg overflow-hidden">
+                            <span id="slipFileName" class="flex-1 px-4 py-2.5 text-sm text-gray-400 bg-white truncate">
+                                กรุณาแนบสลิป
+                            </span>
+                            <span class="px-4 py-2.5 bg-gray-200 text-gray-700 text-sm border-l border-gray-300">
+                                เลือกไฟล์
+                            </span>
+                        </div>
+                        <input type="file" name="payment_slip" accept="image/*" class="hidden"
+                               required
+                               onchange="document.getElementById('slipFileName').textContent = this.files[0]?.name || 'กรุณาแนบสลิป'">
+                    </label>
                     @error('payment_slip')
                     <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
                     @enderror
