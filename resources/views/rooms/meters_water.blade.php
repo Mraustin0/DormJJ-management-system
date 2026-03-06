@@ -186,22 +186,22 @@
                                     <input type="number"
                                            id="waterPrev_{{ $room->id }}"
                                            value="{{ $waterPrev }}"
-                                           min="0"
-                                           {{ $isVacant ? 'readonly' : 'oninput="if(this.value<0)this.value=0; calcWaterUnit(' . $room->id . ')"' }}
-                                           class="w-24 text-center border rounded-lg px-2 py-1.5 outline-none
-                                                  {{ $isVacant ? 'border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed' : 'border-gray-300 focus:ring-2 focus:ring-blue-300' }}">
+                                           readonly
+                                           class="w-24 text-center border rounded-lg px-2 py-1.5 outline-none border-gray-200 bg-gray-100 {{ $isVacant ? 'text-gray-400' : 'text-gray-600' }} cursor-not-allowed">
                                 </td>
                                 <td class="py-4 px-4 text-center">
                                     @if($isVacant)
                                         <span class="text-gray-300">—</span>
                                     @else
-                                        <input type="number"
-                                               id="waterCurr_{{ $room->id }}"
-                                               value="{{ $waterCurr }}"
-                                               min="0"
-                                               placeholder="--"
-                                               oninput="if(this.value<0)this.value=0; calcWaterUnit({{ $room->id }})"
-                                               class="w-24 text-center border border-gray-300 rounded-lg px-2 py-1.5 focus:ring-2 focus:ring-blue-300 outline-none">
+                                        <div>
+                                            <input type="number"
+                                                   id="waterCurr_{{ $room->id }}"
+                                                   value="{{ $waterCurr }}"
+                                                   placeholder="--"
+                                                   oninput="calcWaterUnit({{ $room->id }})"
+                                                   class="w-24 text-center border border-gray-300 rounded-lg px-2 py-1.5 focus:ring-2 focus:ring-blue-300 outline-none">
+                                            <span id="waterCurrError_{{ $room->id }}" class="hidden text-red-500 text-xs mt-1 block">ต้องมากกว่าค่าเดิม</span>
+                                        </div>
                                     @endif
                                 </td>
                                 <td class="py-4 px-4 text-center">
@@ -230,10 +230,27 @@
 
     <script>
         function calcWaterUnit(roomId) {
-            const prev = parseFloat(document.getElementById('waterPrev_' + roomId).value) || 0;
-            const curr = parseFloat(document.getElementById('waterCurr_' + roomId).value) || 0;
-            const unit = curr - prev;
-            document.getElementById('waterUnit_' + roomId).innerText = unit > 0 ? unit + ' หน่วย' : '-';
+            const prevEl = document.getElementById('waterPrev_' + roomId);
+            const currEl = document.getElementById('waterCurr_' + roomId);
+            const errEl  = document.getElementById('waterCurrError_' + roomId);
+            const unitEl = document.getElementById('waterUnit_' + roomId);
+
+            const prev    = parseFloat(prevEl.value) || 0;
+            const currVal = currEl.value;
+            const curr    = parseFloat(currVal);
+            const hasError = currVal !== '' && !isNaN(curr) && curr < prev;
+
+            // แสดง/ซ่อน error ใต้ช่อง
+            currEl.style.borderColor = hasError ? '#f87171' : '';
+            currEl.style.boxShadow   = hasError ? '0 0 0 2px #fecaca' : '';
+            if (errEl) errEl.classList.toggle('hidden', !hasError);
+
+            // อัปเดตหน่วย
+            if (!hasError && currVal !== '') {
+                unitEl.innerText = Math.max(0, curr - prev) + ' หน่วย';
+            } else {
+                unitEl.innerText = '-';
+            }
         }
 
         function saveWater(roomId) {
@@ -241,11 +258,17 @@
         }
 
         function saveWaterSilent(roomId, showAlert = false) {
-            const prev = document.getElementById('waterPrev_' + roomId).value;
-            const curr = document.getElementById('waterCurr_' + roomId).value;
+            const prev    = parseFloat(document.getElementById('waterPrev_' + roomId).value) || 0;
+            const currEl  = document.getElementById('waterCurr_' + roomId);
+            const currVal = currEl ? currEl.value : '';
 
-            if (!curr || curr === '') {
+            if (!currVal || currVal === '') {
                 if (showAlert) Swal.fire({ icon: 'warning', title: 'กรุณากรอกเลขมิเตอร์ใหม่', showConfirmButton: true });
+                return Promise.resolve(false);
+            }
+
+            // เลขใหม่ < เลขเดิม → error แสดงใต้ช่องแล้ว ไม่บันทึก
+            if (parseFloat(currVal) < prev) {
                 return Promise.resolve(false);
             }
 
@@ -253,7 +276,7 @@
             formData.append('room_id', roomId);
             formData.append('billing_month', '{{ $selectedMonth }}');
             formData.append('water_prev', prev);
-            formData.append('water_curr', curr);
+            formData.append('water_curr', currVal);
 
             return fetch("{{ route('meters.water.update') }}", {
                 method: 'POST',
@@ -284,8 +307,10 @@
                 const roomId = row.dataset.roomId;
                 if (!roomId) return;
                 if (row.dataset.vacant === 'true') return; // ข้ามห้องว่าง
-                const curr = document.getElementById('waterCurr_' + roomId)?.value;
-                if (curr && curr !== '') {
+                const curr   = document.getElementById('waterCurr_' + roomId)?.value;
+                const errEl  = document.getElementById('waterCurrError_' + roomId);
+                const hasErr = errEl && !errEl.classList.contains('hidden');
+                if (curr && curr !== '' && !hasErr) {
                     promises.push(saveWaterSilent(roomId, false));
                 }
             });
