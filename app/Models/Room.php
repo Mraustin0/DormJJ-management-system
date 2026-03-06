@@ -16,7 +16,8 @@ class Room extends Model
 
     public function contract()
     {
-        return $this->hasOne(Contract::class, 'room_id')->latest();
+        return $this->hasOne(Contract::class, 'room_id')
+                    ->latest('start_date');
     }
 
     public function contracts()

@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Models\Bill;
 use App\Models\Contract;
 use App\Models\Room;
 use Carbon\Carbon;
@@ -48,9 +49,16 @@ class UpdateContractStatuses extends Command
             ->where('end_date', '<=', $soonLimit)
             ->update(['status' => 'ending']);
 
+        // ── 3. overdue bills: due_date ผ่านไปแล้ว และยังไม่ชำระ ────────────────
+        $overdueCount = Bill::where('status', 'pending')
+            ->whereNotNull('due_date')
+            ->where('due_date', '<', $today)
+            ->update(['status' => 'overdue']);
+
         $this->info("contracts:update-status เสร็จสิ้น");
-        $this->line("  → expired: {$expiredCount} สัญญา");
-        $this->line("  → ending:  {$endingCount} สัญญา");
+        $this->line("  → expired:       {$expiredCount} สัญญา");
+        $this->line("  → ending:        {$endingCount} สัญญา");
+        $this->line("  → overdue bills: {$overdueCount} บิล");
 
         return Command::SUCCESS;
     }

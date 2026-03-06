@@ -11,6 +11,7 @@ use App\Models\Receipt;
 use App\Models\Setting;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class BillController extends Controller
 {
@@ -181,8 +182,8 @@ class BillController extends Controller
         $existingBill = Bill::where('room_id', $request->room_id)
             ->where('billing_month', $request->billing_month)
             ->first();
-        if ($existingBill && $existingBill->status === 'paid') {
-            return response()->json(['success' => false, 'message' => 'ไม่สามารถแก้ไขบิลที่ชำระแล้วได้'], 422);
+        if ($existingBill && in_array($existingBill->status, ['paid', 'reviewing'])) {
+            return response()->json(['success' => false, 'message' => 'ไม่สามารถแก้ไขบิลที่รอการอนุมัติหรือชำระแล้วได้'], 422);
         }
 
         // สร้างหรืออัปเดตบิล
@@ -208,6 +209,11 @@ class BillController extends Controller
 
         // Send notification to tenant
         $room = Room::find($request->room_id);
+
+        // เมื่อสร้างบิลใหม่ ให้รีเซ็ต payment_status ของห้องเป็น ค้างชำระ
+        if ($bill->wasRecentlyCreated && $room) {
+            $room->update(['payment_status' => 'ค้างชำระ']);
+        }
         $monthLabel = Carbon::parse($request->billing_month)->translatedFormat('F Y');
         Notification::notifyTenantByRoom(
             $request->room_id,
@@ -252,6 +258,13 @@ class BillController extends Controller
                     ->exists();
                 if (!$meterExists) continue;
 
+                // ข้ามห้องที่บิลชำระแล้วหรือรอการอนุมัติ
+                $lockedBill = Bill::where('room_id', $roomId)
+                    ->where('billing_month', $billingMonth)
+                    ->whereIn('status', ['paid', 'reviewing'])
+                    ->exists();
+                if ($lockedBill) continue;
+
                 $elecUnits  = floatval($rd['electric_units']  ?? 0);
                 $waterUnits = floatval($rd['water_units']     ?? 0);
                 $elecAmt    = floatval($rd['electric_amount'] ?? 0);
@@ -260,20 +273,27 @@ class BillController extends Controller
                 $otherFees  = floatval($rd['other_fees']      ?? 0);
                 $total      = $roomRate + $elecAmt + $waterAmt + $otherFees;
 
-                Bill::updateOrCreate(
+                $bill = Bill::updateOrCreate(
                     ['room_id' => $roomId, 'billing_month' => $billingMonth],
                     [
+                        'bill_date'       => now()->toDateString(),
                         'electric_units'  => $elecUnits,
                         'electric_amount' => $elecAmt,
                         'water_units'     => $waterUnits,
                         'water_amount'    => $waterAmt,
                         'room_rate'       => $roomRate,
                         'other_fees'      => $otherFees,
+                        'total_price'     => $total,
                         'total_amount'    => $total,
                         'due_date'        => $dueDate,
                         'status'          => 'pending',
                     ]
                 );
+
+                // เมื่อสร้างบิลใหม่ ให้รีเซ็ต payment_status ของห้องเป็น ค้างชำระ
+                if ($bill->wasRecentlyCreated) {
+                    $room->update(['payment_status' => 'ค้างชำระ']);
+                }
 
                 Notification::notifyTenantByRoom(
                     $roomId, 'bill_created',
@@ -294,6 +314,13 @@ class BillController extends Controller
                 $meter = $room->meterReadings->first();
                 if (!$meter) continue;
 
+                // ข้ามห้องที่บิลชำระแล้วหรือรอการอนุมัติ
+                $lockedBill = Bill::where('room_id', $room->id)
+                    ->where('billing_month', $billingMonth)
+                    ->whereIn('status', ['paid', 'reviewing'])
+                    ->exists();
+                if ($lockedBill) continue;
+
                 $elecUnits  = $meter->elec_unit  ?? 0;
                 $waterUnits = $meter->water_unit ?? 0;
                 $elecAmt    = $elecUnits  * ($setting->electric_rate ?? 0);
@@ -301,20 +328,27 @@ class BillController extends Controller
                 $roomRate   = $setting->rent_per_month ?? 0;
                 $total      = $roomRate + $elecAmt + $waterAmt;
 
-                Bill::updateOrCreate(
+                $autoBill = Bill::updateOrCreate(
                     ['room_id' => $room->id, 'billing_month' => $billingMonth],
                     [
+                        'bill_date'       => now()->toDateString(),
                         'electric_units'  => $elecUnits,
                         'electric_amount' => $elecAmt,
                         'water_units'     => $waterUnits,
                         'water_amount'    => $waterAmt,
                         'room_rate'       => $roomRate,
                         'other_fees'      => 0,
+                        'total_price'     => $total,
                         'total_amount'    => $total,
                         'due_date'        => $dueDate,
                         'status'          => 'pending',
                     ]
                 );
+
+                // เมื่อสร้างบิลใหม่ ให้รีเซ็ต payment_status ของห้องเป็น ค้างชำระ
+                if ($autoBill->wasRecentlyCreated) {
+                    $room->update(['payment_status' => 'ค้างชำระ']);
+                }
 
                 Notification::notifyTenantByRoom(
                     $room->id, 'bill_created',
@@ -380,28 +414,38 @@ class BillController extends Controller
         // กำหนดวันที่ชำระ
         $paymentDate = $request->payment_date ? Carbon::parse($request->payment_date) : Carbon::now();
 
-        // สร้างใบเสร็จ
-        $receipt = Receipt::create([
-            'receipt_number' => Receipt::generateReceiptNumber(),
-            'receipt_date' => $paymentDate,
-            'amount_paid' => $bill->total_amount,
-            'payment_method' => $request->payment_method ?? 'เงินสด',
-            'payment_slip' => $slipPath,
-            'notes' => $request->notes,
-            'bill_id' => $bill->id,
-            'received_by' => Auth::id(),
-        ]);
+        DB::beginTransaction();
+        try {
+            // สร้างใบเสร็จ
+            $receipt = Receipt::create([
+                'receipt_number' => Receipt::generateReceiptNumber(),
+                'receipt_date' => $paymentDate,
+                'amount_paid' => $bill->total_amount,
+                'payment_method' => $request->payment_method ?? 'เงินสด',
+                'payment_slip' => $slipPath,
+                'notes' => $request->notes,
+                'bill_id' => $bill->id,
+                'received_by' => Auth::id(),
+            ]);
 
-        // อัปเดตสถานะบิล
-        $bill->update(['status' => 'paid']);
+            // อัปเดตสถานะบิล
+            $bill->update(['status' => 'paid']);
 
-        // อัปเดตสถานะการชำระในห้อง
-        $room = $bill->room;
-        if ($room) {
-            $room->update(['payment_status' => 'ชำระแล้ว']);
+            // อัปเดตสถานะการชำระในห้อง
+            $room = $bill->room;
+            if ($room) {
+                $room->update(['payment_status' => 'ชำระแล้ว']);
+            }
+
+            DB::commit();
+        } catch (\Exception $e) {
+            DB::rollBack();
+            \Log::error('confirmPayment error: ' . $e->getMessage());
+            return response()->json(['success' => false, 'message' => 'เกิดข้อผิดพลาดในการบันทึก กรุณาลองใหม่อีกครั้ง'], 500);
         }
 
-        // Send notification to tenant
+        // Send notification to tenant (outside transaction is fine)
+        $room = $bill->fresh()->room;
         Notification::notifyTenantByRoom(
             $bill->room_id,
             'payment_confirmed',

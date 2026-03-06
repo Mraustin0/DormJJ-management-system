@@ -71,6 +71,25 @@ class CustomerController extends Controller
                 $idcardFilePath = $request->file('idcard_file')->store('idcards', 'public');
             }
 
+            // คำนวณ start_date / end_date
+            $startDate = Carbon::parse($request->check_in_date);
+            $endDate   = $startDate->copy()->addMonths((int) $request->contract_duration);
+
+            // ตรวจสอบสัญญาที่ทับซ้อน
+            $overlap = Contract::where('room_id', $request->room_id)
+                ->whereIn('status', ['active', 'ending'])
+                ->where(function ($q) use ($startDate, $endDate) {
+                    $q->whereNotNull('start_date')
+                      ->whereNotNull('end_date')
+                      ->where('start_date', '<=', $endDate)
+                      ->where('end_date', '>=', $startDate);
+                })->exists();
+
+            if ($overlap) {
+                DB::rollBack();
+                return back()->withErrors(['check_in_date' => 'ห้องนี้มีสัญญาที่ทับซ้อนกับช่วงเวลาที่เลือกอยู่แล้ว'])->withInput();
+            }
+
             // Create contract
             $contract = Contract::create([
                 'room_id' => $request->room_id,
@@ -84,6 +103,9 @@ class CustomerController extends Controller
                 'contract_duration' => $request->contract_duration,
                 'check_in_date' => $request->check_in_date,
                 'contract_date' => $request->contract_date,
+                'start_date'    => $startDate->toDateString(),
+                'end_date'      => $endDate->toDateString(),
+                'status'        => 'active',
                 'contract_file' => $contractFilePath,
                 'idcard_file' => $idcardFilePath,
             ]);
@@ -101,6 +123,10 @@ class CustomerController extends Controller
                 [
                     'water_prev' => (int) ($request->initial_water_meter ?? 0),
                     'elec_prev'  => (int) ($request->initial_electric_meter ?? 0),
+                    'water_curr' => (int) ($request->initial_water_meter ?? 0),
+                    'elec_curr'  => (int) ($request->initial_electric_meter ?? 0),
+                    'water_unit' => 0,
+                    'elec_unit'  => 0,
                 ]
             );
 
@@ -187,8 +213,13 @@ class CustomerController extends Controller
             return response()->json(['success' => false, 'message' => 'ไม่พบสัญญา'], 404);
         }
 
+        if ($contract->status === 'expired') {
+            return response()->json(['success' => false, 'message' => 'สัญญานี้สิ้นสุดแล้ว ไม่สามารถดำเนินการได้'], 422);
+        }
+
         $contract->update([
             'end_date' => $request->move_out_date,
+            'status'   => 'expired',
         ]);
 
         $contract->room->update([
