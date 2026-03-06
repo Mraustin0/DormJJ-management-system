@@ -55,17 +55,18 @@
             </div>
         </nav>
 
-        <main class="p-6 flex flex-col items-center">
-            <div class="w-full max-w-4xl mb-3 no-print">
-                <a href="{{ route('rooms.bills') }}" class="p-2 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-[#4A90E2] transition-colors inline-flex">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
-                </a>
-            </div>
+        <main class="p-6 flex justify-center">
             @php
                 $billNo = $bill ? 'INV-' . str_pad($bill->id, 6, '0', STR_PAD_LEFT) : '-';
                 $billDate = $bill ? \Carbon\Carbon::parse($bill->created_at)->format('d/m/Y') : now()->format('d/m/Y');
                 $apartmentAddress = ($setting->address ?? '140/12,1/1') . ' ถ.' . ($setting->subdistrict ?? 'มิตรภาพ') . ' ต.' . ($setting->district ?? 'ในเมือง') . ' อ.เมือง จ.' . ($setting->province ?? 'ขอนแก่น') . ' ' . ($setting->postal_code ?? '40000');
             @endphp
+
+            <div class="flex items-start gap-3">
+                {{-- ปุ่มซ้ายกระดาษ --}}
+                <a href="{{ route('rooms.bills') }}" class="mt-2 p-2 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-[#4A90E2] transition-colors no-print flex-shrink-0">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+                </a>
 
             <div class="print-area bg-white shadow-lg border border-gray-200 p-10 w-full max-w-4xl" style="min-height: 800px;">
 
@@ -187,6 +188,7 @@
                 @endif
 
             </div>
+            </div>{{-- end flex wrapper --}}
 
         </main>
     </div>
