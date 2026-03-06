@@ -97,10 +97,9 @@ class RoomController extends Controller
         }
 
         // 5. บันทึกข้อมูล (Update หรือ Create ถ้ายังไม่มี)
-        // ใช้ updateOrCreate โดยอิงจาก roomId
         $room->contract()->updateOrCreate(
-            ['roomId' => $room->roomId], // เงื่อนไขการหา (ใช้ roomId)
-            $contractData // ข้อมูลที่จะบันทึก
+            ['room_id' => $room->id],
+            $contractData
         );
 
         // 6. อัปเดตสถานะห้อง (ถ้ามีการเลือกสถานะมา)
