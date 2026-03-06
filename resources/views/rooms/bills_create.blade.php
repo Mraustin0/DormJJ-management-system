@@ -115,17 +115,22 @@
                 @php
                     $hasContract = $room->contract && $room->status == 'ไม่ว่าง';
                     $hasBill = $hasContract && in_array($room->id, $existingBillRoomIds ?? []);
+                    $hasMeter = $hasContract && $room->meterReadings->count() > 0;
                 @endphp
-                <div onclick="selectRoom({{ $room->id }}, '{{ $room->room_number }}', {{ $hasContract ? 'true' : 'false' }})"
+                <div onclick="selectRoom({{ $room->id }}, '{{ $room->room_number }}', {{ $hasContract ? 'true' : 'false' }}, {{ $hasMeter ? 'true' : 'false' }})"
                      class="room-card p-3 rounded-2xl shadow-sm border-2 flex flex-col items-center justify-center text-center relative cursor-pointer hover:shadow-lg hover:scale-105 transition-all
                             {{ $hasContract ? 'bg-red-50 border-red-200 hover:border-red-400' : 'bg-green-50 border-green-200 hover:border-green-400' }}">
 
-                    {{-- Bill checkmark --}}
+                    {{-- Top-left indicator: checkmark (bill done) OR warning (no meter) --}}
                     @if($hasBill)
                         <div class="absolute top-2 left-2 w-5 h-5 bg-green-500 rounded-full flex items-center justify-center shadow-sm">
                             <svg class="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/>
                             </svg>
+                        </div>
+                    @elseif($hasContract && !$hasMeter)
+                        <div class="absolute top-2 left-2 w-5 h-5 bg-yellow-400 rounded-full flex items-center justify-center shadow-sm" title="ยังไม่บันทึกมิเตอร์">
+                            <span class="text-white text-xs font-bold leading-none">!</span>
                         </div>
                     @endif
 
@@ -255,13 +260,31 @@
         let editableRooms = allRoomsData.map(r => ({ ...r }));
 
         // ===== Room card click =====
-        function selectRoom(roomId, roomNumber, hasContract) {
+        function selectRoom(roomId, roomNumber, hasContract, hasMeter) {
             if (!hasContract) {
                 Swal.fire({
                     icon: 'warning',
                     title: 'ห้องว่าง',
                     text: 'ห้อง ' + roomNumber + ' ยังไม่มีผู้เช่า ไม่สามารถสร้างบิลได้',
                     confirmButtonColor: '#4A90E2'
+                });
+                return;
+            }
+            if (!hasMeter) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'ยังไม่บันทึกมิเตอร์',
+                    html: 'ห้อง <b>' + roomNumber + '</b> ยังไม่มีข้อมูลมิเตอร์สำหรับเดือนนี้<br>กรุณาบันทึกค่ามิเตอร์ก่อนสร้างบิล',
+                    showCancelButton: true,
+                    confirmButtonText: 'ไปบันทึกมิเตอร์',
+                    cancelButtonText: 'ยกเลิก',
+                    confirmButtonColor: '#4A90E2',
+                    cancelButtonColor: '#6b7280',
+                    reverseButtons: true
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        window.location.href = '{{ route("meters.water") }}?month=' + selectedMonth;
+                    }
                 });
                 return;
             }

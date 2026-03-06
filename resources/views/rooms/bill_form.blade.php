@@ -92,6 +92,20 @@
             </div>
             @endif
 
+            @if(!$meter && !$existingBill)
+            <div class="mb-4 p-4 bg-yellow-50 border border-yellow-300 rounded-xl flex items-start gap-3">
+                <svg class="w-5 h-5 text-yellow-500 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>
+                <div class="flex-1">
+                    <p class="text-sm font-bold text-yellow-700">ยังไม่มีข้อมูลมิเตอร์สำหรับเดือนนี้</p>
+                    <p class="text-sm text-yellow-600 mt-0.5">กรุณาบันทึกค่ามิเตอร์น้ำและไฟก่อน จึงจะสามารถสร้างบิลได้</p>
+                </div>
+                <a href="{{ route('meters.water') }}?month={{ $selectedMonth }}"
+                   class="shrink-0 bg-yellow-400 hover:bg-yellow-500 text-white text-sm font-bold px-4 py-2 rounded-lg transition-colors">
+                    บันทึกมิเตอร์
+                </a>
+            </div>
+            @endif
+
             <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
                 {{-- Tenant Info --}}
                 <div class="flex items-center gap-4 mb-8">
@@ -249,6 +263,14 @@
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
                                 </svg>
                                 ชำระแล้ว — ไม่สามารถแก้ไข
+                            </button>
+                            @elseif(!$meter && !$existingBill)
+                            <button type="button" disabled
+                                    class="w-full bg-gray-300 text-gray-500 font-bold py-3 rounded-lg cursor-not-allowed flex items-center justify-center gap-2">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+                                </svg>
+                                บันทึกมิเตอร์ก่อนสร้างบิล
                             </button>
                             @elseif($existingBill)
                             <button type="button" onclick="saveBill()"

@@ -167,6 +167,14 @@ class BillController extends Controller
             'total_amount' => 'required|numeric|min:0|max:999999',
         ]);
 
+        // ตรวจสอบว่ามีข้อมูลมิเตอร์สำหรับเดือนนี้แล้วหรือยัง
+        $meterExists = MeterReading::where('room_id', $request->room_id)
+            ->where('billing_month', $request->billing_month)
+            ->exists();
+        if (!$meterExists) {
+            return response()->json(['success' => false, 'message' => 'ยังไม่มีข้อมูลมิเตอร์สำหรับเดือนนี้ กรุณาบันทึกค่ามิเตอร์ก่อน'], 422);
+        }
+
         // ตรวจสอบว่าบิลที่มีอยู่แล้วชำระแล้วหรือไม่
         $existingBill = Bill::where('room_id', $request->room_id)
             ->where('billing_month', $request->billing_month)
@@ -234,6 +242,12 @@ class BillController extends Controller
 
                 $room = Room::with('contract')->find($roomId);
                 if (!$room || !$room->contract) continue;
+
+                // ตรวจสอบว่ามีข้อมูลมิเตอร์ก่อนสร้างบิล
+                $meterExists = MeterReading::where('room_id', $roomId)
+                    ->where('billing_month', $billingMonth)
+                    ->exists();
+                if (!$meterExists) continue;
 
                 $elecUnits  = floatval($rd['electric_units']  ?? 0);
                 $waterUnits = floatval($rd['water_units']     ?? 0);
