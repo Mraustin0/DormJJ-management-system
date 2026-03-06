@@ -179,7 +179,7 @@
                             @foreach($rooms as $room)
                             @php
                                 $meter = $room->meterReadings->first();
-                                $waterPrev = $meter ? $meter->water_prev : ($room->display_water_prev ?? 0);
+                                $waterPrev = $room->display_water_prev ?? 0; // ใช้ค่าที่คำนวณจากเดือนก่อนเสมอ
                                 $waterCurr = $meter ? $meter->water_curr : null;
                                 $waterUnit = $meter ? $meter->water_unit : null;
                                 $isVacant = $room->status !== 'ไม่ว่าง';

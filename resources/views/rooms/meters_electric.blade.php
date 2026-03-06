@@ -179,7 +179,7 @@
                             @foreach($rooms as $room)
                             @php
                                 $meter = $room->meterReadings->first();
-                                $elecPrev = $meter ? $meter->elec_prev : ($room->display_elec_prev ?? 0);
+                                $elecPrev = $room->display_elec_prev ?? 0; // ใช้ค่าที่คำนวณจากเดือนก่อนเสมอ
                                 $elecCurr = $meter ? $meter->elec_curr : null;
                                 $elecUnit = $meter ? $meter->elec_unit : null;
                                 $isVacant = $room->status !== 'ไม่ว่าง';

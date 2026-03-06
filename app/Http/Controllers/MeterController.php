@@ -65,18 +65,15 @@ class MeterController extends Controller
           ->get();
 
         $rooms->each(function ($room) use ($selectedMonth) {
-            $currentMonthReading = $room->meterReadings->first();
-            if ($currentMonthReading) {
-                $room->display_water_prev = $currentMonthReading->water_prev;
+            // คำนวณ water_prev จากเดือนก่อนที่มี water_curr บันทึกไว้ (ไม่เชื่อค่าที่เก็บใน record ปัจจุบัน)
+            $previousReading = $room->allMeterReadings
+                ->filter(fn($r) => $r->billing_month < $selectedMonth && $r->water_curr !== null)
+                ->last();
+            if ($previousReading) {
+                $room->display_water_prev = $previousReading->water_curr;
             } else {
-                $previousReading = $room->allMeterReadings
-                    ->filter(fn($r) => $r->billing_month < $selectedMonth)->last();
-                if ($previousReading) {
-                    $room->display_water_prev = $previousReading->water_curr ?? $previousReading->water_prev;
-                } else {
-                    $firstReading = $room->allMeterReadings->first();
-                    $room->display_water_prev = $firstReading ? ($firstReading->water_prev ?? 0) : 0;
-                }
+                $firstReading = $room->allMeterReadings->first();
+                $room->display_water_prev = $firstReading ? ($firstReading->water_prev ?? 0) : 0;
             }
         });
 
@@ -104,18 +101,15 @@ class MeterController extends Controller
           ->get();
 
         $rooms->each(function ($room) use ($selectedMonth) {
-            $currentMonthReading = $room->meterReadings->first();
-            if ($currentMonthReading) {
-                $room->display_elec_prev = $currentMonthReading->elec_prev;
+            // คำนวณ elec_prev จากเดือนก่อนที่มี elec_curr บันทึกไว้ (ไม่เชื่อค่าที่เก็บใน record ปัจจุบัน)
+            $previousReading = $room->allMeterReadings
+                ->filter(fn($r) => $r->billing_month < $selectedMonth && $r->elec_curr !== null)
+                ->last();
+            if ($previousReading) {
+                $room->display_elec_prev = $previousReading->elec_curr;
             } else {
-                $previousReading = $room->allMeterReadings
-                    ->filter(fn($r) => $r->billing_month < $selectedMonth)->last();
-                if ($previousReading) {
-                    $room->display_elec_prev = $previousReading->elec_curr ?? $previousReading->elec_prev;
-                } else {
-                    $firstReading = $room->allMeterReadings->first();
-                    $room->display_elec_prev = $firstReading ? ($firstReading->elec_prev ?? 0) : 0;
-                }
+                $firstReading = $room->allMeterReadings->first();
+                $room->display_elec_prev = $firstReading ? ($firstReading->elec_prev ?? 0) : 0;
             }
         });
 
