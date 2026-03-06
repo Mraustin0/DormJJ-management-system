@@ -86,16 +86,16 @@
 
                             {{-- Login Information --}}
                             <div class="pt-4 border-t border-gray-200">
-                                <h4 class="text-base font-bold text-gray-800 mb-4">Log In Information</h4>
+                                <h4 class="text-base font-bold text-gray-800 mb-4">ข้อมูลการเข้าสู่ระบบ</h4>
 
                                 <div class="space-y-4">
                                     <div>
-                                        <label class="block text-sm font-medium text-gray-700 mb-1">Username</label>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">ชื่อบัญชีผู้ใช้</label>
                                         <input type="text" name="username" value="{{ old('username') }}" placeholder="กรุณากรอกชื่อบัญชีผู้ใช้" class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:border-[#4A90E2] focus:ring-1 focus:ring-[#4A90E2] outline-none">
                                     </div>
 
                                     <div>
-                                        <label class="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">รหัสผ่าน</label>
                                         <input type="password" name="password" placeholder="กรุณากรอกรหัสผ่าน" class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:border-[#4A90E2] focus:ring-1 focus:ring-[#4A90E2] outline-none">
                                     </div>
                                 </div>
