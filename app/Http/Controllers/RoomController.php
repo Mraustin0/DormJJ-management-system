@@ -106,8 +106,31 @@ class RoomController extends Controller
 
         // 6. อัปเดตสถานะห้อง
         if ($request->has('tenant_status')) {
-            $room->status = $request->tenant_status == 'moving_out' ? 'แจ้งย้ายออก' : 'ไม่ว่าง';
-            $room->save();
+            if ($request->tenant_status === 'moving_out') {
+                $room->status = 'แจ้งย้ายออก';
+                $room->save();
+            } elseif ($request->tenant_status === 'active') {
+                $room->status = 'ไม่ว่าง';
+                $room->save();
+            } elseif ($request->tenant_status === 'moved_out') {
+                // ย้ายออกทันที: คืนสถานะห้องและปิดสัญญา
+                $room->status         = 'ว่าง';
+                $room->payment_status = null;
+                $room->save();
+
+                // ปิดสัญญา active/ending ที่ยังเปิดอยู่
+                $activeContract = $room->contracts()
+                    ->whereIn('status', ['active', 'ending'])
+                    ->latest('start_date')
+                    ->first();
+                if ($activeContract) {
+                    $activeContract->update([
+                        'status'   => 'expired',
+                        'end_date' => $activeContract->end_date ?? now()->toDateString(),
+                    ]);
+                }
+            }
+            // ค่าอื่น: ไม่เปลี่ยนสถานะ
         }
 
         // 7. เด้งกลับไปหน้า Dashboard พร้อมข้อความแจ้งเตือน

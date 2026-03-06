@@ -124,10 +124,18 @@
                             <div>
                                 <label class="block text-sm font-bold text-gray-700 mb-1">สถานะผู้เช่า</label>
                                 <div class="relative">
-                                    <select name="tenant_status" class="w-full bg-gray-50 border border-gray-300 rounded-lg px-4 py-2.5 appearance-none focus:border-[#4A90E2] outline-none">
-                                        <option value="active" {{ $room->status == 'ไม่ว่าง' ? 'selected' : '' }}>กำลังเข้าพัก</option>
-                                        <option value="moving_out" {{ $room->status == 'แจ้งย้ายออก' ? 'selected' : '' }}>แจ้งย้ายออก</option>
-                                    </select>
+                                    @if(in_array($room->status, ['ว่าง', 'จอง']))
+                                        {{-- ห้องว่างหรือจอง: แสดงแบบ read-only ไม่ส่ง value ไปให้ controller --}}
+                                        <select class="w-full bg-gray-100 border border-gray-200 text-gray-500 rounded-lg px-4 py-2.5 appearance-none cursor-not-allowed outline-none" disabled>
+                                            <option selected>{{ $room->status == 'ว่าง' ? 'ว่าง (ย้ายออกแล้ว)' : 'จอง' }}</option>
+                                        </select>
+                                    @else
+                                        <select name="tenant_status" class="w-full bg-gray-50 border border-gray-300 rounded-lg px-4 py-2.5 appearance-none focus:border-[#4A90E2] outline-none">
+                                            <option value="active" {{ $room->status == 'ไม่ว่าง' ? 'selected' : '' }}>กำลังเข้าพัก</option>
+                                            <option value="moving_out" {{ $room->status == 'แจ้งย้ายออก' ? 'selected' : '' }}>แจ้งย้ายออก</option>
+                                            <option value="moved_out">ย้ายออก</option>
+                                        </select>
+                                    @endif
                                     <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
                                         <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
                                     </div>
