@@ -116,7 +116,7 @@ class RoomController extends Controller
         }
 
         // 7. เด้งกลับไปหน้า Dashboard พร้อมข้อความแจ้งเตือน
-        return redirect()->route('rooms.index')->with('success', 'บันทึกข้อมูลเรียบร้อยแล้ว');
+        return redirect()->route('rooms.customers')->with('success', 'บันทึกข้อมูลเรียบร้อยแล้ว');
     }
 
     public function createContract($id)
