@@ -28,7 +28,7 @@
                 <h2 class="text-xl font-bold text-[#4A90E2]">ระบบจัดการหอพัก JJ Apartment</h2>
             </div>
             <div class="flex items-center gap-3">
-                <div class="text-right hidden sm:block"><p class="text-sm font-bold text-gray-900">{{ Auth::user()->name ?? 'Admin' }}</p><p class="text-xs text-gray-500">ผู้ดูแลระบบ</p></div>
+                <div class="text-right hidden sm:block"><p class="text-sm font-bold text-gray-900">{{ Auth::user()->username ?? 'Admin' }}</p><p class="text-xs text-gray-500">ผู้ดูแลระบบ</p></div>
                 <div class="w-10 h-10 rounded-full bg-[#4A90E2] flex items-center justify-center text-white font-bold shadow-md">AD</div>
             </div>
         </nav>
@@ -115,7 +115,7 @@
 
                             <div>
                                 <label class="block text-sm font-bold text-gray-700 mb-1">วันที่เข้าพัก <span class="text-red-500">*</span></label>
-                                <input type="date" name="check_in_date" value="$room->contract->created_at?->format('Y-m-d') }}" class="w-full bg-gray-50 border border-gray-300 rounded-lg px-4 py-2.5 focus:border-[#4A90E2] outline-none">
+                                <input type="date" name="check_in_date" value="{{ $room->contract->check_in_date ?? $room->contract->created_at?->format('Y-m-d') }}" class="w-full bg-gray-50 border border-gray-300 rounded-lg px-4 py-2.5 focus:border-[#4A90E2] outline-none">
                             </div>
 
                             <div>
