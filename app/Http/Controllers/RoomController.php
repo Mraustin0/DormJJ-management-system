@@ -3,10 +3,12 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use App\Models\Contract;
 use App\Models\Notification;
 use App\Models\Room;
 use App\Models\User;
 use App\Models\MeterReading;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
 
@@ -156,6 +158,29 @@ class RoomController extends Controller
 
         $room = Room::findOrFail($id);
 
+        // ─── วิธีที่ 1: ตรวจสอบสัญญาทับซ้อน ───────────────────────────────────
+        $startDate = Carbon::parse($request->check_in_date);
+        $endDate   = $startDate->copy()->addMonths((int) $request->contract_duration);
+
+        $overlap = Contract::where('room_id', $room->id)
+            ->whereIn('status', ['active', 'ending'])
+            ->where(function ($q) use ($startDate, $endDate) {
+                $q->whereNotNull('start_date')
+                  ->whereNotNull('end_date')
+                  ->where('start_date', '<=', $endDate)
+                  ->where('end_date',   '>=', $startDate);
+            })
+            ->exists();
+
+        if ($overlap) {
+            return back()
+                ->withInput()
+                ->withErrors(['check_in_date' => 'มีสัญญาเช่าอยู่แล้วในช่วงเวลานี้ (' .
+                    $startDate->format('d/m/Y') . ' – ' . $endDate->format('d/m/Y') .
+                    ') กรุณาตรวจสอบสัญญาเดิมก่อน']);
+        }
+        // ─────────────────────────────────────────────────────────────────────
+
         DB::beginTransaction();
         try {
             // Create user account if username provided
@@ -181,8 +206,8 @@ class RoomController extends Controller
                 $idcardFilePath = $request->file('idcard_file')->store('idcards', 'public');
             }
 
-            // Create contract
-            $room->contract()->create([
+            // ─── วิธีที่ 2: สร้างสัญญาพร้อม status + start/end date ──────────
+            $room->contracts()->create([
                 'tenant_name' => $request->tenant_name,
                 'phone' => $request->phone,
                 'email' => $request->email,
@@ -193,9 +218,13 @@ class RoomController extends Controller
                 'contract_duration' => $request->contract_duration,
                 'check_in_date' => $request->check_in_date,
                 'contract_date' => $request->contract_date,
+                'start_date'    => $startDate,
+                'end_date'      => $endDate,
+                'status'        => 'active',
                 'contract_file' => $contractFilePath,
                 'idcard_file' => $idcardFilePath,
             ]);
+            // ─────────────────────────────────────────────────────────────────
 
             // Update room status
             $room->update([
