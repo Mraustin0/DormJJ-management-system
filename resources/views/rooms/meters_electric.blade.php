@@ -25,7 +25,7 @@
                 <button onclick="toggleSidebar()" class="p-2 rounded-lg hover:bg-gray-100 text-gray-600 transition-colors focus:outline-none">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
                 </button>
-                <h2 class="text-2xl font-bold text-[#f2b45c]">บันทึกมิเตอร์ไฟฟ้า</h2>
+                <h2 class="text-2xl font-bold text-[#4A90E2]">บันทึกมิเตอร์ไฟฟ้า</h2>
             </div>
             <div class="flex items-center gap-4">
 
