@@ -228,7 +228,7 @@
                         <div>
                             <label class="block text-sm font-bold text-gray-700 mb-1">วันกำหนดชำระ <span class="text-red-500">*</span></label>
                             <input type="date" id="due_date" name="due_date"
-                                   value="{{ $existingBill?->due_date ? \Carbon\Carbon::parse($existingBill->due_date)->format('Y-m-d') : \Carbon\Carbon::parse($selectedMonth)->endOfMonth()->format('Y-m-d') }}"
+                                   value="{{ $existingBill?->due_date ? \Carbon\Carbon::parse($existingBill->due_date)->format('Y-m-d') : \Carbon\Carbon::parse($selectedMonth)->day($setting->payment_due_day ?? 5)->format('Y-m-d') }}"
                                    class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:border-[#4A90E2] outline-none">
                         </div>
 

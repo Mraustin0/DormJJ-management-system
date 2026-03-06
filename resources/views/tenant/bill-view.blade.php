@@ -39,20 +39,20 @@
             </div>
         </header>
 
-        {{-- Content --}}
-        <div class="p-5 max-w-2xl mx-auto">
+        {{-- Back + Title (ชิดซ้าย) --}}
+        <div class="px-5 pt-5 flex items-center gap-3 mb-5 no-print">
+            <a href="{{ route('tenant.bills') }}" class="text-gray-500 hover:text-gray-700 transition-colors shrink-0">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+                </svg>
+            </a>
+            <h2 class="text-xl font-bold text-gray-800">
+                บิลประจำเดือน{{ thaiMonth(\Carbon\Carbon::parse($bill->billing_month)->format('m')) }} {{ \Carbon\Carbon::parse($bill->billing_month)->format('Y') }}
+            </h2>
+        </div>
 
-            {{-- Back + Title --}}
-            <div class="flex items-center gap-3 mb-5 no-print">
-                <a href="{{ route('tenant.bills') }}" class="text-gray-500 hover:text-gray-700 transition-colors">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
-                    </svg>
-                </a>
-                <h2 class="text-xl font-bold text-gray-800">
-                    บิลประจำเดือน{{ thaiMonth(\Carbon\Carbon::parse($bill->billing_month)->format('m')) }} {{ \Carbon\Carbon::parse($bill->billing_month)->format('Y') }}
-                </h2>
-            </div>
+        {{-- Content --}}
+        <div class="px-5 pb-5 max-w-2xl mx-auto">
 
             {{-- ===== Room Info Card ===== --}}
             <div class="bg-white rounded-xl border border-gray-200 p-4 mb-4 flex items-start justify-between">

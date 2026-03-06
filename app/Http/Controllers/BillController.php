@@ -153,7 +153,9 @@ class BillController extends Controller
             ->where('billing_month', $selectedMonth)
             ->first();
 
-        return view('rooms.bill_form', compact('room', 'selectedMonth', 'existingBill'));
+        $setting = Setting::getInstance();
+
+        return view('rooms.bill_form', compact('room', 'selectedMonth', 'existingBill', 'setting'));
     }
 
     /**
@@ -231,6 +233,7 @@ class BillController extends Controller
         $setting = Setting::getInstance();
         $count = 0;
         $monthLabel = Carbon::parse($billingMonth)->translatedFormat('F Y');
+        $dueDate = Carbon::parse($billingMonth)->day($setting->payment_due_day ?? 5)->format('Y-m-d');
 
         $roomsInput = $request->input('rooms', []);
 
@@ -267,6 +270,7 @@ class BillController extends Controller
                         'room_rate'       => $roomRate,
                         'other_fees'      => $otherFees,
                         'total_amount'    => $total,
+                        'due_date'        => $dueDate,
                         'status'          => 'pending',
                     ]
                 );
@@ -307,6 +311,7 @@ class BillController extends Controller
                         'room_rate'       => $roomRate,
                         'other_fees'      => 0,
                         'total_amount'    => $total,
+                        'due_date'        => $dueDate,
                         'status'          => 'pending',
                     ]
                 );
