@@ -168,33 +168,45 @@
                                 $waterPrev = $meter ? $meter->water_prev : ($room->display_water_prev ?? 0);
                                 $waterCurr = $meter ? $meter->water_curr : null;
                                 $waterUnit = $meter ? $meter->water_unit : null;
+                                $isVacant = $room->status !== 'ไม่ว่าง';
                             @endphp
-                            <tr class="border-b border-gray-100 hover:bg-blue-50/30 transition-colors" data-room="{{ $room->room_number }}" data-room-id="{{ $room->id }}">
-                                <td class="py-4 px-4 text-gray-500">{{ $loop->iteration }}</td>
-                                <td class="py-4 px-4 font-bold text-[#4A90E2]">{{ $room->room_number }}</td>
-                                <td class="py-4 px-4 text-gray-700 font-medium">
-                                    {{ $room->contract ? $room->contract->tenant_name : 'ห้องว่าง' }}
+                            <tr class="border-b border-gray-100 transition-colors {{ $isVacant ? 'bg-gray-50' : 'hover:bg-blue-50/30' }}"
+                                data-room="{{ $room->room_number }}" data-room-id="{{ $room->id }}" data-vacant="{{ $isVacant ? 'true' : 'false' }}">
+                                <td class="py-4 px-4 text-gray-400">{{ $loop->iteration }}</td>
+                                <td class="py-4 px-4 font-bold {{ $isVacant ? 'text-gray-400' : 'text-[#4A90E2]' }}">{{ $room->room_number }}</td>
+                                <td class="py-4 px-4 font-medium {{ $isVacant ? 'text-gray-400' : 'text-gray-700' }}">
+                                    @if($isVacant)
+                                        ห้องว่าง
+                                        <span class="ml-1 text-xs bg-gray-200 text-gray-500 px-2 py-0.5 rounded-full">ไม่สามารถกรอกได้</span>
+                                    @else
+                                        {{ $room->contract->tenant_name }}
+                                    @endif
                                 </td>
                                 <td class="py-4 px-4 text-center">
                                     <input type="number"
                                            id="waterPrev_{{ $room->id }}"
                                            value="{{ $waterPrev }}"
                                            min="0"
-                                           oninput="if(this.value<0)this.value=0; calcWaterUnit({{ $room->id }})"
-                                           class="w-24 text-center border border-gray-300 rounded-lg px-2 py-1.5 focus:ring-2 focus:ring-blue-300 outline-none">
+                                           {{ $isVacant ? 'readonly' : 'oninput="if(this.value<0)this.value=0; calcWaterUnit(' . $room->id . ')"' }}
+                                           class="w-24 text-center border rounded-lg px-2 py-1.5 outline-none
+                                                  {{ $isVacant ? 'border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed' : 'border-gray-300 focus:ring-2 focus:ring-blue-300' }}">
                                 </td>
                                 <td class="py-4 px-4 text-center">
-                                    <input type="number"
-                                           id="waterCurr_{{ $room->id }}"
-                                           value="{{ $waterCurr }}"
-                                           min="0"
-                                           placeholder="--"
-                                           oninput="if(this.value<0)this.value=0; calcWaterUnit({{ $room->id }})"
-                                           class="w-24 text-center border border-gray-300 rounded-lg px-2 py-1.5 focus:ring-2 focus:ring-blue-300 outline-none">
+                                    @if($isVacant)
+                                        <span class="text-gray-300">—</span>
+                                    @else
+                                        <input type="number"
+                                               id="waterCurr_{{ $room->id }}"
+                                               value="{{ $waterCurr }}"
+                                               min="0"
+                                               placeholder="--"
+                                               oninput="if(this.value<0)this.value=0; calcWaterUnit({{ $room->id }})"
+                                               class="w-24 text-center border border-gray-300 rounded-lg px-2 py-1.5 focus:ring-2 focus:ring-blue-300 outline-none">
+                                    @endif
                                 </td>
                                 <td class="py-4 px-4 text-center">
-                                    <span id="waterUnit_{{ $room->id }}" class="font-bold text-gray-800">
-                                        {{ $waterUnit !== null ? $waterUnit . ' หน่วย' : '-' }}
+                                    <span id="waterUnit_{{ $room->id }}" class="{{ $isVacant ? 'text-gray-300' : 'font-bold text-gray-800' }}">
+                                        {{ $isVacant ? '—' : ($waterUnit !== null ? $waterUnit . ' หน่วย' : '-') }}
                                     </span>
                                 </td>
                             </tr>
@@ -271,6 +283,7 @@
             rows.forEach(row => {
                 const roomId = row.dataset.roomId;
                 if (!roomId) return;
+                if (row.dataset.vacant === 'true') return; // ข้ามห้องว่าง
                 const curr = document.getElementById('waterCurr_' + roomId)?.value;
                 if (curr && curr !== '') {
                     promises.push(saveWaterSilent(roomId, false));
