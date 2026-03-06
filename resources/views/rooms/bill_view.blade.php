@@ -55,7 +55,7 @@
             </div>
         </nav>
 
-        <main class="p-6 flex justify-center">
+        <main class="p-6 flex flex-col items-center">
             @php
                 $billNo = $bill ? 'INV-' . str_pad($bill->id, 6, '0', STR_PAD_LEFT) : '-';
                 $billDate = $bill ? \Carbon\Carbon::parse($bill->created_at)->format('d/m/Y') : now()->format('d/m/Y');
@@ -183,7 +183,7 @@
 
             </div>
 
-            <div class="mt-6 no-print">
+            <div class="mt-4 w-full max-w-4xl no-print">
                 <a href="{{ route('rooms.bills') }}" class="p-2 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-[#4A90E2] transition-colors inline-flex">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
                 </a>
