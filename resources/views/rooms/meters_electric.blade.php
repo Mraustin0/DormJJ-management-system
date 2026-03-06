@@ -106,7 +106,7 @@
                             <p class="text-sm font-bold text-gray-900">{{ Auth::user()->username ?? 'Admin' }}</p>
                             <p class="text-xs text-gray-500">Admin</p>
                         </div>
-                        <div class="w-10 h-10 rounded-full bg-[#f2b45c] flex items-center justify-center text-white font-bold shadow-md">
+                        <div class="w-10 h-10 rounded-full bg-[#4A90E2] flex items-center justify-center text-white font-bold shadow-md">
                             <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
                         </div>
                     </button>
