@@ -171,11 +171,11 @@
     </div>
 
     {{-- ===== CREATE ALL MODAL ===== --}}
-    <div id="createAllModal" class="fixed inset-0 bg-black/50 z-50 hidden items-start justify-center p-4 pt-10 overflow-y-auto">
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-5xl flex flex-col mb-10">
+    <div id="createAllModal" class="fixed inset-0 bg-black/60 z-50 hidden items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-5xl flex flex-col" style="max-height:90vh;">
 
             {{-- Modal Header --}}
-            <div class="flex items-center justify-between px-6 py-4 border-b border-gray-200 sticky top-0 bg-white rounded-t-2xl z-10">
+            <div class="flex items-center justify-between px-6 py-4 border-b border-gray-200 flex-shrink-0 bg-white rounded-t-2xl">
                 <div>
                     <h3 class="text-lg font-bold text-gray-800">สร้างบิลทั้งหมด</h3>
                     <p class="text-sm text-gray-500 mt-0.5">
@@ -191,7 +191,7 @@
             </div>
 
             {{-- Legend --}}
-            <div class="px-6 pt-3 pb-2 flex items-center gap-4 text-xs text-gray-500 bg-gray-50 border-b border-gray-100">
+            <div class="px-6 pt-3 pb-2 flex items-center gap-4 text-xs text-gray-500 bg-gray-50 border-b border-gray-100 flex-shrink-0">
                 <span class="flex items-center gap-1">
                     <span class="w-3 h-3 rounded-full bg-green-500 inline-block"></span> ส่งบิลแล้ว (จะ overwrite)
                 </span>
@@ -202,7 +202,7 @@
             </div>
 
             {{-- Modal Table --}}
-            <div class="overflow-x-auto">
+            <div class="overflow-x-auto overflow-y-auto flex-1">
                 <table class="w-full text-sm">
                     <thead>
                         <tr class="bg-gray-50 text-gray-600 text-xs uppercase tracking-wide">
@@ -227,7 +227,7 @@
             </div>
 
             {{-- Modal Footer --}}
-            <div class="flex items-center justify-between px-6 py-4 border-t border-gray-200 bg-gray-50 rounded-b-2xl sticky bottom-0">
+            <div class="flex items-center justify-between px-6 py-4 border-t border-gray-200 bg-gray-50 rounded-b-2xl flex-shrink-0">
                 <div class="text-sm">
                     <span class="text-gray-600">จำนวนห้อง: </span>
                     <span id="modalRoomCount" class="font-bold text-gray-800">0</span>

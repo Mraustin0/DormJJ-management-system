@@ -100,9 +100,11 @@
                     $checkInDate    = ($room->contract && $room->contract->check_in_date)
                         ? \Carbon\Carbon::parse($room->contract->check_in_date)
                         : null;
-                    $isFutureCheckIn = $checkInDate && $checkInDate->gt(\Carbon\Carbon::today());
+                    // เหลืองเฉพาะห้องที่อยู่ในสถานะ จอง/รอเข้าพัก และวันยังไม่ถึงเท่านั้น
+                    $isFutureCheckIn = in_array($room->status, ['จอง', 'รอเข้าพัก'])
+                        && $checkInDate
+                        && $checkInDate->gt(\Carbon\Carbon::today());
 
-                    // เหลืองเฉพาะเมื่อวันเข้าพักยังไม่ถึงเท่านั้น
                     $cardColor = match(true) {
                         $isFutureCheckIn
                                                    => 'bg-[#f59e0b] border-[#f59e0b]',
