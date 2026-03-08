@@ -104,31 +104,9 @@
                     </table>
                 </div>
 
-                @if($customers->hasPages())
-                <div class="mt-6 flex justify-end items-center gap-1">
-                    @if($customers->onFirstPage())
-                        <span class="w-8 h-8 flex items-center justify-center text-gray-300 text-sm rounded border border-gray-200 bg-white">&lt;</span>
-                    @else
-                        <a href="{{ $customers->previousPageUrl() }}" class="w-8 h-8 flex items-center justify-center text-gray-500 hover:bg-gray-100 rounded border border-gray-200 bg-white text-sm">&lt;</a>
-                    @endif
-
-                    @foreach($customers->getUrlRange(1, $customers->lastPage()) as $page => $url)
-                        @if($page == $customers->currentPage())
-                            <span class="w-8 h-8 flex items-center justify-center bg-[#4A90E2] text-white rounded text-sm font-bold border border-[#4A90E2]">{{ $page }}</span>
-                        @elseif($page <= 4 || $page == $customers->lastPage())
-                            <a href="{{ $url }}" class="w-8 h-8 flex items-center justify-center text-gray-600 hover:bg-gray-100 rounded border border-gray-200 bg-white text-sm">{{ $page }}</a>
-                        @elseif($page == 5)
-                            <span class="w-8 h-8 flex items-center justify-center text-gray-400 text-sm">...</span>
-                        @endif
-                    @endforeach
-
-                    @if($customers->hasMorePages())
-                        <a href="{{ $customers->nextPageUrl() }}" class="w-8 h-8 flex items-center justify-center text-gray-500 hover:bg-gray-100 rounded border border-gray-200 bg-white text-sm">&gt;</a>
-                    @else
-                        <span class="w-8 h-8 flex items-center justify-center text-gray-300 text-sm rounded border border-gray-200 bg-white">&gt;</span>
-                    @endif
+                <div class="mt-6">
+                    {{ $customers->links() }}
                 </div>
-                @endif
 
             </div>
         </main>
