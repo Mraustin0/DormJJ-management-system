@@ -16,6 +16,17 @@ class RoomController extends Controller
 {
     public function index(Request $request)
     {
+        // ── Auto-update: ห้องที่ถึงวันเข้าพักแล้ว → เปลี่ยนเป็น ไม่ว่าง ──────────
+        $today = \Carbon\Carbon::today()->toDateString();
+        $dueRooms = Room::whereIn('status', ['จอง', 'รอเข้าพัก'])
+            ->whereHas('contract', function ($q) use ($today) {
+                $q->whereIn('status', ['active', 'ending'])
+                  ->whereDate('check_in_date', '<=', $today);
+            })->get();
+        foreach ($dueRooms as $r) {
+            $r->update(['status' => 'ไม่ว่าง']);
+        }
+
         // 1. รับค่าชั้นจาก URL ถ้าไม่มีค่ามาให้ใช้ชั้น 1 เป็นค่าพื้นฐาน
         $currentFloor = $request->query('floor', 1);
 

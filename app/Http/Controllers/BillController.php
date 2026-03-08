@@ -252,7 +252,7 @@ class BillController extends Controller
         $setting = Setting::getInstance();
         $count = 0;
         $monthLabel = Carbon::parse($billingMonth)->translatedFormat('F Y');
-        $dueDate = Carbon::parse($billingMonth)->day($setting->payment_due_day ?? 5)->format('Y-m-d');
+        $dueDate = Carbon::parse($billingMonth)->day((int)($setting->payment_due_day ?? 5))->format('Y-m-d');
 
         $roomsInput = $request->input('rooms', []);
 

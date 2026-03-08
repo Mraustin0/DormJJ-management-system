@@ -97,21 +97,24 @@
                 @foreach($rooms as $room)
                 @php
                     // ถ้า check_in_date ยังไม่ถึง → ถือว่ารอเข้าพัก (สีเหลือง)
-                    $isFutureCheckIn = $room->contract
-                        && $room->contract->check_in_date
-                        && \Carbon\Carbon::parse($room->contract->check_in_date)->gt(\Carbon\Carbon::today());
+                    $checkInDate    = ($room->contract && $room->contract->check_in_date)
+                        ? \Carbon\Carbon::parse($room->contract->check_in_date)
+                        : null;
+                    $isFutureCheckIn = $checkInDate && $checkInDate->gt(\Carbon\Carbon::today());
 
+                    // เหลืองเฉพาะเมื่อวันเข้าพักยังไม่ถึงเท่านั้น
                     $cardColor = match(true) {
-                        in_array($room->status, ['รอเข้าพัก', 'จอง']) || $isFutureCheckIn
+                        $isFutureCheckIn
                                                    => 'bg-[#f59e0b] border-[#f59e0b]',
-                        $room->status === 'ไม่ว่าง' => 'bg-[#f27b6d] border-[#f27b6d]',
+                        in_array($room->status, ['ไม่ว่าง', 'จอง', 'รอเข้าพัก'])
+                                                   => 'bg-[#f27b6d] border-[#f27b6d]',
                         $room->status === 'แจ้งย้ายออก' => 'bg-[#f2b45c] border-[#f2b45c]',
                         default                    => 'bg-[#56ab91] border-[#56ab91]',
                     };
 
-                    $displayStatus = (in_array($room->status, ['รอเข้าพัก', 'จอง']) || $isFutureCheckIn)
+                    $displayStatus = $isFutureCheckIn
                         ? 'รอเข้าพัก'
-                        : $room->status;
+                        : (in_array($room->status, ['จอง', 'รอเข้าพัก']) ? 'ไม่ว่าง' : $room->status);
                 @endphp
                 <div onclick="openRoomModal({{ json_encode($room) }}, {{ json_encode($room->contract) }})"
                      class="p-6 rounded-3xl shadow-sm border text-center relative transition-all group cursor-pointer hover:shadow-xl hover:scale-105 {{ $cardColor }}">
@@ -272,9 +275,17 @@
                 document.getElementById('occupiedView').classList.remove('hidden');
                 populateTenantInfo();
 
+                // ตรวจสอบว่า check_in_date ยังไม่ถึงหรือไม่
+                let isFutureCheckIn = false;
+                if (contract && contract.check_in_date) {
+                    const today = new Date(); today.setHours(0,0,0,0);
+                    const ci = new Date(contract.check_in_date); ci.setHours(0,0,0,0);
+                    isFutureCheckIn = ci > today;
+                }
+
                 // แสดง label ตามสถานะห้อง
                 const statusLabel = document.getElementById('roomStatusLabel');
-                if (room.status === 'รอเข้าพัก' || room.status === 'จอง') {
+                if (room.status === 'รอเข้าพัก' || room.status === 'จอง' || isFutureCheckIn) {
                     statusLabel.textContent = 'รอเข้าพัก';
                     statusLabel.className = 'text-sm font-bold mt-1 text-amber-500';
                 } else if (room.status === 'แจ้งย้ายออก') {
@@ -329,7 +340,20 @@
                 document.getElementById('tenantId').innerText    = currentContract.nid   || '-';
                 document.getElementById('tenantPhone').innerText = currentContract.phone || '-';
                 document.getElementById('tenantEmail').innerText = currentContract.email || '-';
-                document.getElementById('checkInDate').innerText = formatThaiDate(currentContract.check_in_date);
+
+                // วันที่เข้าพัก: เหลืองถ้าอนาคต, ดำถ้ามาถึงแล้ว
+                const checkInEl = document.getElementById('checkInDate');
+                const dateStr = currentContract.check_in_date;
+                checkInEl.innerText = formatThaiDate(dateStr);
+                if (dateStr) {
+                    const today = new Date(); today.setHours(0,0,0,0);
+                    const ci = new Date(dateStr); ci.setHours(0,0,0,0);
+                    checkInEl.className = ci > today
+                        ? 'font-medium text-amber-500'
+                        : 'font-medium text-gray-800';
+                } else {
+                    checkInEl.className = 'font-medium text-gray-800';
+                }
             } else {
                 document.getElementById('tenantName').innerText  = 'ไม่พบข้อมูล';
                 document.getElementById('tenantId').innerText    = '-';
