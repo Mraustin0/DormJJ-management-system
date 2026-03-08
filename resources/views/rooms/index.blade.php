@@ -96,12 +96,22 @@
             <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
                 @foreach($rooms as $room)
                 @php
-                    $cardColor = match($room->status) {
-                        'ไม่ว่าง'                  => 'bg-[#f27b6d] border-[#f27b6d]',
-                        'รอเข้าพัก', 'จอง'         => 'bg-[#f59e0b] border-[#f59e0b]',
-                        'แจ้งย้ายออก'              => 'bg-[#f2b45c] border-[#f2b45c]',
+                    // ถ้า check_in_date ยังไม่ถึง → ถือว่ารอเข้าพัก (สีเหลือง)
+                    $isFutureCheckIn = $room->contract
+                        && $room->contract->check_in_date
+                        && \Carbon\Carbon::parse($room->contract->check_in_date)->gt(\Carbon\Carbon::today());
+
+                    $cardColor = match(true) {
+                        in_array($room->status, ['รอเข้าพัก', 'จอง']) || $isFutureCheckIn
+                                                   => 'bg-[#f59e0b] border-[#f59e0b]',
+                        $room->status === 'ไม่ว่าง' => 'bg-[#f27b6d] border-[#f27b6d]',
+                        $room->status === 'แจ้งย้ายออก' => 'bg-[#f2b45c] border-[#f2b45c]',
                         default                    => 'bg-[#56ab91] border-[#56ab91]',
                     };
+
+                    $displayStatus = (in_array($room->status, ['รอเข้าพัก', 'จอง']) || $isFutureCheckIn)
+                        ? 'รอเข้าพัก'
+                        : $room->status;
                 @endphp
                 <div onclick="openRoomModal({{ json_encode($room) }}, {{ json_encode($room->contract) }})"
                      class="p-6 rounded-3xl shadow-sm border text-center relative transition-all group cursor-pointer hover:shadow-xl hover:scale-105 {{ $cardColor }}">
@@ -110,7 +120,7 @@
                         {{ $room->room_number }}
                     </h3>
                     <p class="text-[10px] text-white/90 font-bold uppercase mt-3 tracking-widest">
-                        {{ $room->status }}
+                        {{ $displayStatus }}
                     </p>
                     @if(in_array($room->status, ['ไม่ว่าง', 'รอเข้าพัก', 'จอง', 'แจ้งย้ายออก']) && $room->contract)
                         <p class="text-[10px] text-white/80 mt-2 truncate bg-white/20 rounded py-0.5 px-2">

@@ -72,6 +72,10 @@
             @endphp
 
             <div class="flex items-center gap-3 mb-6">
+                <a href="{{ route('bills.create') }}?month={{ $selectedMonth }}"
+                   class="p-2 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-[#4A90E2] transition-colors inline-flex shrink-0">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+                </a>
                 <h3 class="text-xl font-bold text-gray-800">
                     {{ $existingBill ? 'แก้ไขบิล' : 'สร้างบิล' }} ห้อง {{ $room->room_number }} ประจำเดือน {{ $monthName }}
                 </h3>
@@ -152,7 +156,7 @@
                                     <label class="block text-xs text-gray-500 mb-1">หน่วยละ</label>
                                     <div class="flex">
                                         <input type="number" id="water_rate"
-                                       value="{{ $existingBill && $existingBill->water_units > 0 ? round($existingBill->water_amount / $existingBill->water_units, 2) : 18 }}"
+                                       value="{{ $existingBill && $existingBill->water_units > 0 ? round($existingBill->water_amount / $existingBill->water_units, 2) : ($setting->water_rate ?? 18) }}"
                                        oninput="calculateWater()" class="w-full border border-gray-300 rounded-l-lg px-3 py-2 text-sm focus:border-[#4A90E2] outline-none">
                                         <span class="bg-gray-100 border border-l-0 border-gray-300 rounded-r-lg px-3 py-2 text-sm text-gray-500">บาท</span>
                                     </div>
@@ -192,7 +196,7 @@
                                     <label class="block text-xs text-gray-500 mb-1">หน่วยละ</label>
                                     <div class="flex">
                                         <input type="number" id="elec_rate"
-                                       value="{{ $existingBill && $existingBill->electric_units > 0 ? round($existingBill->electric_amount / $existingBill->electric_units, 2) : 8 }}"
+                                       value="{{ $existingBill && $existingBill->electric_units > 0 ? round($existingBill->electric_amount / $existingBill->electric_units, 2) : ($setting->electric_rate ?? 8) }}"
                                        oninput="calculateElec()" class="w-full border border-gray-300 rounded-l-lg px-3 py-2 text-sm focus:border-[#4A90E2] outline-none">
                                         <span class="bg-gray-100 border border-l-0 border-gray-300 rounded-r-lg px-3 py-2 text-sm text-gray-500">บาท</span>
                                     </div>
@@ -215,7 +219,7 @@
                             <label class="block text-sm font-bold text-gray-700 mb-1">ค่าห้อง <span class="text-red-500">*</span></label>
                             <div class="flex">
                                 <input type="number" id="room_rate" name="room_rate"
-                                       value="{{ $existingBill?->room_rate ?? $room->price ?? 3500 }}"
+                                       value="{{ $existingBill?->room_rate ?? $setting->rent_per_month ?? $room->price ?? 3500 }}"
                                        oninput="calculateTotal()" class="w-full border border-gray-300 rounded-l-lg px-4 py-2.5 focus:border-[#4A90E2] outline-none">
                                 <span class="bg-gray-100 border border-l-0 border-gray-300 rounded-r-lg px-4 py-2.5 text-gray-500">บาท</span>
                             </div>
@@ -235,7 +239,7 @@
                             <input type="text" id="fine_desc" placeholder="กรุณากรอกรายละเอียดค่าปรับ" class="w-full border border-gray-300 rounded-lg px-4 py-2.5 mb-2 focus:border-[#4A90E2] outline-none">
                             <div class="flex">
                                 <input type="number" id="other_fees" name="other_fees"
-                                       value="{{ $existingBill?->other_fees ?? 0 }}"
+                                       value="{{ $existingBill?->other_fees ?? $setting->late_fee_per_day ?? 0 }}"
                                        oninput="calculateTotal()" placeholder="กรุณากรอกค่าปรับ"
                                        class="w-full border border-gray-300 rounded-l-lg px-4 py-2.5 focus:border-[#4A90E2] outline-none">
                                 <span class="bg-gray-100 border border-l-0 border-gray-300 rounded-r-lg px-4 py-2.5 text-gray-500">บาท</span>
@@ -291,11 +295,6 @@
                 </form>
             </div>
 
-            <div class="mt-6">
-                <a href="{{ route('bills.create') }}?month={{ $selectedMonth }}" class="p-2 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-[#4A90E2] transition-colors inline-flex">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
-                </a>
-            </div>
         </main>
     </div>
 
