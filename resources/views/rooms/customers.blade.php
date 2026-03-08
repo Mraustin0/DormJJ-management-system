@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>ข้อมูลลูกค้า - JJ Apartment</title>
+    <title>จัดการบัญชี - JJ Apartment</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -18,18 +18,44 @@
     @include('partials.sidebar', ['activePage' => 'customers'])
 
     <div id="mainContent" class="md:ml-72 min-h-screen flex flex-col transition-[margin] duration-300 ease-in-out">
-        @include('partials.navbar', ['pageTitle' => 'ข้อมูลลูกค้า'])
+        @include('partials.navbar', ['pageTitle' => 'จัดการบัญชี'])
 
         <main class="p-8">
             <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 min-h-[80vh]">
 
                 <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
-                    <h3 class="text-2xl font-bold text-gray-800">ข้อมูลลูกค้า</h3>
+                    <h3 class="text-2xl font-bold text-gray-800">ประวัติบัญชีผู้ใช้</h3>
 
-                    <form action="{{ route('rooms.customers') }}" method="GET" class="relative w-full md:w-auto">
-                        <svg class="w-5 h-5 text-gray-400 absolute left-3 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-                        <input type="text" name="search" value="{{ request('search') }}" placeholder="ค้นหาข้อมูล" class="pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-[#4A90E2] w-full md:w-64">
-                    </form>
+                    <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full md:w-auto">
+                        {{-- Search --}}
+                        <form action="{{ route('rooms.customers') }}" method="GET" class="relative">
+                            <svg class="w-5 h-5 text-gray-400 absolute left-3 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                            <input type="text" name="search" value="{{ request('search') }}" placeholder="ค้นหาข้อมูล" class="pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-[#4A90E2] w-full sm:w-60">
+                            @if(request('status'))<input type="hidden" name="status" value="{{ request('status') }}">@endif
+                        </form>
+
+                        {{-- Status Filter Pills --}}
+                        <div class="flex gap-1.5 bg-gray-100 p-1 rounded-xl">
+                            @php
+                                $baseParams = request('search') ? ['search' => request('search')] : [];
+                            @endphp
+                            <a href="{{ route('rooms.customers', $baseParams) }}"
+                               class="px-4 py-1.5 rounded-lg text-sm font-semibold transition-all whitespace-nowrap
+                                      {{ $statusFilter === '' ? 'bg-white text-gray-800 shadow-sm' : 'text-gray-500 hover:text-gray-700' }}">
+                                ทั้งหมด
+                            </a>
+                            <a href="{{ route('rooms.customers', array_merge($baseParams, ['status' => 'active'])) }}"
+                               class="px-4 py-1.5 rounded-lg text-sm font-semibold transition-all whitespace-nowrap
+                                      {{ $statusFilter === 'active' ? 'bg-white text-[#56ab91] shadow-sm' : 'text-gray-500 hover:text-gray-700' }}">
+                                พักอยู่
+                            </a>
+                            <a href="{{ route('rooms.customers', array_merge($baseParams, ['status' => 'expired'])) }}"
+                               class="px-4 py-1.5 rounded-lg text-sm font-semibold transition-all whitespace-nowrap
+                                      {{ $statusFilter === 'expired' ? 'bg-white text-red-500 shadow-sm' : 'text-gray-500 hover:text-gray-700' }}">
+                                ย้ายออก
+                            </a>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="overflow-x-auto">
@@ -63,7 +89,7 @@
                                 </td>
 
                                 <td class="py-4 px-4 text-center">
-                                    <a href="{{ route('rooms.edit', $c->room_id) }}"
+                                    <a href="{{ route('customers.editForm', $c->id) }}"
                                        class="text-gray-400 hover:text-[#4A90E2] transition-colors p-1 inline-block">
                                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
                                     </a>
@@ -81,25 +107,25 @@
                 @if($customers->hasPages())
                 <div class="mt-6 flex justify-end items-center gap-1">
                     @if($customers->onFirstPage())
-                        <span class="w-8 h-8 flex items-center justify-center text-gray-300 text-sm">&lt;</span>
+                        <span class="w-8 h-8 flex items-center justify-center text-gray-300 text-sm rounded border border-gray-200 bg-white">&lt;</span>
                     @else
-                        <a href="{{ $customers->previousPageUrl() }}" class="w-8 h-8 flex items-center justify-center text-gray-600 hover:bg-gray-100 rounded text-sm">&lt;</a>
+                        <a href="{{ $customers->previousPageUrl() }}" class="w-8 h-8 flex items-center justify-center text-gray-500 hover:bg-gray-100 rounded border border-gray-200 bg-white text-sm">&lt;</a>
                     @endif
 
                     @foreach($customers->getUrlRange(1, $customers->lastPage()) as $page => $url)
                         @if($page == $customers->currentPage())
-                            <span class="w-8 h-8 flex items-center justify-center border border-gray-800 rounded text-sm font-bold text-gray-800">{{ $page }}</span>
+                            <span class="w-8 h-8 flex items-center justify-center bg-[#4A90E2] text-white rounded text-sm font-bold border border-[#4A90E2]">{{ $page }}</span>
                         @elseif($page <= 4 || $page == $customers->lastPage())
-                            <a href="{{ $url }}" class="w-8 h-8 flex items-center justify-center text-gray-600 hover:bg-gray-100 rounded text-sm">{{ $page }}</a>
+                            <a href="{{ $url }}" class="w-8 h-8 flex items-center justify-center text-gray-600 hover:bg-gray-100 rounded border border-gray-200 bg-white text-sm">{{ $page }}</a>
                         @elseif($page == 5)
                             <span class="w-8 h-8 flex items-center justify-center text-gray-400 text-sm">...</span>
                         @endif
                     @endforeach
 
                     @if($customers->hasMorePages())
-                        <a href="{{ $customers->nextPageUrl() }}" class="w-8 h-8 flex items-center justify-center text-gray-600 hover:bg-gray-100 rounded text-sm">&gt;</a>
+                        <a href="{{ $customers->nextPageUrl() }}" class="w-8 h-8 flex items-center justify-center text-gray-500 hover:bg-gray-100 rounded border border-gray-200 bg-white text-sm">&gt;</a>
                     @else
-                        <span class="w-8 h-8 flex items-center justify-center text-gray-300 text-sm">&gt;</span>
+                        <span class="w-8 h-8 flex items-center justify-center text-gray-300 text-sm rounded border border-gray-200 bg-white">&gt;</span>
                     @endif
                 </div>
                 @endif

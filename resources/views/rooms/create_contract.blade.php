@@ -13,7 +13,7 @@
 </head>
 <body class="bg-gray-50 text-gray-800 overflow-x-hidden">
 
-    @include('partials.sidebar', ['activePage' => 'home'])
+    @include('partials.sidebar', ['activePage' => 'tenants.create'])
 
     <div id="mainContent" class="md:ml-72 flex-1 min-h-screen flex flex-col transition-[margin] duration-300 ease-in-out">
         @include('partials.navbar', ['pageTitle' => 'ระบบจัดการหอพัก JJ Apartment'])
@@ -66,12 +66,12 @@
 
                                 <div class="space-y-4">
                                     <div>
-                                        <label class="block text-sm font-medium text-gray-700 mb-1">ชื่อบัญชีผู้ใช้ <span class="text-red-500">*</span>label>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">ชื่อบัญชีผู้ใช้</label>
                                         <input type="text" name="username" value="{{ old('username') }}" placeholder="กรุณากรอกชื่อบัญชีผู้ใช้" class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:border-[#4A90E2] focus:ring-1 focus:ring-[#4A90E2] outline-none">
                                     </div>
 
                                     <div>
-                                        <label class="block text-sm font-medium text-gray-700 mb-1">รหัสผ่าน <span class="text-red-500">*</span>label>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">รหัสผ่าน</label>
                                         <input type="password" name="password" placeholder="กรุณากรอกรหัสผ่าน" class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:border-[#4A90E2] focus:ring-1 focus:ring-[#4A90E2] outline-none">
                                     </div>
                                 </div>
@@ -126,20 +126,6 @@
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-1">วันที่ทำสัญญา <span class="text-red-500">*</span></label>
                                 <input type="date" name="contract_date" value="{{ old('contract_date') }}" class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:border-[#4A90E2] outline-none cursor-pointer" required>
-                            </div>
-
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">สถานะผู้เช่า</label>
-                                <div class="relative">
-                                    <select name="tenant_status" class="w-full bg-white border border-gray-300 rounded-lg px-4 py-2.5 appearance-none focus:border-[#4A90E2] outline-none cursor-pointer">
-                                        <option value="" disabled selected>- ผู้เช่า / Admin</option>
-                                        <option value="active" {{ old('tenant_status') == 'active' ? 'selected' : '' }}>ผู้เช่า (กำลังเข้าพัก)</option>
-                                        <option value="reserved" {{ old('tenant_status') == 'reserved' ? 'selected' : '' }}>จอง</option>
-                                    </select>
-                                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-gray-500">
-                                        <svg class="fill-current h-4 w-4" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
-                                    </div>
-                                </div>
                             </div>
 
                             {{-- Initial Meter Settings --}}

@@ -20,16 +20,29 @@ class BillController extends Controller
         // 1. สร้าง Query เตรียมดึงข้อมูลจาก Bill (พร้อมข้อมูลห้องและใบเสร็จ)
         $query = Bill::with(['room.contract', 'receipt']);
 
-        // 2. กรองข้อมูล: ตามเดือน (ถ้ามีการเลือก)
-        $selectedMonth = $request->input('month');
+        // 2. กรองข้อมูล: ตามเดือน
+        // - 'month'  (singular) → ส่งมาจาก inline month-picker (กรองเดือนเดียว)
+        // - 'months' (plural)   → ส่งมาจาก filter modal (comma-separated เช่น "2026-03,2026-02")
+        $selectedMonth  = $request->input('month', Carbon::now()->format('Y-m'));
+        $selectedMonths = $request->input('months'); // จาก modal
+
         if ($selectedMonth && $selectedMonth != 'all') {
             $query->where('billing_month', $selectedMonth);
+        } elseif ($selectedMonths) {
+            $monthList = array_values(array_filter(explode(',', $selectedMonths)));
+            if (!empty($monthList)) {
+                $query->whereIn('billing_month', $monthList);
+            }
         }
 
-        // 3. กรองข้อมูล: ตามสถานะ (ถ้ามีการเลือก)
+        // 3. กรองข้อมูล: ตามสถานะ (รองรับหลายสถานะ comma-separated จาก modal)
         $selectedStatus = $request->input('status');
         if ($selectedStatus && $selectedStatus != 'all') {
-            $query->where('status', $selectedStatus);
+            if (str_contains($selectedStatus, ',')) {
+                $query->whereIn('status', array_filter(explode(',', $selectedStatus)));
+            } else {
+                $query->where('status', $selectedStatus);
+            }
         }
 
         // 4. กรองข้อมูล: ค้นหาห้อง (Search)
@@ -432,9 +445,14 @@ class BillController extends Controller
             $bill->update(['status' => 'paid']);
 
             // อัปเดตสถานะการชำระในห้อง
+            // เช็คก่อนว่ายังมีบิลค้างชำระอื่นในห้องนี้ไหม ถ้าไม่มีแล้วจึงตั้งเป็น ชำระแล้ว
             $room = $bill->room;
             if ($room) {
-                $room->update(['payment_status' => 'ชำระแล้ว']);
+                $hasUnpaidBills = Bill::where('room_id', $room->id)
+                    ->where('id', '!=', $bill->id)
+                    ->whereIn('status', ['pending', 'overdue', 'reviewing'])
+                    ->exists();
+                $room->update(['payment_status' => $hasUnpaidBills ? 'ค้างชำระ' : 'ชำระแล้ว']);
             }
 
             DB::commit();

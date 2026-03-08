@@ -65,6 +65,9 @@ Route::middleware(['auth', 'role:admin,staff'])->group(function () {
     // หน้าข้อมูลลูกค้า
     Route::get('/customers', [CustomerController::class, 'index'])->name('rooms.customers');
     Route::post('/customers/update', [CustomerController::class, 'update'])->name('customers.update');
+    Route::get('/customers/{id}/edit', [CustomerController::class, 'editForm'])->name('customers.editForm');
+    Route::put('/customers/{id}', [CustomerController::class, 'updateFull'])->name('customers.updateFull');
+    Route::delete('/contracts/{id}', [CustomerController::class, 'destroyContract'])->name('contracts.destroy');
 
     // แจ้งซ่อม (admin จัดการคำร้องจาก tenant)
     Route::get('/repairs', [RepairController::class, 'index'])->name('repairs.index');
@@ -87,13 +90,7 @@ Route::middleware(['auth', 'role:admin,staff'])->group(function () {
     Route::put('/rooms/{id}', [RoomController::class, 'update'])->name('rooms.update'); // เตรียมไว้สำหรับปุ่มบันทึก
 
 
-    // หน้าฟอร์มทำสัญญาเช่า (สำหรับห้องว่าง)
-    Route::get('/rooms/{id}/assign', [RoomController::class, 'assign'])->name('rooms.assign');
-
-    // ฟังก์ชันบันทึกข้อมูลสัญญาใหม่
-    Route::post('/rooms/{id}/assign', [RoomController::class, 'storeAssignment'])->name('rooms.storeAssignment');
-
-        // หน้าสร้างสัญญาเช่า (หน้าใหม่)
+    // หน้าสร้างสัญญาเช่า (หน้าใหม่)
     Route::get('/rooms/{id}/contract/create', [RoomController::class, 'createContract'])->name('rooms.createContract');
 
     // บันทึกสัญญาเช่า

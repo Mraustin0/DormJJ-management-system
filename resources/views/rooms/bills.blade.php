@@ -177,8 +177,14 @@
                     </span>
                     @endif
                     @if(request('months'))
+                    @php
+                        $fItems = array_filter(explode(',', request('months')));
+                        $fThNames = ['01'=>'ม.ค.','02'=>'ก.พ.','03'=>'มี.ค.','04'=>'เม.ย.','05'=>'พ.ค.','06'=>'มิ.ย.','07'=>'ก.ค.','08'=>'ส.ค.','09'=>'ก.ย.','10'=>'ต.ค.','11'=>'พ.ย.','12'=>'ธ.ค.'];
+                        $fLabels = [];
+                        foreach ($fItems as $fItem) { [$fY, $fMo] = explode('-', $fItem); $fLabels[] = ($fThNames[$fMo] ?? $fMo) . ' ' . $fY; }
+                    @endphp
                     <span class="bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm flex items-center gap-1">
-                        กรองตามเดือน
+                        เดือน: {{ implode(', ', $fLabels) }}
                         <a href="{{ route('rooms.bills', array_merge(request()->except('months'), [])) }}" class="hover:text-green-900">&times;</a>
                     </span>
                     @endif
@@ -187,7 +193,19 @@
                 @endif
 
                 <h4 class="font-bold text-lg mb-4 text-gray-700 border-l-4 border-[#4A90E2] pl-3">
-                    {{ $selectedMonth && $selectedMonth != 'all' ? 'รายการประจำเดือน ' . \Carbon\Carbon::parse($selectedMonth)->translatedFormat('F Y') : 'รายการทั้งหมด' }}
+                    @if($selectedMonth && $selectedMonth != 'all')
+                        รายการประจำเดือน {{ \Carbon\Carbon::parse($selectedMonth)->locale('th')->isoFormat('MMMM YYYY') }}
+                    @elseif(request('months'))
+                        @php
+                            $mItems = array_filter(explode(',', request('months')));
+                            $thNames = ['01'=>'มกราคม','02'=>'กุมภาพันธ์','03'=>'มีนาคม','04'=>'เมษายน','05'=>'พฤษภาคม','06'=>'มิถุนายน','07'=>'กรกฎาคม','08'=>'สิงหาคม','09'=>'กันยายน','10'=>'ตุลาคม','11'=>'พฤศจิกายน','12'=>'ธันวาคม'];
+                            $mLabels = [];
+                            foreach ($mItems as $mItem) { [$mY, $mMo] = explode('-', $mItem); $mLabels[] = ($thNames[$mMo] ?? $mMo) . ' ' . $mY; }
+                        @endphp
+                        รายการเดือน {{ implode(', ', $mLabels) }}
+                    @else
+                        รายการทั้งหมด
+                    @endif
                 </h4>
 
                 <!-- Bills table -->
@@ -635,6 +653,32 @@
 
         // Filter Modal Functions
         function openFilterModal() {
+            // Restore status checkboxes
+            const currentStatus = '{{ $selectedStatus ?? "" }}';
+            if (currentStatus) {
+                const statusList = currentStatus.split(',').filter(s => s.trim());
+                document.querySelectorAll('.status-checkbox').forEach(cb => {
+                    cb.checked = statusList.includes(cb.value);
+                });
+            } else {
+                document.querySelectorAll('.status-checkbox').forEach(cb => cb.checked = false);
+            }
+
+            // Restore month checkboxes
+            const currentMonths = '{{ request("months") }}';
+            if (currentMonths) {
+                const monthList = currentMonths.split(',').filter(m => m.trim());
+                if (monthList.length > 0) {
+                    const firstYear = monthList[0].split('-')[0];
+                    document.getElementById('yearSelect').value = firstYear;
+                    document.querySelectorAll('.month-checkbox').forEach(cb => {
+                        cb.checked = monthList.some(m => m === firstYear + '-' + cb.value);
+                    });
+                }
+            } else {
+                document.querySelectorAll('.month-checkbox').forEach(cb => cb.checked = false);
+            }
+
             document.getElementById('filterModal').classList.remove('hidden');
             document.getElementById('filterModal').classList.add('flex');
         }
@@ -666,6 +710,11 @@
 
             if (selectedStatuses.length === 1) {
                 document.getElementById('statusInput').value = selectedStatuses[0];
+            }
+
+            // ถ้าเลือกเดือนจาก modal ให้ล้าง inline month picker เพื่อไม่ให้ conflict กัน
+            if (selectedMonths.length > 0) {
+                document.querySelector('input[name="month"]').value = '';
             }
 
             closeFilterModal();

@@ -37,11 +37,6 @@ class Bill extends Model
         return $this->belongsTo(Room::class, 'room_id');
     }
 
-    public function tenant()
-    {
-        return $this->belongsTo(Tenant::class, 'tenant_id');
-    }
-
     public function receipt()
     {
         return $this->hasOne(Receipt::class, 'bill_id');

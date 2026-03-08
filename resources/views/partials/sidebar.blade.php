@@ -55,18 +55,18 @@
             <h3 class="text-gray-500 font-bold text-sm uppercase mb-3">USER</h3>
             <ul class="space-y-2">
                 <li>
-                    <a href="{{ route('rooms.customers') }}" class="block px-2 {{ ($activePage ?? '') == 'customers' ? 'py-2 bg-[#A0A0A0] text-white rounded-lg shadow-sm' : 'py-1.5 text-gray-800 hover:text-[#4A90E2]' }} font-medium text-lg">
-                        ข้อมูลลูกค้า
-                    </a>
-                </li>
-                <li>
                     <a href="{{ route('tenants.create') }}" class="block px-2 {{ ($activePage ?? '') == 'tenants.create' ? 'py-2 bg-[#A0A0A0] text-white rounded-lg shadow-sm' : 'py-1.5 text-gray-800 hover:text-[#4A90E2]' }} font-medium text-lg">
                         สร้างบัญชีผู้ใช้
                     </a>
                 </li>
                 <li>
+                    <a href="{{ route('rooms.customers') }}" class="block px-2 {{ ($activePage ?? '') == 'customers' ? 'py-2 bg-[#A0A0A0] text-white rounded-lg shadow-sm' : 'py-1.5 text-gray-800 hover:text-[#4A90E2]' }} font-medium text-lg">
+                        จัดการบัญชี
+                    </a>
+                </li>
+                <li>
                     <a href="{{ route('rooms.accommodation') }}" class="block px-2 {{ ($activePage ?? '') == 'accommodation' ? 'py-2 bg-[#A0A0A0] text-white rounded-lg shadow-sm' : 'py-1.5 text-gray-800 hover:text-[#4A90E2]' }} font-medium text-lg">
-                        ข้อมูลการเข้าพัก
+                        ประวัติการเข้าพัก
                     </a>
                 </li>
                 <li>
@@ -76,7 +76,7 @@
                             $pendingMoveouts = \App\Models\MoveoutRequest::where('status', 'pending')->count();
                         @endphp
                         @if($pendingMoveouts > 0)
-                            <span class="bg-red-500 text-white text-xs font-bold px-1.5 py-0.5 rounded-full min-w-[20px] text-center">
+                            <span class="bg-red-500 text-white text-xs font-bold px-1.5 py-0.5 rounded-full min-w-5 text-center">
                                 {{ $pendingMoveouts > 9 ? '9+' : $pendingMoveouts }}
                             </span>
                         @endif
@@ -104,7 +104,7 @@
             <ul class="space-y-2">
                 <li>
                     <a href="{{ route('settings.index') }}" class="block px-2 {{ ($activePage ?? '') == 'settings' ? 'py-2 bg-[#A0A0A0] text-white rounded-lg shadow-sm' : 'py-1.5 text-gray-800 hover:text-[#4A90E2]' }} font-medium text-lg">
-                        ตั้งค่า
+                        ตั้งค่าระบบ
                     </a>
                 </li>
                 <li>

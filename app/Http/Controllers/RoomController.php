@@ -23,12 +23,13 @@ class RoomController extends Controller
         $data = [
             'total_vacant'   => Room::where('status', 'ว่าง')->count(),
             'total_occupied' => Room::where('status', 'ไม่ว่าง')->count(),
-            'total_paid'     => Room::where('payment_status', 'ชำระแล้ว')->count(),
+            'total_waiting'  => Room::whereIn('status', ['รอเข้าพัก', 'จอง'])->count(),
             'total_pending'  => Room::where('payment_status', 'ค้างชำระ')->count(),
 
             // สถิติเฉพาะชั้นที่เลือก (สำหรับ Chart)
             'floor_vacant'   => Room::where('floor', $currentFloor)->where('status', 'ว่าง')->count(),
             'floor_occupied' => Room::where('floor', $currentFloor)->where('status', 'ไม่ว่าง')->count(),
+            'floor_waiting'  => Room::where('floor', $currentFloor)->whereIn('status', ['รอเข้าพัก', 'จอง'])->count(),
 
             // 3. ดึงเฉพาะห้องในชั้นที่เลือกมาแสดงผล
             'rooms'          => Room::with('contract')->where('floor', $currentFloor)->orderBy('room_number', 'asc')->get(),
@@ -62,61 +63,72 @@ class RoomController extends Controller
 
     public function update(Request $request, $id)
     {
-        // 1. ตรวจสอบข้อมูลที่ส่งมา (Validation)
+        // 1. Validation
         $request->validate([
-            'tenant_name' => 'required|string|max:255',
-            'phone' => 'nullable|string|max:20',
-            'email' => 'nullable|email',
-            'nid'   => 'nullable|string|max:20',
-            // ถ้าจะเช็คไฟล์ด้วย ให้เปิดคอมเมนต์บรรทัดล่าง
-            // 'contract_file' => 'nullable|file|mimes:pdf,jpg,png|max:2048',
+            'tenant_name'       => 'required|string|max:255',
+            'phone'             => 'nullable|string|max:20',
+            'email'             => 'nullable|email',
+            'nid'               => 'nullable|string|max:20',
+            'check_in_date'     => 'nullable|date',
+            'contract_duration' => 'nullable|in:6,12,24',
+            'contract_file'     => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
+            'idcard_file'       => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
         ]);
 
         // 2. ค้นหาห้อง
         $room = Room::findOrFail($id);
 
-        // 3. เตรียมข้อมูลสำหรับ Contract (สัญญา)
+        // 3. เตรียมข้อมูลสำหรับ Contract
         $contractData = [
             'tenant_name' => $request->tenant_name,
             'phone'       => $request->phone,
             'email'       => $request->email,
             'nid'         => $request->nid,
-            // ถ้าใน DB มีคอลัมน์ contract_duration, check_in_date ให้เพิ่มตรงนี้
-            // 'duration' => $request->contract_duration, 
-            // 'created_at' => $request->check_in_date, 
         ];
 
-        // 4. จัดการอัปโหลดไฟล์ (ถ้ามี)
+        // เพิ่ม check_in_date และคำนวณ end_date ใหม่ถ้ามีการเปลี่ยน
+        if ($request->filled('check_in_date') || $request->filled('contract_duration')) {
+            $existingContract = $room->contract;
+            $checkIn  = Carbon::parse($request->check_in_date ?? $existingContract?->check_in_date);
+            $duration = (int) ($request->contract_duration ?? $existingContract?->contract_duration ?? 12);
+
+            $contractData['check_in_date']     = $checkIn->toDateString();
+            $contractData['start_date']        = $checkIn->toDateString();
+            $contractData['contract_duration'] = $duration;
+            $contractData['end_date']          = $checkIn->copy()->addMonths($duration)->toDateString();
+        }
+
+        // 4. จัดการอัปโหลดไฟล์
         if ($request->hasFile('contract_file')) {
-            // เก็บไฟล์ลง folder 'contracts' ใน storage/app/public
-            $path = $request->file('contract_file')->store('contracts', 'public');
-            $contractData['contract_file'] = $path;
+            $contractData['contract_file'] = $request->file('contract_file')->store('contracts', 'public');
         }
-
         if ($request->hasFile('idcard_file')) {
-            $path = $request->file('idcard_file')->store('idcards', 'public');
-            $contractData['idcard_file'] = $path;
+            $contractData['idcard_file'] = $request->file('idcard_file')->store('idcards', 'public');
         }
 
-        // 5. บันทึกข้อมูล (Update หรือ Create ถ้ายังไม่มี)
-        $room->contract()->updateOrCreate(
-            ['room_id' => $room->id],
-            $contractData
-        );
+        // 5. บันทึก Contract (ใช้ contracts() hasMany เพื่อ updateOrCreate เฉพาะสัญญา active/ending)
+        $activeContract = $room->contracts()
+            ->whereIn('status', ['active', 'ending'])
+            ->latest('start_date')
+            ->first();
+
+        if ($activeContract) {
+            $activeContract->update($contractData);
+        } else {
+            $room->contracts()->updateOrCreate(
+                ['room_id' => $room->id],
+                $contractData
+            );
+        }
 
         // 6. อัปเดตสถานะห้อง
         if ($request->has('tenant_status')) {
             if ($request->tenant_status === 'moving_out') {
-                $room->status = 'แจ้งย้ายออก';
-                $room->save();
+                $room->update(['status' => 'แจ้งย้ายออก']);
             } elseif ($request->tenant_status === 'active') {
-                $room->status = 'ไม่ว่าง';
-                $room->save();
+                $room->update(['status' => 'ไม่ว่าง']);
             } elseif ($request->tenant_status === 'moved_out') {
-                // ย้ายออกทันที: คืนสถานะห้องและปิดสัญญา
-                $room->status         = 'ว่าง';
-                $room->payment_status = null;
-                $room->save();
+                $room->update(['status' => 'ว่าง', 'payment_status' => null]);
 
                 // ปิดสัญญา active/ending ที่ยังเปิดอยู่
                 $activeContract = $room->contracts()
@@ -130,11 +142,10 @@ class RoomController extends Controller
                     ]);
                 }
             }
-            // ค่าอื่น: ไม่เปลี่ยนสถานะ
         }
 
-        // 7. เด้งกลับไปหน้า Dashboard พร้อมข้อความแจ้งเตือน
-        return redirect()->route('rooms.customers')->with('success', 'บันทึกข้อมูลเรียบร้อยแล้ว');
+        // 7. Redirect
+        return redirect()->route('rooms.index')->with('success', 'บันทึกข้อมูลเรียบร้อยแล้ว');
     }
 
     public function createContract($id)
@@ -163,7 +174,7 @@ class RoomController extends Controller
         $request->validate([
             'tenant_name' => 'required|string|max:255',
             'phone' => 'required|string|max:20',
-            'email' => 'nullable|email|max:100',
+            'email' => 'nullable|email|max:100|unique:users,email',
             'nid' => 'required|string|max:20',
             'username' => 'nullable|string|max:255|unique:users,username',
             'password' => 'nullable|string|min:6',
@@ -172,7 +183,6 @@ class RoomController extends Controller
             'contract_duration' => 'required|in:6,12',
             'check_in_date' => 'required|date',
             'contract_date' => 'required|date',
-            'tenant_status' => 'nullable|in:active,reserved',
             'initial_electric_meter' => 'nullable|numeric|min:0',
             'initial_water_meter' => 'nullable|numeric|min:0',
             'contract_file' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
@@ -212,7 +222,7 @@ class RoomController extends Controller
                 $user = User::create([
                     'username' => $request->username,
                     'password' => Hash::make($request->password),
-                    'email' => $request->email,
+                    'email' => !empty($request->email) ? $request->email : null,
                     'tenant_role' => true,
                 ]);
                 $userId = $user->id;
@@ -249,18 +259,23 @@ class RoomController extends Controller
             ]);
             // ─────────────────────────────────────────────────────────────────
 
-            // Update room status
-            $room->update([
-                'status' => $request->tenant_status == 'reserved' ? 'จอง' : 'ไม่ว่าง',
-            ]);
+            // Update room status: ถ้า check_in_date ยังไม่ถึง → รอเข้าพัก, ถ้าถึงแล้ว → ไม่ว่าง
+            $newRoomStatus = $startDate->isAfter(Carbon::today()) ? 'รอเข้าพัก' : 'ไม่ว่าง';
+            $room->update(['status' => $newRoomStatus]);
 
             // Create initial meter readings if provided
             if (!empty($request->initial_electric_meter) || !empty($request->initial_water_meter)) {
+                $initElec  = (float) ($request->initial_electric_meter ?? 0);
+                $initWater = (float) ($request->initial_water_meter ?? 0);
                 MeterReading::create([
-                    'room_id' => $room->id,
-                    'electric_reading' => $request->initial_electric_meter ?? 0,
-                    'water_reading' => $request->initial_water_meter ?? 0,
-                    'reading_date' => $request->check_in_date,
+                    'room_id'       => $room->id,
+                    'billing_month' => $startDate->format('Y-m'),
+                    'elec_prev'     => $initElec,
+                    'elec_curr'     => $initElec,
+                    'elec_unit'     => 0,
+                    'water_prev'    => $initWater,
+                    'water_curr'    => $initWater,
+                    'water_unit'    => 0,
                 ]);
             }
 

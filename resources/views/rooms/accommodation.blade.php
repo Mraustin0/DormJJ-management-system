@@ -7,6 +7,8 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <style>
         body { font-family: 'Sarabun', 'Inter', sans-serif; }
     </style>
@@ -37,7 +39,8 @@
                                 <th class="py-4 px-4 font-bold text-gray-600 w-24">ห้อง</th>
                                 <th class="py-4 px-4 font-bold text-gray-600">ชื่อ-สกุล</th>
                                 <th class="py-4 px-4 font-bold text-gray-600">วันที่เข้าพัก</th>
-                                <th class="py-4 px-4 font-bold text-gray-600 rounded-tr-lg">ระยะสัญญา</th>
+                                <th class="py-4 px-4 font-bold text-gray-600">ระยะสัญญา</th>
+                                <th class="py-4 px-4 font-bold text-gray-600 text-center rounded-tr-lg">ลบ</th>
                             </tr>
                         </thead>
                         <tbody class="text-sm">
@@ -53,9 +56,17 @@
                                 <td class="py-4 px-4 text-gray-700 font-medium">{{ $contract->tenant_name }}</td>
                                 <td class="py-4 px-4 text-gray-600">{{ $startDate ? $startDate->format('d/m/Y') : '-' }}</td>
                                 <td class="py-4 px-4 text-gray-600">{{ $duration }}</td>
+                                <td class="py-4 px-4 text-center">
+                                    <button onclick="deleteContract({{ $contract->id }}, '{{ addslashes($contract->tenant_name) }}')"
+                                            class="text-gray-300 hover:text-red-500 transition-colors p-1 inline-block">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                                        </svg>
+                                    </button>
+                                </td>
                             </tr>
                             @empty
-                            <tr><td colspan="5" class="py-8 text-center text-gray-400">ไม่พบข้อมูลผู้เข้าพัก</td></tr>
+                            <tr><td colspan="6" class="py-8 text-center text-gray-400">ไม่พบข้อมูลผู้เข้าพัก</td></tr>
                             @endforelse
                         </tbody>
                     </table>
@@ -70,6 +81,46 @@
     </div>
 
     <script>
+        // ลบข้อมูลผู้เข้าพัก
+        function deleteContract(id, name) {
+            Swal.fire({
+                title: 'ลบข้อมูลผู้เข้าพัก?',
+                html: `คุณต้องการลบข้อมูลของ <b>${name}</b> ใช่หรือไม่?<br><span class="text-sm text-red-500">การลบจะไม่สามารถกู้คืนได้</span>`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#ef4444',
+                cancelButtonColor: '#6b7280',
+                confirmButtonText: 'ลบ',
+                cancelButtonText: 'ยกเลิก',
+                reverseButtons: true,
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    fetch(`/contracts/${id}`, {
+                        method: 'DELETE',
+                        headers: {
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                            'Accept': 'application/json',
+                        },
+                    })
+                    .then(r => r.json())
+                    .then(data => {
+                        if (data.success) {
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'ลบเรียบร้อย',
+                                text: data.message,
+                                showConfirmButton: false,
+                                timer: 1500,
+                            }).then(() => location.reload());
+                        } else {
+                            Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', text: data.message ?? 'กรุณาลองใหม่อีกครั้ง' });
+                        }
+                    })
+                    .catch(() => Swal.fire({ icon: 'error', title: 'ไม่สามารถเชื่อมต่อได้' }));
+                }
+            });
+        }
+
         // ค้นหาแบบ Real-time
         const searchInput = document.getElementById('searchInput');
         const tableBody = document.querySelector('tbody');

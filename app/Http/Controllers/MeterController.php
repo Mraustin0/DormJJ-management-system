@@ -54,15 +54,19 @@ class MeterController extends Controller
         $currentMonth = Carbon::now()->format('Y-m');
         $selectedMonth = $request->input('month', $currentMonth);
         $isCurrentMonth = $selectedMonth === $currentMonth;
-        $floor = $request->input('floor', 1);
+        $floor = $request->input('floor', ''); // '' = ทุกชั้น
 
-        $rooms = Room::with(['contract', 'meterReadings' => function($q) use ($selectedMonth) {
+        $roomQuery = Room::with(['contract', 'meterReadings' => function($q) use ($selectedMonth) {
             $q->where('billing_month', $selectedMonth);
         }, 'allMeterReadings' => function($q) {
             $q->orderBy('billing_month', 'asc');
-        }])->where('room_number', 'like', $floor . '%')
-          ->orderBy('room_number', 'asc')
-          ->get();
+        }]);
+
+        if ($floor !== '') {
+            $roomQuery->where('room_number', 'like', $floor . '%');
+        }
+
+        $rooms = $roomQuery->orderBy('room_number', 'asc')->get();
 
         $rooms->each(function ($room) use ($selectedMonth) {
             // คำนวณ water_prev จากเดือนก่อนที่มี water_curr บันทึกไว้ (ไม่เชื่อค่าที่เก็บใน record ปัจจุบัน)
@@ -90,15 +94,19 @@ class MeterController extends Controller
         $currentMonth = Carbon::now()->format('Y-m');
         $selectedMonth = $request->input('month', $currentMonth);
         $isCurrentMonth = $selectedMonth === $currentMonth;
-        $floor = $request->input('floor', 1);
+        $floor = $request->input('floor', ''); // '' = ทุกชั้น
 
-        $rooms = Room::with(['contract', 'meterReadings' => function($q) use ($selectedMonth) {
+        $roomQuery = Room::with(['contract', 'meterReadings' => function($q) use ($selectedMonth) {
             $q->where('billing_month', $selectedMonth);
         }, 'allMeterReadings' => function($q) {
             $q->orderBy('billing_month', 'asc');
-        }])->where('room_number', 'like', $floor . '%')
-          ->orderBy('room_number', 'asc')
-          ->get();
+        }]);
+
+        if ($floor !== '') {
+            $roomQuery->where('room_number', 'like', $floor . '%');
+        }
+
+        $rooms = $roomQuery->orderBy('room_number', 'asc')->get();
 
         $rooms->each(function ($room) use ($selectedMonth) {
             // คำนวณ elec_prev จากเดือนก่อนที่มี elec_curr บันทึกไว้ (ไม่เชื่อค่าที่เก็บใน record ปัจจุบัน)

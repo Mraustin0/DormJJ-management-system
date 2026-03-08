@@ -68,12 +68,13 @@ class AuthController extends Controller
         // ข้อมูลรวมทั้งหมด
         $total_vacant   = Room::where('status', 'ว่าง')->count();
         $total_occupied = Room::where('status', 'ไม่ว่าง')->count();
-        $total_paid     = Room::where('payment_status', 'ชำระแล้ว')->count();
+        $total_waiting  = Room::whereIn('status', ['รอเข้าพัก', 'จอง'])->count();
         $total_pending  = Room::where('payment_status', 'ค้างชำระ')->count();
 
         // ข้อมูลตามชั้นที่เลือก (สำหรับ Chart)
         $floor_vacant   = Room::where('floor', $currentFloor)->where('status', 'ว่าง')->count();
         $floor_occupied = Room::where('floor', $currentFloor)->where('status', 'ไม่ว่าง')->count();
+        $floor_waiting  = Room::where('floor', $currentFloor)->whereIn('status', ['รอเข้าพัก', 'จอง'])->count();
 
         $rooms = Room::with('contract')
                      ->where('floor', $currentFloor)
@@ -82,8 +83,8 @@ class AuthController extends Controller
 
         return view('rooms.index', compact(
             'currentFloor', 'rooms',
-            'total_vacant', 'total_occupied', 'total_paid', 'total_pending',
-            'floor_vacant', 'floor_occupied'
+            'total_vacant', 'total_occupied', 'total_waiting', 'total_pending',
+            'floor_vacant', 'floor_occupied', 'floor_waiting'
         ));
     }
 

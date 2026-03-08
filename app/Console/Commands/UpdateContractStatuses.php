@@ -18,6 +18,21 @@ class UpdateContractStatuses extends Command
         $today      = Carbon::today();
         $soonLimit  = $today->copy()->addDays(30);
 
+        // ── 0. รอเข้าพัก → ไม่ว่าง: check_in_date ถึงแล้ว ──────────────────
+        $activateCount = 0;
+        $waitingRooms = Room::where('status', 'รอเข้าพัก')
+            ->whereHas('contract', function ($q) use ($today) {
+                $q->whereIn('status', ['active', 'ending'])
+                  ->where('check_in_date', '<=', $today);
+            })
+            ->get();
+
+        foreach ($waitingRooms as $room) {
+            $room->update(['status' => 'ไม่ว่าง']);
+            $this->line("  ห้อง {$room->room_number}: รอเข้าพัก → ไม่ว่าง");
+            $activateCount++;
+        }
+
         // ── 1. expired: end_date ผ่านไปแล้ว ──────────────────────────────────
         $expiredContracts = Contract::whereIn('status', ['active', 'ending'])
             ->whereNotNull('end_date')
@@ -56,6 +71,7 @@ class UpdateContractStatuses extends Command
             ->update(['status' => 'overdue']);
 
         $this->info("contracts:update-status เสร็จสิ้น");
+        $this->line("  → activate:      {$activateCount} ห้อง");
         $this->line("  → expired:       {$expiredCount} สัญญา");
         $this->line("  → ending:        {$endingCount} สัญญา");
         $this->line("  → overdue bills: {$overdueCount} บิล");
