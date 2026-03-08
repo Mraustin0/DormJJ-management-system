@@ -13,9 +13,9 @@
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
                 </svg>
-                @if(($pendingSlipsCount ?? 0) > 0)
+                @if(($adminNotifCount ?? 0) > 0)
                 <span class="absolute -top-1 -right-1 bg-red-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center font-bold">
-                    {{ $pendingSlipsCount > 9 ? '9+' : $pendingSlipsCount }}
+                    {{ $adminNotifCount > 9 ? '9+' : $adminNotifCount }}
                 </span>
                 @endif
             </button>
@@ -31,71 +31,78 @@
                 </div>
 
                 <div class="max-h-96 overflow-y-auto" id="notificationList">
-                    @if(isset($pendingSlips) && $pendingSlips->count() > 0)
-                        @foreach($pendingSlips->take(6) as $slip)
-                        <a href="{{ route('rooms.bills') }}?status=pending" class="notification-item flex items-start gap-3 p-4 hover:bg-gray-50 cursor-pointer border-b border-gray-50 transition-colors" data-notif-id="slip-{{ $slip->id }}" data-read="false" data-color="#4A90E2" onclick="markAsRead(this, event)">
-                            <div class="w-10 h-10 rounded-full bg-[#4A90E2] flex items-center justify-center flex-shrink-0 notif-icon">
-                                <svg class="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
-                            </div>
-                            <div class="flex-1 min-w-0">
-                                <p class="text-sm font-bold text-gray-800 notif-title">ห้อง {{ $slip->room->room_number ?? '-' }}</p>
-                                <p class="text-sm text-[#4A90E2] notif-desc">แจ้งเตือนการโอนเงิน</p>
-                                <p class="text-xs text-gray-400 mt-1">{{ $slip->created_at?->diffForHumans() ?? '1 day' }}</p>
-                            </div>
-                            <div class="w-2 h-2 rounded-full bg-[#4A90E2] mt-2 unread-dot"></div>
-                        </a>
-                        @endforeach
-                    @else
-                        {{-- Sample notifications for demo with different links --}}
-                        <a href="{{ route('rooms.bills') }}?status=pending" class="notification-item flex items-start gap-3 p-4 hover:bg-gray-50 cursor-pointer border-b border-gray-50" data-notif-id="demo-1" data-read="false" data-color="#4A90E2" onclick="markAsRead(this, event)">
+                    @if(($adminNotifCount ?? 0) > 0)
+
+                        {{-- สลิปรอตรวจสอบ --}}
+                        @foreach($reviewingBills ?? [] as $bill)
+                        <a href="{{ route('rooms.bills') }}?status=reviewing" class="notification-item flex items-start gap-3 p-4 hover:bg-gray-50 cursor-pointer border-b border-gray-50 transition-colors" data-notif-id="reviewing-{{ $bill->id }}" data-read="false" onclick="markAsRead(this, event)">
                             <div class="w-10 h-10 rounded-full bg-[#4A90E2] flex items-center justify-center flex-shrink-0 notif-icon">
                                 <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
                             </div>
                             <div class="flex-1 min-w-0">
-                                <p class="text-sm font-bold text-gray-800 notif-title">ห้อง 101</p>
-                                <p class="text-sm text-[#4A90E2] notif-desc">แจ้งเตือนการโอนเงิน</p>
-                                <p class="text-xs text-gray-400 mt-1">1 วันที่แล้ว</p>
+                                <p class="text-sm font-bold text-gray-800 notif-title">ห้อง {{ $bill->room->room_number ?? '-' }}</p>
+                                <p class="text-sm text-[#4A90E2] notif-desc">แจ้งชำระค่าเช่า (รอตรวจสอบ)</p>
+                                <p class="text-xs text-gray-400 mt-1">{{ $bill->updated_at?->diffForHumans() }}</p>
                             </div>
                             <div class="w-2 h-2 rounded-full bg-[#4A90E2] mt-2 unread-dot"></div>
                         </a>
-                        <a href="{{ route('rooms.accommodation') }}" class="notification-item flex items-start gap-3 p-4 hover:bg-gray-50 cursor-pointer border-b border-gray-50" data-notif-id="demo-2" data-read="false" data-color="#f2b45c" onclick="markAsRead(this, event)">
+                        @endforeach
+
+                        {{-- สัญญาใกล้หมดอายุ --}}
+                        @foreach($endingContracts ?? [] as $contract)
+                        <a href="{{ route('rooms.accommodation') }}" class="notification-item flex items-start gap-3 p-4 hover:bg-gray-50 cursor-pointer border-b border-gray-50 transition-colors" data-notif-id="ending-{{ $contract->id }}" data-read="false" onclick="markAsRead(this, event)">
                             <div class="w-10 h-10 rounded-full bg-[#f2b45c] flex items-center justify-center flex-shrink-0 notif-icon">
                                 <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                             </div>
                             <div class="flex-1 min-w-0">
-                                <p class="text-sm font-bold text-gray-800 notif-title">ห้อง 102</p>
-                                <p class="text-sm text-[#f2b45c] notif-desc">สัญญาใกล้หมดอายุ</p>
-                                <p class="text-xs text-gray-400 mt-1">4 วันที่แล้ว</p>
+                                <p class="text-sm font-bold text-gray-800 notif-title">ห้อง {{ $contract->room->room_number ?? '-' }}</p>
+                                <p class="text-sm text-[#f2b45c] notif-desc">สัญญาใกล้หมดอายุ {{ $contract->end_date?->format('d/m/Y') }}</p>
+                                <p class="text-xs text-gray-400 mt-1">{{ $contract->end_date?->diffForHumans() }}</p>
                             </div>
                             <div class="w-2 h-2 rounded-full bg-[#f2b45c] mt-2 unread-dot"></div>
                         </a>
-                        <a href="{{ route('rooms.bills') }}?status=pending" class="notification-item flex items-start gap-3 p-4 hover:bg-gray-50 cursor-pointer border-b border-gray-50" data-notif-id="demo-3" data-read="false" data-color="#f27b6d" onclick="markAsRead(this, event)">
-                            <div class="w-10 h-10 rounded-full bg-[#f27b6d] flex items-center justify-center shrink-0 notif-icon">
+                        @endforeach
+
+                        {{-- ค้างชำระ --}}
+                        @foreach($overdueBills ?? [] as $bill)
+                        <a href="{{ route('rooms.bills') }}?status=overdue" class="notification-item flex items-start gap-3 p-4 hover:bg-gray-50 cursor-pointer border-b border-gray-50 transition-colors" data-notif-id="overdue-{{ $bill->id }}" data-read="false" onclick="markAsRead(this, event)">
+                            <div class="w-10 h-10 rounded-full bg-[#f27b6d] flex items-center justify-center flex-shrink-0 notif-icon">
                                 <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                             </div>
                             <div class="flex-1 min-w-0">
-                                <p class="text-sm font-bold text-gray-800 notif-title">ห้อง 110</p>
+                                <p class="text-sm font-bold text-gray-800 notif-title">ห้อง {{ $bill->room->room_number ?? '-' }}</p>
                                 <p class="text-sm text-[#f27b6d] notif-desc">ค้างชำระค่าเช่า</p>
-                                <p class="text-xs text-gray-400 mt-1">1 วันที่แล้ว</p>
+                                <p class="text-xs text-gray-400 mt-1">{{ $bill->updated_at?->diffForHumans() }}</p>
                             </div>
                             <div class="w-2 h-2 rounded-full bg-[#f27b6d] mt-2 unread-dot"></div>
                         </a>
-                        <a href="{{ route('rooms.customers') }}" class="notification-item flex items-start gap-3 p-4 hover:bg-gray-50 cursor-pointer border-b border-gray-50" data-notif-id="demo-4" data-read="false" data-color="#9ca3af" onclick="markAsRead(this, event)">
-                            <div class="w-10 h-10 rounded-full bg-gray-400 flex items-center justify-center shrink-0 notif-icon">
+                        @endforeach
+
+                        {{-- คำขอย้ายออกรอดำเนินการ --}}
+                        @foreach($pendingMoveouts ?? [] as $moveout)
+                        <a href="{{ route('moveout.requests') }}" class="notification-item flex items-start gap-3 p-4 hover:bg-gray-50 cursor-pointer border-b border-gray-50 transition-colors" data-notif-id="moveout-{{ $moveout->id }}" data-read="false" onclick="markAsRead(this, event)">
+                            <div class="w-10 h-10 rounded-full bg-gray-400 flex items-center justify-center flex-shrink-0 notif-icon">
                                 <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
                             </div>
                             <div class="flex-1 min-w-0">
-                                <p class="text-sm font-bold text-gray-800 notif-title">ห้อง 201</p>
-                                <p class="text-sm text-gray-500 notif-desc">แจ้งย้ายออก</p>
-                                <p class="text-xs text-gray-400 mt-1">4 วันที่แล้ว</p>
+                                <p class="text-sm font-bold text-gray-800 notif-title">ห้อง {{ $moveout->room->room_number ?? '-' }}</p>
+                                <p class="text-sm text-gray-500 notif-desc">แจ้งย้ายออก {{ $moveout->moveout_date?->format('d/m/Y') }}</p>
+                                <p class="text-xs text-gray-400 mt-1">{{ $moveout->created_at?->diffForHumans() }}</p>
                             </div>
                             <div class="w-2 h-2 rounded-full bg-gray-400 mt-2 unread-dot"></div>
                         </a>
+                        @endforeach
+
+                    @else
+                        <div class="p-8 text-center text-gray-400">
+                            <svg class="w-12 h-12 mx-auto mb-3 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
+                            <p class="text-sm">ไม่มีการแจ้งเตือน</p>
+                        </div>
                     @endif
                 </div>
 
                 <div class="p-3 border-t border-gray-100 text-center">
-                    <a href="{{ route('rooms.bills') }}?status=pending" class="text-[#4A90E2] text-sm font-bold hover:underline">View All</a>
+                    <a href="{{ route('rooms.bills') }}" class="text-[#4A90E2] text-sm font-bold hover:underline">ดูทั้งหมด</a>
                 </div>
             </div>
         </div>

@@ -131,12 +131,12 @@
                                         คลิกบนแผนที่หรือลากหมุดเพื่อเปลี่ยนตำแหน่ง
                                     </p>
                                     <div class="text-xs text-gray-400">
-                                        <span id="coordDisplay">{{ $setting->latitude ?? '16.4419' }}, {{ $setting->longitude ?? '102.8360' }}</span>
+                                        <span id="coordDisplay">{{ $setting->latitude ?? '16.46189' }}, {{ $setting->longitude ?? '102.82738' }}</span>
                                     </div>
                                 </div>
                             </div>
-                            <input type="hidden" name="latitude" id="latitude" value="{{ $setting->latitude ?? '16.4419' }}">
-                            <input type="hidden" name="longitude" id="longitude" value="{{ $setting->longitude ?? '102.8360' }}">
+                            <input type="hidden" name="latitude" id="latitude" value="{{ $setting->latitude ?? '16.46189' }}">
+                            <input type="hidden" name="longitude" id="longitude" value="{{ $setting->longitude ?? '102.82738' }}">
                         </div>
                     </div>
                 </div>
@@ -155,8 +155,8 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
         // Initialize Map
-        const lat = parseFloat(document.getElementById('latitude').value) || 16.4419;
-        const lng = parseFloat(document.getElementById('longitude').value) || 102.8360;
+        const lat = parseFloat(document.getElementById('latitude').value) || 16.46189;
+        const lng = parseFloat(document.getElementById('longitude').value) || 102.82738;
 
         const map = L.map('map').setView([lat, lng], 16);
 
