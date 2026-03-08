@@ -64,6 +64,7 @@
                             <tr class="border-b-2 border-gray-200">
                                 <th class="py-4 px-4 font-bold text-gray-700">#</th>
                                 <th class="py-4 px-4 font-bold text-gray-700">ชื่อ สกุล</th>
+                                <th class="py-4 px-4 font-bold text-gray-700">ชื่อบัญชีผู้ใช้</th>
                                 <th class="py-4 px-4 font-bold text-gray-700">เลขบัตรประชาชน</th>
                                 <th class="py-4 px-4 font-bold text-gray-700">เบอร์โทร</th>
                                 <th class="py-4 px-4 font-bold text-gray-700">อีเมล</th>
@@ -76,13 +77,14 @@
                             <tr class="border-b border-gray-100 hover:bg-gray-50 transition-colors">
                                 <td class="py-4 px-4 font-medium text-gray-700">A{{ str_pad($customers->firstItem() + $index, 3, '0', STR_PAD_LEFT) }}</td>
                                 <td class="py-4 px-4 text-gray-800">{{ $c->tenant_name }}</td>
+                                <td class="py-4 px-4 text-gray-600">{{ $c->user->username ?? '-' }}</td>
                                 <td class="py-4 px-4 text-gray-600">{{ $c->nid ?? '-' }}</td>
                                 <td class="py-4 px-4 text-gray-600">{{ $c->phone ?? '-' }}</td>
                                 <td class="py-4 px-4 text-gray-500">{{ $c->email ?? '-' }}</td>
 
                                 <td class="py-4 px-4">
-                                    @if($c->room && $c->room->status !== 'ว่าง')
-                                        <span class="text-[#56ab91] font-bold">ห้อง {{ $c->room->room_number }}</span>
+                                    @if(in_array($c->status, ['active', 'ending']))
+                                        <span class="text-[#56ab91] font-semibold">พักอยู่</span>
                                     @else
                                         <span class="text-red-400 font-bold bg-red-50 px-3 py-1 rounded-full text-xs">ย้ายออก</span>
                                     @endif
@@ -97,7 +99,7 @@
                             </tr>
                             @empty
                             <tr>
-                                <td colspan="7" class="py-8 text-center text-gray-400">ไม่พบข้อมูลลูกค้า</td>
+                                <td colspan="8" class="py-8 text-center text-gray-400">ไม่พบข้อมูลลูกค้า</td>
                             </tr>
                             @endforelse
                         </tbody>

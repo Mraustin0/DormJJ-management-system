@@ -156,7 +156,19 @@ class CustomerController extends Controller
 
     public function index(Request $request)
     {
-        $query = Contract::with('room');
+        // แสดงเฉพาะ contract ล่าสุดของแต่ละคน (จัดกลุ่มตาม nid)
+        $latestIds = \DB::table('contracts')
+            ->whereNotNull('nid')
+            ->selectRaw('MAX(id) as max_id')
+            ->groupBy('nid')
+            ->pluck('max_id');
+
+        $nullNidIds = \DB::table('contracts')
+            ->whereNull('nid')
+            ->pluck('id');
+
+        $query = Contract::with(['room', 'user'])
+            ->whereIn('id', $latestIds->merge($nullNidIds));
 
         // ── Filter: search ────────────────────────────────────────────────────
         if ($request->filled('search')) {
