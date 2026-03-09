@@ -116,39 +116,48 @@ class BillController extends Controller
             ->pluck('room_id')
             ->toArray();
 
-        // ดึงห้องที่มีผู้เช่าทั้งหมด สำหรับ modal สร้างบิลทั้งหมด
+        return view('rooms.bills_create', compact(
+            'rooms', 'currentFloor', 'selectedMonth', 'search',
+            'existingBillRoomIds'
+        ));
+    }
+
+    /**
+     * API: ดึงข้อมูลห้องสำหรับ modal สร้างบิลทั้งหมด (ไม่ embed ใน HTML)
+     */
+    public function getRoomData(Request $request)
+    {
+        $selectedMonth = $request->query('month', Carbon::now()->format('Y-m'));
         $setting = Setting::getInstance();
+
+        $existingBillRoomIds = Bill::where('billing_month', $selectedMonth)
+            ->pluck('room_id')->toArray();
+
         $allOccupiedRooms = Room::with(['contract', 'meterReadings' => function($q) use ($selectedMonth) {
             $q->where('billing_month', $selectedMonth);
         }])->where('status', 'ไม่ว่าง')->orderBy('floor')->orderBy('room_number')->get();
 
-        $allRoomsData = $allOccupiedRooms->map(function($room) use ($setting, $existingBillRoomIds) {
-            $meter = $room->meterReadings->first();
-            $elecUnits = $meter ? floatval($meter->elec_unit ?? 0) : 0;
+        $data = $allOccupiedRooms->map(function($room) use ($setting, $existingBillRoomIds) {
+            $meter      = $room->meterReadings->first();
+            $elecUnits  = $meter ? floatval($meter->elec_unit  ?? 0) : 0;
             $waterUnits = $meter ? floatval($meter->water_unit ?? 0) : 0;
-            $elecAmount = round($elecUnits * floatval($setting->electric_rate ?? 0), 2);
-            $waterAmount = round($waterUnits * floatval($setting->water_rate ?? 0), 2);
-            $roomRate = floatval($setting->rent_per_month ?? 0);
             return [
                 'room_id'         => $room->id,
                 'room_number'     => $room->room_number,
                 'floor'           => $room->floor,
-                'tenant_name'     => $room->contract ? $room->contract->tenant_name : '',
+                'tenant_name'     => $room->contract?->tenant_name ?? '',
                 'has_meter'       => $meter !== null,
                 'electric_units'  => $elecUnits,
-                'electric_amount' => $elecAmount,
+                'electric_amount' => round($elecUnits  * floatval($setting->electric_rate ?? 0), 2),
                 'water_units'     => $waterUnits,
-                'water_amount'    => $waterAmount,
-                'room_rate'       => $roomRate,
+                'water_amount'    => round($waterUnits * floatval($setting->water_rate    ?? 0), 2),
+                'room_rate'       => floatval($setting->rent_per_month ?? 0),
                 'other_fees'      => 0,
                 'has_bill'        => in_array($room->id, $existingBillRoomIds),
             ];
-        })->values()->toArray();
+        })->values();
 
-        return view('rooms.bills_create', compact(
-            'rooms', 'currentFloor', 'selectedMonth', 'search',
-            'existingBillRoomIds', 'allRoomsData', 'setting'
-        ));
+        return response()->json($data);
     }
 
     /**
@@ -220,8 +229,8 @@ class BillController extends Controller
             ]
         );
 
-        // Send notification to tenant
-        $room = Room::find($request->room_id);
+        // ดึง room จาก relation (ไม่ query ซ้ำ)
+        $room = $bill->room()->with('contract')->first();
 
         // เมื่อสร้างบิลใหม่ ให้รีเซ็ต payment_status ของห้องเป็น ค้างชำระ
         if ($bill->wasRecentlyCreated && $room) {
@@ -255,6 +264,9 @@ class BillController extends Controller
         $dueDate = Carbon::parse($billingMonth)->day((int)($setting->payment_due_day ?? 5))->format('Y-m-d');
 
         $roomsInput = $request->input('rooms', []);
+
+        DB::beginTransaction();
+        try {
 
         if (!empty($roomsInput)) {
             // โหมด modal — รับข้อมูลต่อห้องที่ผู้ใช้แก้ไขแล้ว
@@ -371,6 +383,13 @@ class BillController extends Controller
                 );
                 $count++;
             }
+        }
+
+        DB::commit();
+
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            return response()->json(['success' => false, 'message' => 'เกิดข้อผิดพลาด: ' . $e->getMessage()], 500);
         }
 
         if ($count === 0) {

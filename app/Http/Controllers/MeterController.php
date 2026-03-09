@@ -63,7 +63,7 @@ class MeterController extends Controller
         }]);
 
         if ($floor !== '') {
-            $roomQuery->where('room_number', 'like', $floor . '%');
+            $roomQuery->where('floor', (int)$floor);
         }
 
         $rooms = $roomQuery->orderBy('room_number', 'asc')->get();
@@ -103,7 +103,7 @@ class MeterController extends Controller
         }]);
 
         if ($floor !== '') {
-            $roomQuery->where('room_number', 'like', $floor . '%');
+            $roomQuery->where('floor', (int)$floor);
         }
 
         $rooms = $roomQuery->orderBy('room_number', 'asc')->get();

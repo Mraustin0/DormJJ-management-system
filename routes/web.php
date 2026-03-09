@@ -54,6 +54,7 @@ Route::middleware(['auth', 'role:admin,staff'])->group(function () {
     // หน้าสร้างบิล
     Route::get('/bills/create', [BillController::class, 'create'])->name('bills.create');
     Route::get('/bills/create/{id}', [BillController::class, 'createForRoom'])->name('bills.createForRoom');
+    Route::get('/bills/room-data', [BillController::class, 'getRoomData'])->name('bills.roomData');
     Route::post('/bills/store', [BillController::class, 'store'])->name('bills.store');
     Route::post('/bills/store-all', [BillController::class, 'storeAll'])->name('bills.storeAll');
     Route::get('/bills/view/{id}', [BillController::class, 'view'])->name('bills.view');

@@ -252,12 +252,10 @@
     </div>
 
     <script>
-        // ข้อมูลห้องทั้งหมดจาก PHP
-        const allRoomsData = @json($allRoomsData);
         const selectedMonth = '{{ $selectedMonth }}';
 
-        // clone เพื่อให้ผู้ใช้แก้ไขได้
-        let editableRooms = allRoomsData.map(r => ({ ...r }));
+        // โหลดเฉพาะตอนเปิด modal (ไม่ embed ข้อมูลไว้ใน HTML)
+        let editableRooms = [];
 
         // ===== Room card click =====
         function selectRoom(roomId, roomNumber, hasContract, hasMeter) {
@@ -292,13 +290,28 @@
         }
 
         // ===== Modal open/close =====
-        function openCreateAllModal() {
-            editableRooms = allRoomsData.map(r => ({ ...r }));
-            renderModalTable();
+        async function openCreateAllModal() {
+            // แสดง modal ก่อน แล้วค่อย load ข้อมูล
             const modal = document.getElementById('createAllModal');
             modal.classList.remove('hidden');
             modal.classList.add('flex');
             document.body.style.overflow = 'hidden';
+
+            // แสดง loading ขณะรอ
+            document.getElementById('modalRoomsBody').innerHTML =
+                '<tr><td colspan="7" class="text-center py-10 text-gray-400">กำลังโหลดข้อมูล...</td></tr>';
+
+            try {
+                const res = await fetch('{{ route("bills.roomData") }}?month=' + selectedMonth, {
+                    headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content }
+                });
+                const data = await res.json();
+                editableRooms = data.map(r => ({ ...r }));
+                renderModalTable();
+            } catch (e) {
+                document.getElementById('modalRoomsBody').innerHTML =
+                    '<tr><td colspan="7" class="text-center py-10 text-red-400">โหลดข้อมูลไม่สำเร็จ</td></tr>';
+            }
         }
 
         function closeCreateAllModal() {

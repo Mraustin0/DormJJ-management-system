@@ -247,7 +247,7 @@
             currentRoom = room;
             currentContract = contract;
             
-            const rId = room.roomId ? room.roomId : room.id;
+            const rId = room.id;
             console.log("Room Data:", room);
 
             const modal = document.getElementById('roomModal');
@@ -278,8 +278,10 @@
                 populateTenantInfo();
 
                 // ตรวจสอบว่า check_in_date ยังไม่ถึงหรือไม่
+                // เหลืองเฉพาะห้องที่อยู่ในสถานะ จอง/รอเข้าพัก เท่านั้น (เหมือน PHP)
                 let isFutureCheckIn = false;
-                if (contract && contract.check_in_date) {
+                if (contract && contract.check_in_date &&
+                    (room.status === 'จอง' || room.status === 'รอเข้าพัก')) {
                     const today = new Date(); today.setHours(0,0,0,0);
                     const ci = new Date(contract.check_in_date); ci.setHours(0,0,0,0);
                     isFutureCheckIn = ci > today;
