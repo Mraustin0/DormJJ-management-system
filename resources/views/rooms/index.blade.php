@@ -345,14 +345,16 @@
                 document.getElementById('tenantPhone').innerText = currentContract.phone || '-';
                 document.getElementById('tenantEmail').innerText = currentContract.email || '-';
 
-                // วันที่เข้าพัก: เหลืองถ้าอนาคต, ดำถ้ามาถึงแล้ว
+                // วันที่เข้าพัก: เหลืองถ้าอนาคต และเป็นสถานะ จอง/รอเข้าพัก เท่านั้น
                 const checkInEl = document.getElementById('checkInDate');
                 const dateStr = currentContract.check_in_date;
                 checkInEl.innerText = formatThaiDate(dateStr);
                 if (dateStr) {
                     const today = new Date(); today.setHours(0,0,0,0);
                     const ci = new Date(dateStr); ci.setHours(0,0,0,0);
-                    checkInEl.className = ci > today
+                    const isWaiting = currentRoom &&
+                        (currentRoom.status === 'จอง' || currentRoom.status === 'รอเข้าพัก');
+                    checkInEl.className = (ci > today && isWaiting)
                         ? 'font-medium text-amber-500'
                         : 'font-medium text-gray-800';
                 } else {
