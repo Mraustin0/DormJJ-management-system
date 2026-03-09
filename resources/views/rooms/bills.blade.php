@@ -373,14 +373,28 @@
                                 <input type="date" name="payment_date" id="paymentDate" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:border-[#4A90E2]" value="{{ date('Y-m-d') }}">
                             </div>
 
-                            <div class="mb-6">
+                            <div class="mb-4">
                                 <label class="block text-sm font-bold text-gray-700 mb-2">จำนวนเงิน</label>
                                 <input type="text" name="amount" id="paymentAmount" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:border-[#4A90E2]" readonly>
                             </div>
 
-                            <button type="submit" class="w-full bg-[#4A90E2] hover:bg-blue-600 text-white font-bold py-3 rounded-xl transition-colors">
-                                อนุมัติ
-                            </button>
+                            <div class="mb-6">
+                                <label class="block text-sm font-bold text-gray-700 mb-2">หมายเหตุ</label>
+                                <textarea id="paymentNotes" name="notes" rows="2"
+                                    placeholder="ระบุหมายเหตุ (ถ้ามี)..."
+                                    class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:border-[#4A90E2] resize-none text-sm"></textarea>
+                            </div>
+
+                            <div class="flex gap-3">
+                                <button type="button" onclick="rejectPayment()"
+                                    class="flex-1 bg-red-500 hover:bg-red-600 text-white font-bold py-3 rounded-xl transition-colors">
+                                    ปฏิเสธ
+                                </button>
+                                <button type="submit"
+                                    class="flex-1 bg-[#4A90E2] hover:bg-blue-600 text-white font-bold py-3 rounded-xl transition-colors">
+                                    อนุมัติ
+                                </button>
+                            </div>
                         </form>
                     </div>
                 </div>
@@ -765,9 +779,12 @@
             const paymentMethod = document.querySelector('input[name="payment_method"]:checked').value;
             const paymentDate = document.getElementById('paymentDate').value;
 
+            const notes = document.getElementById('paymentNotes').value;
+
             const formData = new FormData();
             formData.append('payment_method', paymentMethod);
             formData.append('payment_date', paymentDate);
+            if (notes) formData.append('notes', notes);
 
             // Attach admin's slip file if selected
             const adminSlipInput = document.getElementById('adminSlipFile');
@@ -812,6 +829,53 @@
                 });
             });
         });
+
+        // ปฏิเสธสลิป
+        function rejectPayment() {
+            const billId = document.getElementById('slipBillId').value;
+            const notes  = document.getElementById('paymentNotes').value;
+
+            Swal.fire({
+                title: 'ปฏิเสธสลิปนี้?',
+                text: 'ผู้เช่าจะได้รับแจ้งและต้องอัปโหลดสลิปใหม่อีกครั้ง',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#ef4444',
+                cancelButtonColor: '#6b7280',
+                confirmButtonText: 'ยืนยัน ปฏิเสธ',
+                cancelButtonText: 'ยกเลิก',
+            }).then((result) => {
+                if (!result.isConfirmed) return;
+
+                fetch(`/bills/${billId}/reject-payment`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ notes }),
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'ปฏิเสธสลิปเรียบร้อย',
+                            text: 'ผู้เช่าได้รับแจ้งแล้ว',
+                            confirmButtonColor: '#4A90E2'
+                        }).then(() => {
+                            closeSlipModal();
+                            window.location.reload();
+                        });
+                    } else {
+                        Swal.fire('เกิดข้อผิดพลาด', data.message || 'ไม่สามารถปฏิเสธได้', 'error');
+                    }
+                })
+                .catch(() => {
+                    Swal.fire('เกิดข้อผิดพลาด', 'กรุณาลองใหม่อีกครั้ง', 'error');
+                });
+            });
+        }
     </script>
 </body>
 </html>

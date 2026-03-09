@@ -56,9 +56,12 @@ class MoveoutController extends Controller
             'processed_at'  => now(),
         ]);
 
-        // อัปเดตวันสิ้นสุดสัญญา
+        // อัปเดตวันสิ้นสุดสัญญา + ปิดสัญญา
         $contract = $moveout->contract;
-        $contract->update(['end_date' => $moveout->moveout_date]);
+        $contract->update([
+            'end_date' => $moveout->moveout_date,
+            'status'   => 'expired',             // ← แก้: ต้องปิดสัญญาด้วย
+        ]);
 
         // เปลี่ยนสถานะห้องเป็นว่าง
         $moveout->room->update([

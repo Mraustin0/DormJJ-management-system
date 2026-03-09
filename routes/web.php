@@ -61,6 +61,7 @@ Route::middleware(['auth', 'role:admin,staff'])->group(function () {
 
     // ยืนยันการชำระและใบเสร็จ
     Route::post('/bills/{id}/confirm-payment', [BillController::class, 'confirmPayment'])->name('bills.confirmPayment');
+    Route::post('/bills/{id}/reject-payment',  [BillController::class, 'rejectPayment'])->name('bills.rejectPayment');
     Route::get('/bills/{id}/receipt', [BillController::class, 'viewReceipt'])->name('bills.receipt');
 
     // หน้าข้อมูลลูกค้า

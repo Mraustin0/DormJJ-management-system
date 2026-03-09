@@ -499,6 +499,46 @@ class BillController extends Controller
     }
 
     /**
+     * ปฏิเสธสลิป → reset bill กลับเป็น pending ให้ผู้เช่าอัปโหลดใหม่
+     */
+    public function rejectPayment(Request $request, $id)
+    {
+        $request->validate([
+            'notes' => 'nullable|string|max:500',
+        ]);
+
+        $bill = Bill::findOrFail($id);
+
+        DB::beginTransaction();
+        try {
+            // ลบสลิปเก่า + reset สถานะกลับเป็น pending
+            $bill->update([
+                'status'       => 'pending',
+                'payment_slip' => null,
+            ]);
+
+            DB::commit();
+        } catch (\Exception $e) {
+            DB::rollBack();
+            \Log::error('rejectPayment error: ' . $e->getMessage());
+            return response()->json(['success' => false, 'message' => 'เกิดข้อผิดพลาดในการบันทึก'], 500);
+        }
+
+        // แจ้งเตือนผู้เช่า
+        $room  = $bill->room;
+        $notes = $request->notes ?: 'กรุณาตรวจสอบและอัปโหลดสลิปใหม่อีกครั้ง';
+        Notification::notifyTenantByRoom(
+            $bill->room_id,
+            'payment_rejected',
+            'สลิปการชำระเงินถูกปฏิเสธ',
+            'สลิปการชำระเงินห้อง ' . ($room->room_number ?? '') . ' ถูกปฏิเสธ: ' . $notes,
+            null
+        );
+
+        return response()->json(['success' => true, 'message' => 'ปฏิเสธสลิปเรียบร้อย']);
+    }
+
+    /**
      * ดูใบเสร็จ
      */
     public function viewReceipt($id)
