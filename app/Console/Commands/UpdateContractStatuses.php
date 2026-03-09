@@ -7,6 +7,7 @@ use App\Models\Contract;
 use App\Models\Room;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\DB;
 
 class UpdateContractStatuses extends Command
 {
@@ -40,19 +41,20 @@ class UpdateContractStatuses extends Command
             ->get();
 
         foreach ($expiredContracts as $contract) {
-            $contract->update(['status' => 'expired']);
+            DB::transaction(function () use ($contract) {
+                $contract->update(['status' => 'expired']);
 
-            // คืนสถานะห้องเป็น "ว่าง" ถ้าไม่มีสัญญา active/ending อื่นอยู่
-            $hasActiveContract = Contract::where('room_id', $contract->room_id)
-                ->whereIn('status', ['active', 'ending'])
-                ->exists();
+                // คืนสถานะห้องเป็น "ว่าง" ถ้าไม่มีสัญญา active/ending อื่นอยู่
+                $hasActiveContract = Contract::where('room_id', $contract->room_id)
+                    ->whereIn('status', ['active', 'ending'])
+                    ->exists();
 
-            if (! $hasActiveContract) {
-                Room::where('id', $contract->room_id)
-                    ->update(['status' => 'ว่าง']);
-
-                $this->line("  ห้อง {$contract->room->room_number}: สัญญา #{$contract->id} หมดอายุ → ห้องว่าง");
-            }
+                if (! $hasActiveContract) {
+                    Room::where('id', $contract->room_id)
+                        ->update(['status' => 'ว่าง', 'payment_status' => null]);
+                }
+            });
+            $this->line("  สัญญา #{$contract->id} ({$contract->tenant_name}): หมดอายุ → ตรวจสอบห้องเรียบร้อย");
         }
 
         $expiredCount = $expiredContracts->count();
