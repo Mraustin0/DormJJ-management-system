@@ -137,7 +137,12 @@ class RoomController extends Controller
             if ($request->tenant_status === 'moving_out') {
                 $room->update(['status' => 'แจ้งย้ายออก']);
             } elseif ($request->tenant_status === 'active') {
-                $room->update(['status' => 'ไม่ว่าง']);
+                // เช็ค check_in_date: ถ้ายังไม่ถึง → รอเข้าพัก, ถ้าถึงแล้ว → ไม่ว่าง
+                $ciDate = $request->filled('check_in_date')
+                    ? Carbon::parse($request->check_in_date)
+                    : ($room->contract?->check_in_date ? Carbon::parse($room->contract->check_in_date) : null);
+                $newStatus = ($ciDate && $ciDate->isAfter(Carbon::today())) ? 'รอเข้าพัก' : 'ไม่ว่าง';
+                $room->update(['status' => $newStatus]);
             } elseif ($request->tenant_status === 'moved_out') {
                 $room->update(['status' => 'ว่าง', 'payment_status' => null]);
 
