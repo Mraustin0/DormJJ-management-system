@@ -28,7 +28,7 @@ class MeterController extends Controller
                 $room->display_elec_prev = $currentMonthReading->elec_prev;
             } else {
                 // กรองเฉพาะ readings ของสัญญาปัจจุบัน (ไม่ดึงมิเตอร์ผู้เช่าเก่ามา)
-                $contractStartMonth = $room->contract
+                $contractStartMonth = ($room->contract && $room->contract->check_in_date)
                     ? Carbon::parse($room->contract->check_in_date)->format('Y-m')
                     : null;
 
@@ -74,7 +74,7 @@ class MeterController extends Controller
 
         $rooms->each(function ($room) use ($selectedMonth) {
             // กรองเฉพาะ readings ของสัญญาปัจจุบัน (ไม่ดึงมิเตอร์ผู้เช่าเก่ามา)
-            $contractStartMonth = $room->contract
+            $contractStartMonth = ($room->contract && $room->contract->check_in_date)
                 ? Carbon::parse($room->contract->check_in_date)->format('Y-m')
                 : null;
 
@@ -121,7 +121,7 @@ class MeterController extends Controller
 
         $rooms->each(function ($room) use ($selectedMonth) {
             // กรองเฉพาะ readings ของสัญญาปัจจุบัน (ไม่ดึงมิเตอร์ผู้เช่าเก่ามา)
-            $contractStartMonth = $room->contract
+            $contractStartMonth = ($room->contract && $room->contract->check_in_date)
                 ? Carbon::parse($room->contract->check_in_date)->format('Y-m')
                 : null;
 

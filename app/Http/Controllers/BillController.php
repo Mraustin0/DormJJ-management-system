@@ -145,7 +145,7 @@ class BillController extends Controller
             $waterUnits = $meter ? floatval($meter->water_unit ?? 0) : 0;
 
             // ตรวจว่าบิลที่มีเป็นของสัญญาปัจจุบัน (ไม่ใช่บิลผู้เช่าเก่า)
-            $contractStartMonth = $room->contract
+            $contractStartMonth = ($room->contract && $room->contract->check_in_date)
                 ? Carbon::parse($room->contract->check_in_date)->format('Y-m')
                 : null;
             $existingBill = $existingBills->get($room->id);
@@ -213,7 +213,7 @@ class BillController extends Controller
 
         // ตรวจสอบว่าบิลที่มีอยู่แล้วชำระแล้วหรือไม่ (เฉพาะบิลของสัญญาปัจจุบัน)
         $room = Room::with('contract')->findOrFail($request->room_id);
-        $contractStartMonth = $room->contract
+        $contractStartMonth = ($room->contract && $room->contract->check_in_date)
             ? Carbon::parse($room->contract->check_in_date)->format('Y-m')
             : null;
 
@@ -306,7 +306,7 @@ class BillController extends Controller
                 if (!$meterExists) continue;
 
                 // ข้ามห้องที่บิลชำระแล้วหรือรอการอนุมัติ (เฉพาะบิลของสัญญาปัจจุบัน)
-                $contractStartMonth = $room->contract
+                $contractStartMonth = ($room->contract && $room->contract->check_in_date)
                     ? Carbon::parse($room->contract->check_in_date)->format('Y-m')
                     : null;
                 $lockedBill = Bill::where('room_id', $roomId)
@@ -365,7 +365,7 @@ class BillController extends Controller
                 if (!$meter) continue;
 
                 // ข้ามห้องที่บิลชำระแล้วหรือรอการอนุมัติ (เฉพาะบิลของสัญญาปัจจุบัน)
-                $contractStartMonth = $room->contract
+                $contractStartMonth = ($room->contract && $room->contract->check_in_date)
                     ? Carbon::parse($room->contract->check_in_date)->format('Y-m')
                     : null;
                 $lockedBill = Bill::where('room_id', $room->id)
