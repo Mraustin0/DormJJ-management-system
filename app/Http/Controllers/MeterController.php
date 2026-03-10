@@ -121,8 +121,8 @@ class MeterController extends Controller
         $rooms->each(function ($room) use ($selectedMonth) {
             $currentMonthReading = $room->meterReadings->first();
 
-            // 1. ถ้าเดือนนี้มี elec_curr แล้ว → ใช้ elec_prev ที่ admin บันทึกไว้
-            if ($currentMonthReading && $currentMonthReading->elec_prev !== null) {
+            // 1. เดือนนี้มี elec_prev ที่มีค่าจริง (> 0) → ใช้เลย
+            if ($currentMonthReading && ($currentMonthReading->elec_prev ?? 0) > 0) {
                 $room->display_elec_prev = $currentMonthReading->elec_prev;
                 return;
             }
@@ -134,11 +134,15 @@ class MeterController extends Controller
 
             if ($previousReading) {
                 $room->display_elec_prev = $previousReading->elec_curr;
-            } else {
-                // 3. ยังไม่เคยบันทึกไฟเลย → ใช้ elec_prev ของ record แรก (ค่าเริ่มต้นตอน setup)
-                $firstReading = $room->allMeterReadings->first();
-                $room->display_elec_prev = $firstReading ? ($firstReading->elec_prev ?? 0) : 0;
+                return;
             }
+
+            // 3. ไม่มีประวัติไฟเลย → ดึงจาก init record (record ที่มี elec_prev > 0 ไม่ว่าเดือนไหน)
+            //    init record ถูกสร้างตอนบันทึกสัญญา เก็บค่ามิเตอร์เริ่มต้นไว้
+            $initRecord = $room->allMeterReadings
+                ->filter(fn($r) => ($r->elec_prev ?? 0) > 0)
+                ->first(); // first = เก่าที่สุด = init record
+            $room->display_elec_prev = $initRecord ? $initRecord->elec_prev : 0;
         });
 
         // ดึงสถานะบิลของทุกห้องในเดือนที่เลือก (room_id => status)
