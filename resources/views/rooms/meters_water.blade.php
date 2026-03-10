@@ -148,8 +148,8 @@
                 </form>
             </div>
 
-            {{-- Banner: โหมดอ่านอย่างเดียว (เดือนในอดีต) --}}
-            @if(!$isCurrentMonth)
+            {{-- Banner: โหมดอ่านอย่างเดียว (เฉพาะเดือนในอดีต) --}}
+            @if($isPastMonth)
             <div class="mb-4 flex items-center gap-3 bg-amber-50 border border-amber-200 rounded-xl px-5 py-3">
                 <svg class="w-5 h-5 text-amber-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>
                 <span class="text-amber-700 font-medium text-sm">กำลังดูข้อมูลเดือน <b>{{ \Carbon\Carbon::parse($selectedMonth)->locale('th')->translatedFormat('F Y') }}</b> — โหมดอ่านอย่างเดียว (ไม่สามารถแก้ไขได้)</span>
@@ -185,8 +185,8 @@
                                 $isVacant = $room->status !== 'ไม่ว่าง';
                                 $roomBillStatus = $billStatuses[$room->id] ?? null;
                                 $isPaid = $roomBillStatus === 'paid';
-                                // ล็อก input: ถ้าไม่ใช่เดือนปัจจุบัน → readonly เสมอ (จนกว่าจะ override)
-                                $inputReadonly = !$isCurrentMonth;
+                                // ล็อก input: เฉพาะเดือนอดีต (< ปัจจุบัน) → readonly; ปัจจุบัน + อนาคต กรอกได้
+                                $inputReadonly = $isPastMonth;
                             @endphp
                             <tr class="border-b border-gray-100 transition-colors {{ $isVacant ? 'bg-gray-50' : 'hover:bg-blue-50/30' }}"
                                 data-room="{{ $room->room_number }}"
@@ -257,7 +257,7 @@
                 {{-- ปุ่มบันทึกทั้งหมด --}}
                 <div class="mt-6 flex justify-between items-end">
                     {{-- ปุ่ม Override (ซ่อนเล็กๆ ใช้เฉพาะเดือนในอดีต) --}}
-                    @if(!$isCurrentMonth)
+                    @if($isPastMonth)
                     <button id="overrideBtn" onclick="enterOverrideMode()"
                             class="text-xs text-gray-300 hover:text-gray-500 transition-colors underline underline-offset-2 cursor-pointer">
                         ⚙ แก้ไขข้อมูลย้อนหลัง (กรณีฉุกเฉิน)
@@ -268,7 +268,7 @@
 
                     <button onclick="saveAll()"
                             id="saveAllBtn"
-                            class="{{ !$isCurrentMonth ? 'hidden' : '' }} bg-[#4A90E2] hover:bg-[#357abd] text-white font-bold py-2.5 px-8 rounded-lg transition-colors shadow-md flex items-center gap-2">
+                            class="{{ $isPastMonth ? 'hidden' : '' }} bg-[#4A90E2] hover:bg-[#357abd] text-white font-bold py-2.5 px-8 rounded-lg transition-colors shadow-md flex items-center gap-2">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
                         บันทึกทั้งหมด
                     </button>

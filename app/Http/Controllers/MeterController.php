@@ -54,6 +54,7 @@ class MeterController extends Controller
         $currentMonth = Carbon::now()->format('Y-m');
         $selectedMonth = $request->input('month', $currentMonth);
         $isCurrentMonth = $selectedMonth === $currentMonth;
+        $isPastMonth = $selectedMonth < $currentMonth; // เฉพาะอดีตเท่านั้นที่ lock
         $floor = $request->input('floor', ''); // '' = ทุกชั้น
 
         $roomQuery = Room::with(['contract', 'meterReadings' => function($q) use ($selectedMonth) {
@@ -96,7 +97,7 @@ class MeterController extends Controller
             ->pluck('status', 'room_id')
             ->toArray();
 
-        return view('rooms.meters_water', compact('rooms', 'selectedMonth', 'floor', 'isCurrentMonth', 'billStatuses'));
+        return view('rooms.meters_water', compact('rooms', 'selectedMonth', 'floor', 'isCurrentMonth', 'isPastMonth', 'billStatuses'));
     }
 
     public function electricIndex(Request $request)
@@ -104,6 +105,7 @@ class MeterController extends Controller
         $currentMonth = Carbon::now()->format('Y-m');
         $selectedMonth = $request->input('month', $currentMonth);
         $isCurrentMonth = $selectedMonth === $currentMonth;
+        $isPastMonth = $selectedMonth < $currentMonth; // เฉพาะอดีตเท่านั้นที่ lock
         $floor = $request->input('floor', ''); // '' = ทุกชั้น
 
         $roomQuery = Room::with(['contract', 'meterReadings' => function($q) use ($selectedMonth) {
@@ -121,9 +123,10 @@ class MeterController extends Controller
         $rooms->each(function ($room) use ($selectedMonth) {
             $currentMonthReading = $room->meterReadings->first();
 
-            // 1. เดือนนี้มี elec_prev ที่มีค่าจริง (> 0) → ใช้เลย
+            // 1. เดือนนี้มี elec_prev ที่มีค่าจริง (> 0) → ข้อมูลถูกต้องแล้ว ใช้เลย
             if ($currentMonthReading && ($currentMonthReading->elec_prev ?? 0) > 0) {
                 $room->display_elec_prev = $currentMonthReading->elec_prev;
+                $room->display_elec_curr = $currentMonthReading->elec_curr;
                 return;
             }
 
@@ -134,6 +137,12 @@ class MeterController extends Controller
 
             if ($previousReading) {
                 $room->display_elec_prev = $previousReading->elec_curr;
+                // elec_curr ที่บันทึกไว้อาจผิด (บันทึกตอน elec_prev=0) → คำนวณใหม่จาก prev+unit
+                if ($currentMonthReading && $currentMonthReading->elec_unit !== null) {
+                    $room->display_elec_curr = $previousReading->elec_curr + $currentMonthReading->elec_unit;
+                } else {
+                    $room->display_elec_curr = $currentMonthReading?->elec_curr;
+                }
                 return;
             }
 
@@ -143,6 +152,13 @@ class MeterController extends Controller
                 ->filter(fn($r) => ($r->elec_prev ?? 0) > 0)
                 ->first(); // first = เก่าที่สุด = init record
             $room->display_elec_prev = $initRecord ? $initRecord->elec_prev : 0;
+
+            // คำนวณ display_elec_curr = init_prev + elec_unit ที่บันทึกไว้ (แก้ค่าที่เคยกรอกผิดตอน prev=0)
+            if ($currentMonthReading && $currentMonthReading->elec_unit !== null && $room->display_elec_prev > 0) {
+                $room->display_elec_curr = $room->display_elec_prev + $currentMonthReading->elec_unit;
+            } else {
+                $room->display_elec_curr = $currentMonthReading?->elec_curr;
+            }
         });
 
         // ดึงสถานะบิลของทุกห้องในเดือนที่เลือก (room_id => status)
@@ -150,7 +166,7 @@ class MeterController extends Controller
             ->pluck('status', 'room_id')
             ->toArray();
 
-        return view('rooms.meters_electric', compact('rooms', 'selectedMonth', 'floor', 'isCurrentMonth', 'billStatuses'));
+        return view('rooms.meters_electric', compact('rooms', 'selectedMonth', 'floor', 'isCurrentMonth', 'isPastMonth', 'billStatuses'));
     }
 
     public function update(Request $request)
