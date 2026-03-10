@@ -69,7 +69,15 @@ class MeterController extends Controller
         $rooms = $roomQuery->orderBy('room_number', 'asc')->get();
 
         $rooms->each(function ($room) use ($selectedMonth) {
-            // มิเตอร์เป็นกายภาพ เลขต่อเนื่อง → ดึง reading ล่าสุดก่อนเดือนนี้ (ไม่จำกัดสัญญา)
+            $currentMonthReading = $room->meterReadings->first();
+
+            // 1. ถ้าเดือนนี้มี water_prev แล้ว → ใช้ค่าที่ admin บันทึกไว้
+            if ($currentMonthReading && $currentMonthReading->water_prev !== null) {
+                $room->display_water_prev = $currentMonthReading->water_prev;
+                return;
+            }
+
+            // 2. หา water_curr ล่าสุดจากเดือนก่อน (มิเตอร์ต่อเนื่อง)
             $previousReading = $room->allMeterReadings
                 ->filter(fn($r) => $r->billing_month < $selectedMonth && $r->water_curr !== null)
                 ->last();
@@ -77,6 +85,7 @@ class MeterController extends Controller
             if ($previousReading) {
                 $room->display_water_prev = $previousReading->water_curr;
             } else {
+                // 3. ยังไม่เคยบันทึกน้ำเลย → ใช้ water_prev ของ record แรก (ค่าเริ่มต้น)
                 $firstReading = $room->allMeterReadings->first();
                 $room->display_water_prev = $firstReading ? ($firstReading->water_prev ?? 0) : 0;
             }
@@ -110,7 +119,15 @@ class MeterController extends Controller
         $rooms = $roomQuery->orderBy('room_number', 'asc')->get();
 
         $rooms->each(function ($room) use ($selectedMonth) {
-            // มิเตอร์เป็นกายภาพ เลขต่อเนื่อง → ดึง reading ล่าสุดก่อนเดือนนี้ (ไม่จำกัดสัญญา)
+            $currentMonthReading = $room->meterReadings->first();
+
+            // 1. ถ้าเดือนนี้มี elec_curr แล้ว → ใช้ elec_prev ที่ admin บันทึกไว้
+            if ($currentMonthReading && $currentMonthReading->elec_prev !== null) {
+                $room->display_elec_prev = $currentMonthReading->elec_prev;
+                return;
+            }
+
+            // 2. หา elec_curr ล่าสุดจากเดือนก่อน (มิเตอร์ต่อเนื่อง)
             $previousReading = $room->allMeterReadings
                 ->filter(fn($r) => $r->billing_month < $selectedMonth && $r->elec_curr !== null)
                 ->last();
@@ -118,6 +135,7 @@ class MeterController extends Controller
             if ($previousReading) {
                 $room->display_elec_prev = $previousReading->elec_curr;
             } else {
+                // 3. ยังไม่เคยบันทึกไฟเลย → ใช้ elec_prev ของ record แรก (ค่าเริ่มต้นตอน setup)
                 $firstReading = $room->allMeterReadings->first();
                 $room->display_elec_prev = $firstReading ? ($firstReading->elec_prev ?? 0) : 0;
             }
