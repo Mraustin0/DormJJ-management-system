@@ -22,26 +22,30 @@ class MeterController extends Controller
 
         $rooms->each(function ($room) use ($selectedMonth) {
             $currentMonthReading = $room->meterReadings->first();
-            
+
             if ($currentMonthReading) {
                 $room->display_water_prev = $currentMonthReading->water_prev;
                 $room->display_elec_prev = $currentMonthReading->elec_prev;
             } else {
-                // Find the latest meter reading before the selected month
+                // กรองเฉพาะ readings ของสัญญาปัจจุบัน (ไม่ดึงมิเตอร์ผู้เช่าเก่ามา)
+                $contractStartMonth = $room->contract
+                    ? Carbon::parse($room->contract->check_in_date)->format('Y-m')
+                    : null;
+
                 $previousReading = $room->allMeterReadings
-                                        ->filter(function ($reading) use ($selectedMonth) {
-                                            return $reading->billing_month < $selectedMonth;
-                                        })
-                                        ->last();
-                
+                    ->filter(function ($reading) use ($selectedMonth, $contractStartMonth) {
+                        return $reading->billing_month < $selectedMonth
+                            && (!$contractStartMonth || $reading->billing_month >= $contractStartMonth);
+                    })
+                    ->last();
+
                 if ($previousReading) {
                     $room->display_water_prev = $previousReading->water_curr ?? $previousReading->water_prev;
                     $room->display_elec_prev = $previousReading->elec_curr ?? $previousReading->elec_prev;
                 } else {
-                    // No previous reading, use the very first initial reading (water_prev/elec_prev of the earliest entry)
-                    $firstReading = $room->allMeterReadings->first();
-                    $room->display_water_prev = $firstReading ? ($firstReading->water_prev ?? 0) : 0;
-                    $room->display_elec_prev = $firstReading ? ($firstReading->elec_prev ?? 0) : 0;
+                    // ผู้เช่าใหม่ยังไม่มี reading ในรอบสัญญา → ใช้ 0
+                    $room->display_water_prev = 0;
+                    $room->display_elec_prev = 0;
                 }
             }
         });
@@ -69,15 +73,22 @@ class MeterController extends Controller
         $rooms = $roomQuery->orderBy('room_number', 'asc')->get();
 
         $rooms->each(function ($room) use ($selectedMonth) {
-            // คำนวณ water_prev จากเดือนก่อนที่มี water_curr บันทึกไว้ (ไม่เชื่อค่าที่เก็บใน record ปัจจุบัน)
+            // กรองเฉพาะ readings ของสัญญาปัจจุบัน (ไม่ดึงมิเตอร์ผู้เช่าเก่ามา)
+            $contractStartMonth = $room->contract
+                ? Carbon::parse($room->contract->check_in_date)->format('Y-m')
+                : null;
+
             $previousReading = $room->allMeterReadings
-                ->filter(fn($r) => $r->billing_month < $selectedMonth && $r->water_curr !== null)
+                ->filter(fn($r) => $r->billing_month < $selectedMonth
+                    && $r->water_curr !== null
+                    && (!$contractStartMonth || $r->billing_month >= $contractStartMonth))
                 ->last();
+
             if ($previousReading) {
                 $room->display_water_prev = $previousReading->water_curr;
             } else {
-                $firstReading = $room->allMeterReadings->first();
-                $room->display_water_prev = $firstReading ? ($firstReading->water_prev ?? 0) : 0;
+                // ผู้เช่าใหม่ยังไม่มี reading ในรอบสัญญา → ใช้ 0
+                $room->display_water_prev = 0;
             }
         });
 
@@ -109,15 +120,22 @@ class MeterController extends Controller
         $rooms = $roomQuery->orderBy('room_number', 'asc')->get();
 
         $rooms->each(function ($room) use ($selectedMonth) {
-            // คำนวณ elec_prev จากเดือนก่อนที่มี elec_curr บันทึกไว้ (ไม่เชื่อค่าที่เก็บใน record ปัจจุบัน)
+            // กรองเฉพาะ readings ของสัญญาปัจจุบัน (ไม่ดึงมิเตอร์ผู้เช่าเก่ามา)
+            $contractStartMonth = $room->contract
+                ? Carbon::parse($room->contract->check_in_date)->format('Y-m')
+                : null;
+
             $previousReading = $room->allMeterReadings
-                ->filter(fn($r) => $r->billing_month < $selectedMonth && $r->elec_curr !== null)
+                ->filter(fn($r) => $r->billing_month < $selectedMonth
+                    && $r->elec_curr !== null
+                    && (!$contractStartMonth || $r->billing_month >= $contractStartMonth))
                 ->last();
+
             if ($previousReading) {
                 $room->display_elec_prev = $previousReading->elec_curr;
             } else {
-                $firstReading = $room->allMeterReadings->first();
-                $room->display_elec_prev = $firstReading ? ($firstReading->elec_prev ?? 0) : 0;
+                // ผู้เช่าใหม่ยังไม่มี reading ในรอบสัญญา → ใช้ 0
+                $room->display_elec_prev = 0;
             }
         });
 

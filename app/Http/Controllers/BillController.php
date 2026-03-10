@@ -130,17 +130,28 @@ class BillController extends Controller
         $selectedMonth = $request->query('month', Carbon::now()->format('Y-m'));
         $setting = Setting::getInstance();
 
-        $existingBillRoomIds = Bill::where('billing_month', $selectedMonth)
-            ->pluck('room_id')->toArray();
+        // ดึงบิลของเดือนนี้ทุกห้อง (keyed by room_id)
+        $existingBills = Bill::where('billing_month', $selectedMonth)
+            ->get(['room_id', 'status'])
+            ->keyBy('room_id');
 
         $allOccupiedRooms = Room::with(['contract', 'meterReadings' => function($q) use ($selectedMonth) {
             $q->where('billing_month', $selectedMonth);
         }])->where('status', 'ไม่ว่าง')->orderBy('floor')->orderBy('room_number')->get();
 
-        $data = $allOccupiedRooms->map(function($room) use ($setting, $existingBillRoomIds) {
+        $data = $allOccupiedRooms->map(function($room) use ($setting, $existingBills, $selectedMonth) {
             $meter      = $room->meterReadings->first();
             $elecUnits  = $meter ? floatval($meter->elec_unit  ?? 0) : 0;
             $waterUnits = $meter ? floatval($meter->water_unit ?? 0) : 0;
+
+            // ตรวจว่าบิลที่มีเป็นของสัญญาปัจจุบัน (ไม่ใช่บิลผู้เช่าเก่า)
+            $contractStartMonth = $room->contract
+                ? Carbon::parse($room->contract->check_in_date)->format('Y-m')
+                : null;
+            $existingBill = $existingBills->get($room->id);
+            $hasBillForCurrentContract = $existingBill !== null
+                && (!$contractStartMonth || $selectedMonth >= $contractStartMonth);
+
             return [
                 'room_id'         => $room->id,
                 'room_number'     => $room->room_number,
@@ -153,7 +164,7 @@ class BillController extends Controller
                 'water_amount'    => round($waterUnits * floatval($setting->water_rate    ?? 0), 2),
                 'room_rate'       => floatval($setting->rent_per_month ?? 0),
                 'other_fees'      => 0,
-                'has_bill'        => in_array($room->id, $existingBillRoomIds),
+                'has_bill'        => $hasBillForCurrentContract,
             ];
         })->values();
 
@@ -200,11 +211,22 @@ class BillController extends Controller
             return response()->json(['success' => false, 'message' => 'ยังไม่มีข้อมูลมิเตอร์สำหรับเดือนนี้ กรุณาบันทึกค่ามิเตอร์ก่อน'], 422);
         }
 
-        // ตรวจสอบว่าบิลที่มีอยู่แล้วชำระแล้วหรือไม่
+        // ตรวจสอบว่าบิลที่มีอยู่แล้วชำระแล้วหรือไม่ (เฉพาะบิลของสัญญาปัจจุบัน)
+        $room = Room::with('contract')->findOrFail($request->room_id);
+        $contractStartMonth = $room->contract
+            ? Carbon::parse($room->contract->check_in_date)->format('Y-m')
+            : null;
+
         $existingBill = Bill::where('room_id', $request->room_id)
             ->where('billing_month', $request->billing_month)
             ->first();
-        if ($existingBill && in_array($existingBill->status, ['paid', 'reviewing'])) {
+
+        // บล็อกเฉพาะกรณีที่บิลเป็นของสัญญาปัจจุบัน (billing_month >= check_in month)
+        $billBelongsToCurrentContract = $existingBill
+            && (!$contractStartMonth || $request->billing_month >= $contractStartMonth);
+
+        if ($existingBill && $billBelongsToCurrentContract
+            && in_array($existingBill->status, ['paid', 'reviewing'])) {
             return response()->json(['success' => false, 'message' => 'ไม่สามารถแก้ไขบิลที่รอการอนุมัติหรือชำระแล้วได้'], 422);
         }
 
@@ -283,12 +305,15 @@ class BillController extends Controller
                     ->exists();
                 if (!$meterExists) continue;
 
-                // ข้ามห้องที่บิลชำระแล้วหรือรอการอนุมัติ
+                // ข้ามห้องที่บิลชำระแล้วหรือรอการอนุมัติ (เฉพาะบิลของสัญญาปัจจุบัน)
+                $contractStartMonth = $room->contract
+                    ? Carbon::parse($room->contract->check_in_date)->format('Y-m')
+                    : null;
                 $lockedBill = Bill::where('room_id', $roomId)
                     ->where('billing_month', $billingMonth)
                     ->whereIn('status', ['paid', 'reviewing'])
                     ->exists();
-                if ($lockedBill) continue;
+                if ($lockedBill && (!$contractStartMonth || $billingMonth >= $contractStartMonth)) continue;
 
                 $elecUnits  = floatval($rd['electric_units']  ?? 0);
                 $waterUnits = floatval($rd['water_units']     ?? 0);
@@ -339,12 +364,15 @@ class BillController extends Controller
                 $meter = $room->meterReadings->first();
                 if (!$meter) continue;
 
-                // ข้ามห้องที่บิลชำระแล้วหรือรอการอนุมัติ
+                // ข้ามห้องที่บิลชำระแล้วหรือรอการอนุมัติ (เฉพาะบิลของสัญญาปัจจุบัน)
+                $contractStartMonth = $room->contract
+                    ? Carbon::parse($room->contract->check_in_date)->format('Y-m')
+                    : null;
                 $lockedBill = Bill::where('room_id', $room->id)
                     ->where('billing_month', $billingMonth)
                     ->whereIn('status', ['paid', 'reviewing'])
                     ->exists();
-                if ($lockedBill) continue;
+                if ($lockedBill && (!$contractStartMonth || $billingMonth >= $contractStartMonth)) continue;
 
                 $elecUnits  = $meter->elec_unit  ?? 0;
                 $waterUnits = $meter->water_unit ?? 0;
