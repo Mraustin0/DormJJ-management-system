@@ -12,6 +12,7 @@ use App\Models\Setting;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class TenantDashboardController extends Controller
 {
@@ -144,6 +145,27 @@ class TenantDashboardController extends Controller
         $setting = Setting::getInstance();
 
         return view('tenant.bill-view', compact('contract', 'bill', 'setting'));
+    }
+
+    /**
+     * ดาวน์โหลดใบแจ้งหนี้ PDF (tenant)
+     */
+    public function downloadBillPdf($id)
+    {
+        $contract = $this->getTenantContract();
+
+        if (!$contract) {
+            abort(403);
+        }
+
+        $bill = $contract->room->bills()->where('id', $id)->with('room.contract')->firstOrFail();
+        $room = $bill->room;
+        $setting = Setting::getInstance();
+
+        $pdf = Pdf::loadView('pdf.bill', compact('bill', 'room', 'setting'));
+        $filename = 'bill-' . ($bill->billing_month ?? $bill->id) . '-room-' . ($room->room_number ?? $id) . '.pdf';
+
+        return $pdf->download($filename);
     }
 
     /**
@@ -305,6 +327,31 @@ class TenantDashboardController extends Controller
         $setting = Setting::getInstance();
 
         return view('tenant.receipt', compact('contract', 'bill', 'setting'));
+    }
+
+    /**
+     * ดาวน์โหลดใบเสร็จ PDF (tenant)
+     */
+    public function downloadReceiptPdf($id)
+    {
+        $contract = $this->getTenantContract();
+
+        if (!$contract) {
+            abort(403);
+        }
+
+        $bill = $contract->room->bills()->where('id', $id)->with(['room.contract', 'receipt.receiver'])->firstOrFail();
+
+        if (!$bill->receipt) {
+            abort(404, 'ยังไม่มีใบเสร็จสำหรับบิลนี้');
+        }
+
+        $setting = Setting::getInstance();
+
+        $pdf = Pdf::loadView('pdf.receipt', compact('bill', 'setting'));
+        $filename = 'receipt-' . ($bill->receipt->receipt_number ?? $id) . '.pdf';
+
+        return $pdf->download($filename);
     }
 
     /**

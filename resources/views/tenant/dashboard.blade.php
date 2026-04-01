@@ -226,7 +226,7 @@
                                     {{-- ดาวน์โหลดใบเสร็จ / จ่ายบิล --}}
                                     @if($bill->status === 'paid' && $bill->receipt)
                                     <div class="mt-4 pt-3 border-t border-gray-100">
-                                        <a href="{{ route('tenant.receipt', $bill->id) }}"
+                                        <a href="{{ route('tenant.bills.downloadReceipt', $bill->id) }}" target="_blank"
                                            class="flex items-center justify-between text-sm text-gray-600 hover:text-gray-800 transition-colors">
                                             <span>ดาวน์โหลดใบเสร็จ</span>
                                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
