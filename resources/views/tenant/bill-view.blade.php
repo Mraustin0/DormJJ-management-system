@@ -85,10 +85,10 @@
                             </p>
                         @endif
                     </div>
-                    <button onclick="window.print()"
-                            class="no-print px-4 py-1.5 bg-blue-500 hover:bg-blue-600 text-white rounded-full text-sm font-semibold transition-colors">
+                    <a href="{{ route('tenant.bills.downloadPdf', $bill->id) }}" target="_blank"
+                       class="no-print px-4 py-1.5 bg-blue-500 hover:bg-blue-600 text-white rounded-full text-sm font-semibold transition-colors">
                         ดาวน์โหลดใบเสร็จ
-                    </button>
+                    </a>
                 </div>
 
                 @php

@@ -44,10 +44,10 @@
                 <h2 class="text-xl font-bold text-gray-800">ใบแจ้งหนี้</h2>
             </div>
             <div class="flex items-center gap-3">
-                <button onclick="window.print()" class="bg-[#f27b6d] hover:bg-[#e06a5c] text-white px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 transition-colors">
+                <a href="{{ route('bills.downloadPdf', $bill->id) }}" target="_blank" class="bg-[#f27b6d] hover:bg-[#e06a5c] text-white px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 transition-colors">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
                     พิมพ์
-                </button>
+                </a>
                 <button onclick="sendBill()" class="bg-[#4A90E2] hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 transition-colors">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
                     ส่งบิล
@@ -85,7 +85,7 @@
                 <div class="flex justify-between mb-6">
                     {{-- Left: Tenant Info --}}
                     <div class="flex-1">
-                        <p><span class="font-medium">ชื่อผู้เช่า</span> Name: <span class="font-bold">{{ $room->contract->tenant_name ?? '-' }}</span></p>
+                        <p><span class="font-medium">ชื่อผู้เช่า</span> Name: <span class="font-bold">{{ $room->contract?->tenant_name ?? '-' }}</span></p>
                         <p><span class="font-medium">ที่อยู่</span> Address: {{ $apartmentAddress }}</p>
                     </div>
                     {{-- Right: Bill Info Table --}}
