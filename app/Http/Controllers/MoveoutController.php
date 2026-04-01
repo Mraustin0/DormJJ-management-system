@@ -43,17 +43,26 @@ class MoveoutController extends Controller
 
         $moveout = MoveoutRequest::with(['contract', 'room'])->findOrFail($id);
 
-        $deposit       = $moveout->contract->deposit ?? 0;
-        $debt          = $request->outstanding_debt ?? 0;
-        $fine          = $request->fine_amount ?? 0;
-        $depositReturn = $deposit - $debt - $fine;
+        $deposit          = (float)($moveout->contract->deposit ?? 0);
+        $debt             = (float)($request->outstanding_debt ?? 0);
+        $fine             = (float)($request->fine_amount ?? 0);
+        $totalDeductions  = $debt + $fine;
+        $depositReturn    = max(0, $deposit - $totalDeductions);
+        $remainingDebt    = max(0, $totalDeductions - $deposit);
+
+        // ถ้ายอดค้างเกินมัดจำ ให้บันทึกยอดค้างใน remark
+        $remark = $request->admin_remark ?? '';
+        if ($remainingDebt > 0) {
+            $note = 'ยอดค้างชำระหลังหักมัดจำ: ' . number_format($remainingDebt, 2) . ' บาท';
+            $remark = $remark ? $remark . ' | ' . $note : $note;
+        }
 
         // อัปเดตสถานะคำร้อง
         $moveout->update([
-            'status'        => 'approved',
+            'status'         => 'approved',
             'deposit_return' => $depositReturn,
-            'admin_remark'  => $request->admin_remark,
-            'processed_at'  => now(),
+            'admin_remark'   => $remark ?: null,
+            'processed_at'   => now(),
         ]);
 
         // อัปเดตวันสิ้นสุดสัญญา + ปิดสัญญา

@@ -41,6 +41,27 @@ class RepairController extends Controller
 
         $repair = Repair::with(['room', 'room.contract'])->findOrFail($id);
 
+        // State machine: บังคับ transition ที่ถูกต้องเท่านั้น
+        $allowedTransitions = [
+            'pending'     => ['in_progress', 'cancelled'],
+            'in_progress' => ['completed', 'cancelled'],
+            'completed'   => [],
+            'cancelled'   => [],
+        ];
+        if (!in_array($request->status, $allowedTransitions[$repair->status] ?? [])) {
+            $statusLabel = match ($repair->status) {
+                'pending'     => 'รอดำเนินการ',
+                'in_progress' => 'กำลังดำเนินการ',
+                'completed'   => 'เสร็จสิ้น',
+                'cancelled'   => 'ยกเลิก',
+                default       => $repair->status,
+            };
+            return response()->json([
+                'success' => false,
+                'message' => 'ไม่สามารถเปลี่ยนสถานะได้ เนื่องจากสถานะปัจจุบันคือ "' . $statusLabel . '"',
+            ], 422);
+        }
+
         $repair->update([
             'status' => $request->status,
             'remark' => $request->remark,
