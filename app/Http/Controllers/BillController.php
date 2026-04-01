@@ -12,6 +12,7 @@ use App\Models\Setting;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class BillController extends Controller
 {
@@ -515,7 +516,7 @@ class BillController extends Controller
             $bill->room_id,
             'payment_confirmed',
             'ยืนยันการชำระเงินเรียบร้อย',
-            'การชำระเงินห้อง ' . ($room->room_number ?? '') . ' จำนวน ' . number_format($bill->total_amount, 2) . ' บาท ได้รับการยืนยันแล้ว',
+            'การชำระเงินห้อง ' . ($room?->room_number ?? '') . ' จำนวน ' . number_format($bill->total_amount, 2) . ' บาท ได้รับการยืนยันแล้ว',
             route('tenant.receipt', $bill->id)
         );
 
@@ -535,7 +536,7 @@ class BillController extends Controller
             'notes' => 'nullable|string|max:500',
         ]);
 
-        $bill = Bill::findOrFail($id);
+        $bill = Bill::with('room')->findOrFail($id);
 
         DB::beginTransaction();
         try {
@@ -581,5 +582,39 @@ class BillController extends Controller
         $setting = Setting::getInstance();
 
         return view('rooms.receipt_view', compact('bill', 'setting'));
+    }
+
+    /**
+     * ดาวน์โหลดใบแจ้งหนี้ PDF
+     */
+    public function downloadBillPdf($id)
+    {
+        $bill = Bill::with(['room.contract'])->findOrFail($id);
+        $room = $bill->room;
+        $setting = Setting::getInstance();
+
+        $pdf = Pdf::loadView('pdf.bill', compact('bill', 'room', 'setting'));
+        $filename = 'bill-' . ($bill->billing_month ?? $bill->id) . '-room-' . ($room->room_number ?? $id) . '.pdf';
+
+        return $pdf->download($filename);
+    }
+
+    /**
+     * ดาวน์โหลดใบเสร็จ PDF
+     */
+    public function downloadReceiptPdf($id)
+    {
+        $bill = Bill::with(['room.contract', 'receipt.receiver'])->findOrFail($id);
+
+        if (!$bill->receipt) {
+            return redirect()->back()->with('error', 'ไม่พบใบเสร็จสำหรับบิลนี้');
+        }
+
+        $setting = Setting::getInstance();
+
+        $pdf = Pdf::loadView('pdf.receipt', compact('bill', 'setting'));
+        $filename = 'receipt-' . ($bill->receipt->receipt_number ?? $id) . '.pdf';
+
+        return $pdf->download($filename);
     }
 }
