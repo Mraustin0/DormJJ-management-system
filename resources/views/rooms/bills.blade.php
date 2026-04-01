@@ -61,7 +61,7 @@
                             @endphp
                             @if($pendingBills->count() > 0)
                                 @foreach($pendingBills as $pBill)
-                                <div onclick="openSlipModal({{ $pBill->id }}, '{{ $pBill->room->room_number ?? '-' }}', {{ $pBill->total_amount ?? 0 }}, '{{ $pBill->payment_slip ? asset('storage/' . $pBill->payment_slip) : '' }}')" class="block px-4 py-3 hover:bg-gray-50 border-b border-gray-100 last:border-0 cursor-pointer">
+                                <div onclick="openSlipModal({{ $pBill->id }}, '{{ $pBill->room?->room_number ?? '-' }}', {{ $pBill->total_amount ?? 0 }}, '{{ $pBill->payment_slip ? asset('storage/' . $pBill->payment_slip) : '' }}')" class="block px-4 py-3 hover:bg-gray-50 border-b border-gray-100 last:border-0 cursor-pointer">
                                     <div class="flex items-start gap-3">
                                         <div class="w-10 h-10 bg-yellow-100 rounded-full flex items-center justify-center flex-shrink-0">
                                             <svg class="w-5 h-5 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -69,7 +69,7 @@
                                             </svg>
                                         </div>
                                         <div class="flex-1 min-w-0">
-                                            <p class="text-sm font-medium text-gray-800">ห้อง {{ $pBill->room->room_number ?? '-' }} รอตรวจสอบ</p>
+                                            <p class="text-sm font-medium text-gray-800">ห้อง {{ $pBill->room?->room_number ?? '-' }} รอตรวจสอบ</p>
                                             <p class="text-xs text-gray-500 mt-1">{{ number_format($pBill->total_amount ?? 0, 2) }} บาท</p>
                                         </div>
                                     </div>
@@ -228,8 +228,8 @@
                             @forelse($bills as $index => $bill)
                             <tr class="border-b border-gray-100 hover:bg-gray-50 transition-colors">
                                 <td class="py-4 px-4 text-gray-500 text-center">{{ $bills->firstItem() + $index }}</td>
-                                <td class="py-4 px-4 font-bold text-[#4A90E2]">{{ $bill->room->room_number ?? '-' }}</td>
-                                <td class="py-4 px-4 text-gray-700 font-medium">{{ $bill->room->contract->tenant_name ?? 'ไม่พบผู้เช่า' }}</td>
+                                <td class="py-4 px-4 font-bold text-[#4A90E2]">{{ $bill->room?->room_number ?? '-' }}</td>
+                                <td class="py-4 px-4 text-gray-700 font-medium">{{ $bill->room?->contract?->tenant_name ?? 'ไม่พบผู้เช่า' }}</td>
                                 <td class="py-4 px-4 text-center text-gray-500">
                                     @if($bill->receipt && $bill->receipt->receipt_date)
                                         {{ \Carbon\Carbon::parse($bill->receipt->receipt_date)->translatedFormat('j M Y') }}
@@ -254,7 +254,7 @@
                                 {{-- Slip Column --}}
                                 <td class="py-4 px-4 text-center">
                                     @if($bill->status != 'paid')
-                                        <button onclick="openSlipModal({{ $bill->id }}, '{{ $bill->room->room_number ?? '-' }}', {{ $bill->total_amount ?? 0 }}, '{{ $bill->payment_slip ? asset('storage/' . $bill->payment_slip) : '' }}')" class="{{ $bill->payment_slip ? 'bg-yellow-100 text-yellow-700' : 'bg-gray-100 text-gray-600' }} text-xs px-3 py-1.5 rounded-lg inline-flex items-center gap-1 hover:bg-gray-200 transition-all font-medium">
+                                        <button onclick="openSlipModal({{ $bill->id }}, '{{ $bill->room?->room_number ?? '-' }}', {{ $bill->total_amount ?? 0 }}, '{{ $bill->payment_slip ? asset('storage/' . $bill->payment_slip) : '' }}')" class="{{ $bill->payment_slip ? 'bg-yellow-100 text-yellow-700' : 'bg-gray-100 text-gray-600' }} text-xs px-3 py-1.5 rounded-lg inline-flex items-center gap-1 hover:bg-gray-200 transition-all font-medium">
                                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
                                             {{ $bill->payment_slip ? 'ดูสลิป' : 'ตรวจสลิป' }}
                                         </button>
@@ -522,8 +522,8 @@
                             @foreach($monthBills as $bill)
                             <label class="flex items-center gap-3 px-3 py-2.5 hover:bg-blue-50 cursor-pointer rounded-lg transition-colors">
                                 <input type="checkbox" name="download_bills[]" value="{{ $bill->id }}" class="room-checkbox w-4 h-4 text-[#4A90E2] rounded cursor-pointer">
-                                <span class="font-bold text-[#4A90E2] text-sm w-12 shrink-0">{{ $bill->room->room_number ?? '-' }}</span>
-                                <span class="text-gray-700 text-sm flex-1 truncate">{{ $bill->room->contract->tenant_name ?? '-' }}</span>
+                                <span class="font-bold text-[#4A90E2] text-sm w-12 shrink-0">{{ $bill->room?->room_number ?? '-' }}</span>
+                                <span class="text-gray-700 text-sm flex-1 truncate">{{ $bill->room?->contract?->tenant_name ?? '-' }}</span>
                                 <span class="text-xs text-gray-400 shrink-0">{{ $bill->receipt->receipt_number ?? '' }}</span>
                             </label>
                             @endforeach

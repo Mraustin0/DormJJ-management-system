@@ -16,9 +16,7 @@ class MeterController extends Controller
 
         $rooms = Room::with(['contract', 'meterReadings' => function($q) use ($selectedMonth) {
             $q->where('billing_month', $selectedMonth);
-        }, 'allMeterReadings' => function($q) {
-            $q->orderBy('billing_month', 'asc');
-        }])->orderBy('room_number', 'asc')->get();
+        }, 'allMeterReadings'])->orderBy('room_number', 'asc')->get();
 
         $rooms->each(function ($room) use ($selectedMonth) {
             $currentMonthReading = $room->meterReadings->first();
@@ -59,9 +57,7 @@ class MeterController extends Controller
 
         $roomQuery = Room::with(['contract', 'meterReadings' => function($q) use ($selectedMonth) {
             $q->where('billing_month', $selectedMonth);
-        }, 'allMeterReadings' => function($q) {
-            $q->orderBy('billing_month', 'asc');
-        }]);
+        }, 'allMeterReadings']);
 
         if ($floor !== '') {
             $roomQuery->where('floor', (int)$floor);
@@ -84,7 +80,17 @@ class MeterController extends Controller
                 ->last();
 
             if ($previousReading) {
-                $room->display_water_prev = $previousReading->water_curr;
+                // ถ้า water_prev ของ reading นั้นถูกบันทึกผิด (=0) ให้คำนวณ water_curr จริงจาก init_prev + unit
+                if (($previousReading->water_prev ?? 0) > 0) {
+                    $room->display_water_prev = $previousReading->water_curr;
+                } else {
+                    $initRecord = $room->allMeterReadings
+                        ->filter(fn($r) => ($r->water_prev ?? 0) > 0)
+                        ->first();
+                    $room->display_water_prev = $initRecord
+                        ? ($initRecord->water_prev + ($previousReading->water_unit ?? 0))
+                        : $previousReading->water_curr;
+                }
             } else {
                 // 3. ยังไม่เคยบันทึกน้ำเลย → ใช้ water_prev ของ record แรก (ค่าเริ่มต้น)
                 $firstReading = $room->allMeterReadings->first();
@@ -110,9 +116,7 @@ class MeterController extends Controller
 
         $roomQuery = Room::with(['contract', 'meterReadings' => function($q) use ($selectedMonth) {
             $q->where('billing_month', $selectedMonth);
-        }, 'allMeterReadings' => function($q) {
-            $q->orderBy('billing_month', 'asc');
-        }]);
+        }, 'allMeterReadings']);
 
         if ($floor !== '') {
             $roomQuery->where('floor', (int)$floor);
@@ -136,10 +140,20 @@ class MeterController extends Controller
                 ->last();
 
             if ($previousReading) {
-                $room->display_elec_prev = $previousReading->elec_curr;
-                // elec_curr ที่บันทึกไว้อาจผิด (บันทึกตอน elec_prev=0) → คำนวณใหม่จาก prev+unit
+                // ถ้า elec_prev ของ reading นั้นถูกบันทึกผิด (=0) ให้คำนวณ elec_curr จริงจาก init_prev + unit
+                if (($previousReading->elec_prev ?? 0) > 0) {
+                    $truePrevCurr = $previousReading->elec_curr;
+                } else {
+                    $initRecord = $room->allMeterReadings
+                        ->filter(fn($r) => ($r->elec_prev ?? 0) > 0)
+                        ->first();
+                    $truePrevCurr = $initRecord
+                        ? ($initRecord->elec_prev + ($previousReading->elec_unit ?? 0))
+                        : $previousReading->elec_curr;
+                }
+                $room->display_elec_prev = $truePrevCurr;
                 if ($currentMonthReading && $currentMonthReading->elec_unit !== null) {
-                    $room->display_elec_curr = $previousReading->elec_curr + $currentMonthReading->elec_unit;
+                    $room->display_elec_curr = $truePrevCurr + $currentMonthReading->elec_unit;
                 } else {
                     $room->display_elec_curr = $currentMonthReading?->elec_curr;
                 }
