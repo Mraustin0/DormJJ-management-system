@@ -284,7 +284,9 @@ class BillController extends Controller
         $setting = Setting::getInstance();
         $count = 0;
         $monthLabel = Carbon::parse($billingMonth)->translatedFormat('F Y');
-        $dueDate = Carbon::parse($billingMonth)->day((int)($setting->payment_due_day ?? 5))->format('Y-m-d');
+        $billingCarbon = Carbon::parse($billingMonth);
+        $dueDay  = min((int)($setting->payment_due_day ?? 5), $billingCarbon->daysInMonth);
+        $dueDate = $billingCarbon->copy()->day($dueDay)->format('Y-m-d');
 
         $roomsInput = $request->input('rooms', []);
 
@@ -446,6 +448,12 @@ class BillController extends Controller
                     ->where('billing_month', $selectedMonth)
                     ->first();
 
+        // Auto-mark เป็น overdue ถ้าเลยกำหนดชำระแล้วและยังเป็น pending
+        if ($bill && $bill->status === 'pending' && $bill->due_date && $bill->due_date->isPast()) {
+            $bill->update(['status' => 'overdue']);
+            $bill->refresh();
+        }
+
         // ดึงข้อมูลหอพัก
         $setting = Setting::getInstance();
 
@@ -466,10 +474,12 @@ class BillController extends Controller
 
         $bill = Bill::findOrFail($id);
 
-        // อัปโหลดสลิป (ถ้ามี)
+        // อัปโหลดสลิป (ถ้ามี) — ถ้าแอดมินไม่ upload ให้ใช้สลิปที่ tenant เคย upload ไว้
         $slipPath = null;
         if ($request->hasFile('payment_slip')) {
             $slipPath = $request->file('payment_slip')->store('payment_slips', 'public');
+        } else {
+            $slipPath = $bill->payment_slip; // reuse tenant's slip
         }
 
         // กำหนดวันที่ชำระ
@@ -493,12 +503,16 @@ class BillController extends Controller
             $bill->update(['status' => 'paid']);
 
             // อัปเดตสถานะการชำระในห้อง
-            // เช็คก่อนว่ายังมีบิลค้างชำระอื่นในห้องนี้ไหม ถ้าไม่มีแล้วจึงตั้งเป็น ชำระแล้ว
-            $room = $bill->room;
+            // เช็คเฉพาะบิลของผู้เช่าปัจจุบัน (billing_month >= check_in_date ของสัญญาปัจจุบัน)
+            $room = $bill->room()->with('contract')->first();
             if ($room) {
+                $contractStartMonth = $room->contract
+                    ? Carbon::parse($room->contract->check_in_date)->format('Y-m')
+                    : null;
                 $hasUnpaidBills = Bill::where('room_id', $room->id)
                     ->where('id', '!=', $bill->id)
                     ->whereIn('status', ['pending', 'overdue', 'reviewing'])
+                    ->when($contractStartMonth, fn($q) => $q->where('billing_month', '>=', $contractStartMonth))
                     ->exists();
                 $room->update(['payment_status' => $hasUnpaidBills ? 'ค้างชำระ' : 'ชำระแล้ว']);
             }

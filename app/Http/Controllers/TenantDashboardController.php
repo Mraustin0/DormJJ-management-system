@@ -63,11 +63,12 @@ class TenantDashboardController extends Controller
             ->whereIn('status', ['pending', 'overdue'])
             ->count();
 
-        // Meter chart data (last 6 months)
+        // Meter chart data (last 6 months) — desc to get latest, then re-sort asc for chart
         $meterReadings = MeterReading::where('room_id', $room->id)
-            ->orderBy('billing_month', 'asc')
+            ->orderBy('billing_month', 'desc')
             ->take(6)
-            ->get();
+            ->get()
+            ->sortBy('billing_month');
 
         $chartLabels  = $meterReadings->map(fn($r) => \Carbon\Carbon::parse($r->billing_month . '-01')->format('m/Y'))->toArray();
         $electricData = $meterReadings->pluck('elec_unit')->toArray();
@@ -142,6 +143,13 @@ class TenantDashboardController extends Controller
 
         // Make sure the bill belongs to tenant's room
         $bill = $contract->room->bills()->where('id', $id)->with('receipt')->firstOrFail();
+
+        // Auto-mark เป็น overdue ถ้าเลยกำหนดชำระแล้วและยังเป็น pending
+        if ($bill->status === 'pending' && $bill->due_date && $bill->due_date->isPast()) {
+            $bill->update(['status' => 'overdue']);
+            $bill->refresh();
+        }
+
         $setting = Setting::getInstance();
 
         return view('tenant.bill-view', compact('contract', 'bill', 'setting'));
@@ -192,12 +200,7 @@ class TenantDashboardController extends Controller
         ]);
 
         try {
-            // Delete old slip if exists
-            if ($bill->payment_slip) {
-                Storage::disk('public')->delete($bill->payment_slip);
-            }
-
-            // Store new slip
+            // Store new slip first — delete old only after successful save
             $path = $request->file('payment_slip')->store('payment_slips', 'public');
 
             if (!$path) {
@@ -205,10 +208,17 @@ class TenantDashboardController extends Controller
                     ->withErrors(['payment_slip' => 'ไม่สามารถอัปโหลดไฟล์ได้ กรุณาลองใหม่']);
             }
 
+            $oldSlip = $bill->payment_slip;
+
             $bill->update([
                 'payment_slip' => $path,
                 'status' => 'reviewing',
             ]);
+
+            // Delete old slip only after DB save succeeded
+            if ($oldSlip) {
+                Storage::disk('public')->delete($oldSlip);
+            }
 
             return redirect()->route('tenant.bills.view', $id)->with('slip_success', 'อัปโหลดสลิปเรียบร้อยแล้ว รอแอดมินตรวจสอบ');
         } catch (\Exception $e) {
@@ -264,11 +274,12 @@ class TenantDashboardController extends Controller
         $room = $contract->room;
         $setting = Setting::getInstance();
 
-        // Get last 6 months of meter readings
+        // Get last 6 months of meter readings — desc to get latest, then re-sort asc for chart
         $meterReadings = MeterReading::where('room_id', $room->id)
-            ->orderBy('billing_month', 'asc')
+            ->orderBy('billing_month', 'desc')
             ->take(6)
-            ->get();
+            ->get()
+            ->sortBy('billing_month');
 
         // Prepare chart data
         $chartLabels = [];
@@ -282,8 +293,8 @@ class TenantDashboardController extends Controller
             $chartLabels[] = $month->format('m') . '/' . $month->format('Y');
             $electricUnits[] = $reading->elec_unit ?? 0;
             $waterUnits[] = $reading->water_unit ?? 0;
-            $electricCosts[] = ($reading->elec_unit ?? 0) * ($setting->electric_rate ?? 8);
-            $waterCosts[] = ($reading->water_unit ?? 0) * ($setting->water_rate ?? 18);
+            $electricCosts[] = ($reading->elec_unit ?? 0) * (float)($setting->electric_rate ?? 0);
+            $waterCosts[] = ($reading->water_unit ?? 0) * (float)($setting->water_rate ?? 0);
         }
 
         // Stats
