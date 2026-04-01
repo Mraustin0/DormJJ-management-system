@@ -41,4 +41,24 @@ class Bill extends Model
     {
         return $this->hasOne(Receipt::class, 'bill_id');
     }
+
+    /** จำนวนวันที่เลยกำหนดชำระ (0 ถ้ายังไม่เลย) */
+    public function getDaysOverdueAttribute(): int
+    {
+        if (!$this->due_date || in_array($this->status, ['paid', 'reviewing'])) {
+            return 0;
+        }
+        $days = (int) now()->startOfDay()->diffInDays($this->due_date->copy()->startOfDay(), false);
+        return max(0, -$days);
+    }
+
+    /** ค่าปรับล่าช้า = วันที่เลยกำหนด × late_fee_per_day จาก Settings */
+    public function getLateFeeAttribute(): float
+    {
+        if ($this->days_overdue === 0) {
+            return 0.0;
+        }
+        $rate = (float) (\App\Models\Setting::getInstance()->late_fee_per_day ?? 0);
+        return $this->days_overdue * $rate;
+    }
 }
