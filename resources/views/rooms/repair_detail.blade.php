@@ -25,7 +25,7 @@
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
                 </svg>
-                กลับไปรายการแจ้งซ่อม
+                
             </a>
 
             {{-- Status Banner --}}
@@ -42,6 +42,13 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
                     </svg>
                     <p class="text-green-700 font-medium text-sm">สถานะ: <strong>ซ่อมเสร็จสิ้นแล้ว</strong></p>
+                </div>
+            @elseif($repair->status == 'cancelled')
+                <div class="flex items-center gap-3 bg-gray-50 border border-gray-200 rounded-xl px-5 py-3 mb-5">
+                    <svg class="w-5 h-5 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                    <p class="text-gray-500 font-medium text-sm">สถานะ: <strong>ยกเลิกแล้ว</strong></p>
                 </div>
             @endif
 
@@ -84,6 +91,8 @@
                                         <span class="px-3 py-1 bg-orange-100 text-orange-600 rounded-full text-xs font-bold">กำลังดำเนินการ</span>
                                     @elseif($repair->status == 'completed')
                                         <span class="px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-bold">เสร็จสิ้น</span>
+                                    @else
+                                        <span class="px-3 py-1 bg-gray-100 text-gray-500 rounded-full text-xs font-bold">ยกเลิก</span>
                                     @endif
                                 </span>
                             </div>
@@ -179,30 +188,59 @@
         const statusLabels = {
             in_progress: 'ยืนยันรับเรื่อง',
             completed:   'ซ่อมเสร็จสิ้น',
+            cancelled:   'ยกเลิกคำร้อง',
         };
 
         const statusTexts = {
             in_progress: 'สถานะจะเปลี่ยนเป็น "กำลังดำเนินการ" และแจ้งเตือนผู้เช่า',
             completed:   'สถานะจะเปลี่ยนเป็น "เสร็จสิ้น" และแจ้งเตือนผู้เช่า',
+            cancelled:   'คำร้องจะถูกยกเลิก กรุณาระบุเหตุผล',
         };
 
         function confirmStatus(newStatus) {
-            Swal.fire({
-                title: statusLabels[newStatus] + '?',
-                text: statusTexts[newStatus],
-                input: 'textarea',
-                inputPlaceholder: 'หมายเหตุเพิ่มเติม (ถ้ามี)',
-                inputAttributes: { 'aria-label': 'หมายเหตุ' },
-                showCancelButton: true,
-                confirmButtonColor: newStatus === 'in_progress' ? '#4A90E2' : '#14b8a6',
-                cancelButtonColor: '#6b7280',
-                confirmButtonText: 'ยืนยัน',
-                cancelButtonText: 'ยกเลิก',
-            }).then(result => {
-                if (result.isConfirmed) {
-                    doUpdateStatus(newStatus, result.value || '');
-                }
-            });
+            if (newStatus === 'cancelled') {
+                // For cancel, ask for reason
+                Swal.fire({
+                    title: statusLabels[newStatus] + '?',
+                    text: statusTexts[newStatus],
+                    input: 'textarea',
+                    inputPlaceholder: 'ระบุเหตุผลการยกเลิก...',
+                    inputAttributes: { 'aria-label': 'เหตุผล' },
+                    showCancelButton: true,
+                    confirmButtonColor: '#ef4444',
+                    cancelButtonColor: '#6b7280',
+                    confirmButtonText: 'ยืนยัน',
+                    cancelButtonText: 'ยกเลิก',
+                    preConfirm: (remark) => {
+                        if (!remark || !remark.trim()) {
+                            Swal.showValidationMessage('กรุณาระบุเหตุผล');
+                        }
+                        return remark;
+                    }
+                }).then(result => {
+                    if (result.isConfirmed) {
+                        doUpdateStatus(newStatus, result.value);
+                    }
+                });
+            } else {
+                // For in_progress / completed, optionally add remark
+                Swal.fire({
+                    title: statusLabels[newStatus] + '?',
+                    text: statusTexts[newStatus],
+                    input: 'textarea',
+                    inputPlaceholder: 'หมายเหตุเพิ่มเติม (ถ้ามี)',
+                    inputAttributes: { 'aria-label': 'หมายเหตุ' },
+                    showCancelButton: true,
+                    confirmButtonColor: newStatus === 'in_progress' ? '#4A90E2' : '#14b8a6',
+                    cancelButtonColor: '#6b7280',
+                    confirmButtonText: 'ยืนยัน',
+                    cancelButtonText: 'ยกเลิก',
+                }).then(result => {
+                    if (result.isConfirmed) {
+                        doUpdateStatus(newStatus, result.value || '');
+                    }
+                });
+            }
         }
 
         function doUpdateStatus(newStatus, remark) {
