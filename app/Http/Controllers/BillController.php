@@ -284,7 +284,9 @@ class BillController extends Controller
         $setting = Setting::getInstance();
         $count = 0;
         $monthLabel = Carbon::parse($billingMonth)->translatedFormat('F Y');
-        $dueDate = Carbon::parse($billingMonth)->day((int)($setting->payment_due_day ?? 5))->format('Y-m-d');
+        $billingCarbon = Carbon::parse($billingMonth);
+        $dueDay  = min((int)($setting->payment_due_day ?? 5), $billingCarbon->daysInMonth);
+        $dueDate = $billingCarbon->copy()->day($dueDay)->format('Y-m-d');
 
         $roomsInput = $request->input('rooms', []);
 
@@ -472,10 +474,12 @@ class BillController extends Controller
 
         $bill = Bill::findOrFail($id);
 
-        // อัปโหลดสลิป (ถ้ามี)
+        // อัปโหลดสลิป (ถ้ามี) — ถ้าแอดมินไม่ upload ให้ใช้สลิปที่ tenant เคย upload ไว้
         $slipPath = null;
         if ($request->hasFile('payment_slip')) {
             $slipPath = $request->file('payment_slip')->store('payment_slips', 'public');
+        } else {
+            $slipPath = $bill->payment_slip; // reuse tenant's slip
         }
 
         // กำหนดวันที่ชำระ

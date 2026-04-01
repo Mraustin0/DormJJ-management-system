@@ -67,6 +67,16 @@
                                 <span class="font-bold text-gray-900 text-base">{{ $repair->room->room_number ?? '-' }}</span>
                             </div>
                             <div class="flex items-start gap-3">
+                                <span class="text-gray-400 text-sm w-32 flex-shrink-0 pt-0.5">ผู้แจ้งซ่อม</span>
+                                <span class="font-medium text-gray-800">{{ $repair->room->contract->tenant_name ?? '-' }}</span>
+                            </div>
+                            @if($repair->room->contract?->phone)
+                            <div class="flex items-start gap-3">
+                                <span class="text-gray-400 text-sm w-32 flex-shrink-0 pt-0.5">เบอร์โทร</span>
+                                <span class="font-medium text-gray-800">{{ $repair->room->contract->phone }}</span>
+                            </div>
+                            @endif
+                            <div class="flex items-start gap-3">
                                 <span class="text-gray-400 text-sm w-32 flex-shrink-0 pt-0.5">วันที่แจ้งซ่อม</span>
                                 <span class="font-medium text-gray-800">
                                     {{ $repair->created_at ? $repair->created_at->format('d/m/Y H:i') : '-' }}

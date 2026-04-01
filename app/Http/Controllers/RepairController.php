@@ -13,7 +13,7 @@ class RepairController extends Controller
     {
         $status = $request->input('status', '');
 
-        $query = Repair::with('room')->latest();
+        $query = Repair::with(['room', 'room.contract'])->latest();
 
         if ($status) {
             $query->where('status', $status);
@@ -27,7 +27,7 @@ class RepairController extends Controller
     /** รายละเอียดคำร้องแจ้งซ่อม (admin) */
     public function show($id)
     {
-        $repair = Repair::with('room')->findOrFail($id);
+        $repair = Repair::with(['room', 'room.contract'])->findOrFail($id);
         return view('rooms.repair_detail', compact('repair'));
     }
 
