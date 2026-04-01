@@ -63,6 +63,8 @@ Route::middleware(['auth', 'role:admin,staff'])->group(function () {
     Route::post('/bills/{id}/confirm-payment', [BillController::class, 'confirmPayment'])->name('bills.confirmPayment');
     Route::post('/bills/{id}/reject-payment',  [BillController::class, 'rejectPayment'])->name('bills.rejectPayment');
     Route::get('/bills/{id}/receipt', [BillController::class, 'viewReceipt'])->name('bills.receipt');
+    Route::get('/bills/{id}/download-pdf', [BillController::class, 'downloadBillPdf'])->name('bills.downloadPdf');
+    Route::get('/bills/{id}/download-receipt', [BillController::class, 'downloadReceiptPdf'])->name('bills.downloadReceipt');
 
     // หน้าข้อมูลลูกค้า
     Route::get('/customers', [CustomerController::class, 'index'])->name('rooms.customers');
@@ -122,6 +124,8 @@ Route::middleware(['auth', 'role:tenant'])->prefix('tenant')->group(function () 
     Route::get('/bills/{id}', [TenantDashboardController::class, 'viewBill'])->name('tenant.bills.view');
     Route::post('/bills/{id}/upload-slip', [TenantDashboardController::class, 'uploadSlip'])->name('tenant.bills.uploadSlip');
     Route::get('/bills/{id}/receipt', [TenantDashboardController::class, 'receipt'])->name('tenant.receipt');
+    Route::get('/bills/{id}/download-pdf', [TenantDashboardController::class, 'downloadBillPdf'])->name('tenant.bills.downloadPdf');
+    Route::get('/bills/{id}/download-receipt', [TenantDashboardController::class, 'downloadReceiptPdf'])->name('tenant.bills.downloadReceipt');
     Route::get('/contract', [TenantDashboardController::class, 'contract'])->name('tenant.contract');
     Route::get('/contract/detail', [TenantDashboardController::class, 'contractDetail'])->name('tenant.contract.detail');
     Route::get('/contract/history', [TenantDashboardController::class, 'contractHistory'])->name('tenant.contract.history');
