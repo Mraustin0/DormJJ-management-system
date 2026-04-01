@@ -201,7 +201,7 @@
                                         ห้องว่าง
                                         <span class="ml-1 text-xs bg-gray-200 text-gray-500 px-2 py-0.5 rounded-full">ไม่สามารถกรอกได้</span>
                                     @else
-                                        {{ $room->contract->tenant_name }}
+                                        {{ $room->contract?->tenant_name ?? '-' }}
                                     @endif
                                 </td>
                                 <td class="py-4 px-4 text-center">
