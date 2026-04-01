@@ -200,12 +200,7 @@ class TenantDashboardController extends Controller
         ]);
 
         try {
-            // Delete old slip if exists
-            if ($bill->payment_slip) {
-                Storage::disk('public')->delete($bill->payment_slip);
-            }
-
-            // Store new slip
+            // Store new slip first — delete old only after successful save
             $path = $request->file('payment_slip')->store('payment_slips', 'public');
 
             if (!$path) {
@@ -213,10 +208,17 @@ class TenantDashboardController extends Controller
                     ->withErrors(['payment_slip' => 'ไม่สามารถอัปโหลดไฟล์ได้ กรุณาลองใหม่']);
             }
 
+            $oldSlip = $bill->payment_slip;
+
             $bill->update([
                 'payment_slip' => $path,
                 'status' => 'reviewing',
             ]);
+
+            // Delete old slip only after DB save succeeded
+            if ($oldSlip) {
+                Storage::disk('public')->delete($oldSlip);
+            }
 
             return redirect()->route('tenant.bills.view', $id)->with('slip_success', 'อัปโหลดสลิปเรียบร้อยแล้ว รอแอดมินตรวจสอบ');
         } catch (\Exception $e) {
@@ -291,8 +293,8 @@ class TenantDashboardController extends Controller
             $chartLabels[] = $month->format('m') . '/' . $month->format('Y');
             $electricUnits[] = $reading->elec_unit ?? 0;
             $waterUnits[] = $reading->water_unit ?? 0;
-            $electricCosts[] = ($reading->elec_unit ?? 0) * ($setting->electric_rate ?? 8);
-            $waterCosts[] = ($reading->water_unit ?? 0) * ($setting->water_rate ?? 18);
+            $electricCosts[] = ($reading->elec_unit ?? 0) * (float)($setting->electric_rate ?? 0);
+            $waterCosts[] = ($reading->water_unit ?? 0) * (float)($setting->water_rate ?? 0);
         }
 
         // Stats
