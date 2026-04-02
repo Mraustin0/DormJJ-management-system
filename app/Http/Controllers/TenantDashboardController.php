@@ -588,6 +588,31 @@ class TenantDashboardController extends Controller
     }
 
     /**
+     * Polling endpoint — returns unread count + latest notifications (JSON)
+     * ใช้สำหรับ JS polling ทุก 30 วินาที ไม่ต้อง reload หน้า
+     */
+    public function pollNotifications()
+    {
+        $notifications = Notification::forUser(Auth::id())
+            ->latest()
+            ->take(20)
+            ->get();
+
+        return response()->json([
+            'count'         => $notifications->where('is_read', false)->count(),
+            'notifications' => $notifications->map(fn($n) => [
+                'id'      => $n->id,
+                'type'    => $n->type,
+                'title'   => $n->title,
+                'message' => $n->message,
+                'link'    => $n->link,
+                'is_read' => $n->is_read,
+                'time'    => $n->created_at->diffForHumans(),
+            ])->values(),
+        ]);
+    }
+
+    /**
      * Mark all notifications as read
      */
     public function markAllRead()

@@ -7,6 +7,8 @@ use Illuminate\Support\Facades\Auth;
 use App\Models\User;
 use App\Models\Room;
 use App\Models\Contract;
+use App\Models\Bill;
+use App\Models\MoveoutRequest;
 
 class AuthController extends Controller
 {
@@ -130,4 +132,23 @@ class AuthController extends Controller
         return redirect()->route('profile.index')->with('success', 'บันทึกข้อมูลโปรไฟล์เรียบร้อยแล้ว');
     }
 
+    /**
+     * Polling endpoint — returns admin notification counts (JSON)
+     * ใช้สำหรับ JS polling ทุก 30 วินาที ไม่ต้อง reload หน้า
+     */
+    public function pollAdminNotifications()
+    {
+        $reviewing = Bill::where('status', 'reviewing')->count();
+        $ending    = Contract::where('status', 'ending')->count();
+        $overdue   = Bill::where('status', 'overdue')->count();
+        $moveouts  = MoveoutRequest::where('status', 'pending')->count();
+
+        return response()->json([
+            'count'     => $reviewing + $ending + $overdue + $moveouts,
+            'reviewing' => $reviewing,
+            'ending'    => $ending,
+            'overdue'   => $overdue,
+            'moveouts'  => $moveouts,
+        ]);
+    }
 }
