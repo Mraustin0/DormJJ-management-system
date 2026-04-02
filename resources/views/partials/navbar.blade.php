@@ -274,6 +274,53 @@
         });
     }
 
+    // ─── Admin Notification Polling ─────────────────────────────────────────
+    // ถาม server ทุก 30 วินาทีว่ามี notification ใหม่ไหม → อัปเดต badge เท่านั้น
+    // (dropdown content ยัง SSR อยู่ — เปิด dropdown แล้ว refresh ถ้าต้องการเห็นรายการล่าสุด)
+    ;(function () {
+        const POLL_INTERVAL = 30000;
+        @auth
+        let lastCount = {{ $adminNotifCount ?? 0 }};
+
+        function updateAdminBadge(count) {
+            const container = document.getElementById('notificationContainer');
+            if (!container) return;
+            const btn   = container.querySelector('button');
+            let   badge = container.querySelector('.admin-notif-badge');
+
+            if (count > 0) {
+                if (!badge) {
+                    badge = document.createElement('span');
+                    badge.className = 'admin-notif-badge absolute -top-1 -right-1 bg-red-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center font-bold pointer-events-none';
+                    btn.style.position = 'relative';
+                    btn.appendChild(badge);
+                }
+                badge.textContent = count > 9 ? '9+' : count;
+                badge.style.display = 'flex';
+            } else if (badge) {
+                badge.style.display = 'none';
+            }
+        }
+
+        function pollAdmin() {
+            fetch('{{ route("admin.notifications.poll") }}', {
+                headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' }
+            })
+            .then(r => r.ok ? r.json() : null)
+            .then(data => {
+                if (!data) return;
+                if (data.count !== lastCount) {
+                    lastCount = data.count;
+                    updateAdminBadge(data.count);
+                }
+            })
+            .catch(() => {});
+        }
+
+        setInterval(pollAdmin, POLL_INTERVAL);
+        @endauth
+    })();
+
     // Close dropdowns when clicking outside
     document.addEventListener('click', function(e) {
         const notificationContainer = document.getElementById('notificationContainer');

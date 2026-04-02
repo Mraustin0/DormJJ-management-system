@@ -115,6 +115,9 @@ Route::middleware(['auth', 'role:admin,staff'])->group(function () {
     Route::get('/tenants/create', [CustomerController::class, 'create'])->name('tenants.create');
     Route::post('/tenants', [CustomerController::class, 'store'])->name('tenants.store');
 
+    // Notifications polling
+    Route::get('/notifications/poll', [AuthController::class, 'pollAdminNotifications'])->name('admin.notifications.poll');
+
 });
 
 // 3. ส่วนของ Tenant (ต้อง Login + เป็น Tenant)
@@ -143,6 +146,7 @@ Route::middleware(['auth', 'role:tenant'])->prefix('tenant')->group(function () 
     Route::post('/repairs', [TenantDashboardController::class, 'repairStore'])->name('tenant.repairs.store');
 
     // Notifications
+    Route::get('/notifications/poll', [TenantDashboardController::class, 'pollNotifications'])->name('tenant.notifications.poll');
     Route::get('/notifications/{id}/read', [TenantDashboardController::class, 'readNotification'])->name('tenant.notifications.read');
     Route::post('/notifications/mark-all-read', [TenantDashboardController::class, 'markAllRead'])->name('tenant.notifications.markAllRead');
 });
